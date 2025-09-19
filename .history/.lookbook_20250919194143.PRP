@@ -1,0 +1,10 @@
+
+
+I want to create a small framwork in python.
+The goal is to provide and that provide an API for an LLM with this service.
+It about fashion, for the COS brand.
+Whan the request is: "What should I waer for the next week?"
+The server must check what week we are, check even, and if the next week its christamast, avise some lookbook mostly in green and red, a bit cusual.
+For that, the server muct to have all clothing description in database.
+For that, I sugest to have an LLM with vision capability to describe clothing.
+I have already some successful 
