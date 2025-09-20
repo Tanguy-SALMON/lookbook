@@ -15,7 +15,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select, and_, or_, text, JSON
 
 from lookbook_mpc.domain.entities import (
-    Item, ItemDB, Outfit, OutfitDB, OutfitItem, OutfitItemDB,
+    Item, ProductDB, Outfit, OutfitDB, OutfitItem, OutfitItemDB,
     Rule, RuleDB, Intent, VisionAttributes
 )
 
@@ -93,7 +93,7 @@ class SQLiteLookbookRepository(LookbookRepository):
                 for item in items:
                     # Check if item already exists
                     existing_result = await session.execute(
-                        select(ItemDB).where(ItemDB.sku == item["sku"])
+                        select(ProductDB).where(ProductDB.sku == item["sku"])
                     )
                     existing_item = existing_result.scalar_one_or_none()
 
@@ -108,7 +108,7 @@ class SQLiteLookbookRepository(LookbookRepository):
                         existing_item.updated_at = datetime.utcnow()
                     else:
                         # Create new item
-                        new_item = ItemDB(
+                        new_item = ProductDB(
                             sku=item["sku"],
                             title=item["title"],
                             price=item["price"],
@@ -143,63 +143,63 @@ class SQLiteLookbookRepository(LookbookRepository):
             self.logger.info("Getting items by intent", intent=intent.dict())
 
             async with self._get_session() as session:
-                query = select(ItemDB).where(ItemDB.in_stock == True)
+                query = select(ProductDB).where(ProductDB.in_stock == True)
 
                 # Apply filters based on intent
                 if intent.budget_max:
-                    query = query.where(ItemDB.price <= intent.budget_max)
+                    query = query.where(ProductDB.price <= intent.budget_max)
 
                 if intent.size:
                     # This is a simplified size filter - in production you'd want more sophisticated logic
                     query = query.where(
                         or_(
-                            ItemDB.size_range.contains([intent.size]),
-                            ItemDB.size_range == ["ONE_SIZE"]
+                            ProductDB.size_range.contains([intent.size]),
+                            ProductDB.size_range == ["ONE_SIZE"]
                         )
                     )
 
                 # Filter by category if specified in attributes
                 if hasattr(intent, 'category') and intent.category:
                     query = query.where(
-                        ItemDB.attributes.op('->>')('category').astext == intent.category
+                        ProductDB.attributes.op('->>')('category').astext == intent.category
                     )
 
                 # Filter by color if specified in attributes
                 if hasattr(intent, 'color') and intent.color:
                     query = query.where(
-                        ItemDB.attributes.op('->>')('color').astext == intent.color
+                        ProductDB.attributes.op('->>')('color').astext == intent.color
                     )
 
                 # Filter by material if specified in attributes
                 if hasattr(intent, 'material') and intent.material:
                     query = query.where(
-                        ItemDB.attributes.op('->>')('material').astext == intent.material
+                        ProductDB.attributes.op('->>')('material').astext == intent.material
                     )
 
                 # Filter by occasion if specified in attributes
                 if intent.occasion:
                     query = query.where(
-                        ItemDB.attributes.op('->>')('occasion').astext == intent.occasion
+                        ProductDB.attributes.op('->>')('occasion').astext == intent.occasion
                     )
 
                 # Filter by season if specified in attributes
                 if hasattr(intent, 'season') and intent.season:
                     query = query.where(
-                        ItemDB.attributes.op('->>')('season').astext == intent.season
+                        ProductDB.attributes.op('->>')('season').astext == intent.season
                     )
 
                 # Filter by objectives (e.g., slimming)
                 if intent.objectives:
                     for objective in intent.objectives:
                         query = query.where(
-                            ItemDB.attributes.op('->>')('objectives').astext.contains(objective)
+                            ProductDB.attributes.op('->>')('objectives').astext.contains(objective)
                         )
 
                 # Filter by palette if specified
                 if intent.palette:
                     for color in intent.palette:
                         query = query.where(
-                            ItemDB.attributes.op('->>')('color').astext.in_(intent.palette)
+                            ProductDB.attributes.op('->>')('color').astext.in_(intent.palette)
                         )
 
                 result = await session.execute(query)
@@ -242,7 +242,7 @@ class SQLiteLookbookRepository(LookbookRepository):
             self.logger.info("Searching items", filters=filters)
 
             async with self._get_session() as session:
-                query = select(ItemDB).where(ItemDB.in_stock == True)
+                query = select(ProductDB).where(ProductDB.in_stock == True)
 
                 # Apply filters
                 if 'category' in filters:
@@ -266,30 +266,30 @@ class SQLiteLookbookRepository(LookbookRepository):
                 if 'size' in filters:
                     query = query.where(
                         or_(
-                            ItemDB.size_range.contains([filters['size']]),
-                            ItemDB.size_range == ["ONE_SIZE"]
+                            ProductDB.size_range.contains([filters['size']]),
+                            ProductDB.size_range == ["ONE_SIZE"]
                         )
                     )
 
                 if 'max_price' in filters:
-                    query = query.where(ItemDB.price <= filters['max_price'])
+                    query = query.where(ProductDB.price <= filters['max_price'])
 
                 if 'min_price' in filters:
-                    query = query.where(ItemDB.price >= filters['min_price'])
+                    query = query.where(ProductDB.price >= filters['min_price'])
 
                 if 'pattern' in filters:
                     query = query.where(
-                        ItemDB.attributes.op('->>')('pattern').astext == filters['pattern']
+                        ProductDB.attributes.op('->>')('pattern').astext == filters['pattern']
                     )
 
                 if 'season' in filters:
                     query = query.where(
-                        ItemDB.attributes.op('->>')('season').astext == filters['season']
+                        ProductDB.attributes.op('->>')('season').astext == filters['season']
                     )
 
                 if 'occasion' in filters:
                     query = query.where(
-                        ItemDB.attributes.op('->>')('occasion').astext == filters['occasion']
+                        ProductDB.attributes.op('->>')('occasion').astext == filters['occasion']
                     )
 
                 result = await session.execute(query)
@@ -317,7 +317,7 @@ class SQLiteLookbookRepository(LookbookRepository):
 
             async with self._get_session() as session:
                 result = await session.execute(
-                    select(ItemDB).where(ItemDB.id == item_id)
+                    select(ProductDB).where(ProductDB.id == item_id)
                 )
                 item_db = result.scalar_one_or_none()
 

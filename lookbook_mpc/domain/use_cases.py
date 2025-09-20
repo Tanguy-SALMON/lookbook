@@ -237,46 +237,97 @@ class ChatTurn(UseCase):
             replies = []
             outfits = []
 
-            if "recommend" in intent.intent.lower() or "outfit" in intent.intent.lower():
-                # Generate outfit recommendations
-                recommendation_request = RecommendationRequest(
-                    text_query=request.message,
-                    budget=intent.budget_max,
-                    size=intent.size,
-                    preferences={
-                        "objectives": intent.objectives,
-                        "palette": intent.palette
-                    }
-                )
+            # Handle both dict and Intent object
+            if isinstance(intent, dict):
+                intent_str = intent.get('intent', '').lower() if intent.get('intent') else ""
 
-                recommendation_response = await RecommendOutfits(
-                    self.recommender_service,
-                    self.lookbook_repo,
-                    self.intent_parser
-                ).execute(recommendation_request)
+                if "recommend" in intent_str or "outfit" in intent_str:
+                    # Generate outfit recommendations
+                    recommendation_request = RecommendationRequest(
+                        text_query=request.message,
+                        budget=intent.get('budget_max'),
+                        size=intent.get('size'),
+                        preferences={
+                            "objectives": intent.get('objectives', []),
+                            "palette": intent.get('palette')
+                        }
+                    )
 
-                outfits = recommendation_response.outfits
+                    try:
+                        recommendation_response = await RecommendOutfits(
+                            self.recommender_service,
+                            self.lookbook_repo,
+                            self.intent_parser
+                        ).execute(recommendation_request)
 
-                # Build response message
-                if outfits:
-                    replies.append({
-                        "type": "recommendations",
-                        "message": f"I found {len(outfits)} outfit(s) for you!",
-                        "outfits": len(outfits)
-                    })
-                else:
-                    replies.append({
-                        "type": "no_results",
-                        "message": "I couldn't find any outfits matching your criteria. Let me try a different search."
-                    })
+                        outfits = recommendation_response.outfits
+                    except Exception as e:
+                        outfits = []
 
-            elif "help" in intent.intent.lower():
+                    # Build response message
+                    if outfits:
+                        replies.append({
+                            "type": "recommendations",
+                            "message": f"I found {len(outfits)} outfit(s) for you!",
+                            "outfits": len(outfits)
+                        })
+                    else:
+                        replies.append({
+                            "type": "no_results",
+                            "message": "I couldn't find any outfits matching your criteria. Let me try a different search."
+                        })
+            else:
+                # Handle Intent object (for real LLM parser)
+                intent_str = intent.intent.lower() if intent.intent else ""
+                if "recommend" in intent_str or "outfit" in intent_str:
+                    # Generate outfit recommendations using Intent object
+                    recommendation_request = RecommendationRequest(
+                        text_query=request.message,
+                        budget=intent.budget_max,
+                        size=intent.size,
+                        preferences={
+                            "objectives": intent.objectives,
+                            "palette": intent.palette
+                        }
+                    )
+
+                    try:
+                        recommendation_response = await RecommendOutfits(
+                            self.recommender_service,
+                            self.lookbook_repo,
+                            self.intent_parser
+                        ).execute(recommendation_request)
+
+                        outfits = recommendation_response.outfits
+                    except Exception as e:
+                        outfits = []
+
+                    # Build response message
+                    if outfits:
+                        replies.append({
+                            "type": "recommendations",
+                            "message": f"I found {len(outfits)} outfit(s) for you!",
+                            "outfits": len(outfits)
+                        })
+                    else:
+                        replies.append({
+                            "type": "no_results",
+                            "message": "I couldn't find any outfits matching your criteria. Let me try a different search."
+                        })
+            # Handle help and general cases for both dict and Intent object
+            if isinstance(intent, dict):
+                intent_str = intent.get('intent', '').lower() if intent.get('intent') else ""
+                help_intent = "help" in intent_str
+            else:
+                intent_str = intent.intent.lower() if intent.intent else ""
+                help_intent = "help" in intent_str
+
+            if help_intent:
                 replies.append({
                     "type": "help",
                     "message": "I can help you find outfits! Try asking for recommendations based on occasions, activities, or styles."
                 })
-
-            else:
+            elif not ("recommend" in intent_str or "outfit" in intent_str):
                 replies.append({
                     "type": "general",
                     "message": "I understand you're looking for fashion help. Could you tell me more about what you need?"

@@ -185,7 +185,23 @@ class MockIntentParser(IntentParser):
             "size": None
         }
 
-        if any(word in text_lower for word in ["yoga", "gym", "exercise", "workout"]):
+        # Handle special keywords first
+        if any(word in text_lower for word in ["test"]):
+            # Test mode - return a simple test intent
+            base_intent.update({
+                "activity": "test",
+                "occasion": "debug",
+                "objectives": ["testing"],
+                "formality": "casual"
+            })
+        elif any(word in text_lower for word in ["prod", "agent", "shop", "sell"]):
+            # Production/agent mode - treat as general recommendation
+            base_intent.update({
+                "occasion": "casual",
+                "formality": "casual",
+                "objectives": ["style"]
+            })
+        elif any(word in text_lower for word in ["yoga", "gym", "exercise", "workout"]):
             base_intent.update({
                 "activity": "yoga",
                 "occasion": "casual",

@@ -155,7 +155,7 @@
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
                 <div class="flex items-center">
-                  <img src="cos-chat2.png" class="h-10"/>
+                  <img src="../cos-chat2.png" class="h-10"/>
                 </div>
 
                 <div class="hidden md:flex items-center space-x-8">
@@ -212,9 +212,17 @@
                             <button
                                 id="sendButton"
                                 onclick="sendMessage()"
-                                class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black hover:bg-gray-800 text-white w-12 h-12 flex items-center justify-center transition-all"
+                                class="absolute right-16 top-1/2 transform -translate-y-1/2 bg-black hover:bg-gray-800 text-white w-12 h-12 flex items-center justify-center transition-all"
                             >
                                 <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button
+                                id="resetButton"
+                                onclick="resetChat()"
+                                class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-red-500 hover:bg-red-600 text-white w-12 h-12 flex items-center justify-center transition-all"
+                                title="Clear all messages"
+                            >
+                                <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </div>
@@ -569,6 +577,30 @@
         }
 
         // Focus input on load and start monitoring
+        // Reset chat function
+        function resetChat() {
+            if (confirm('Are you sure you want to clear all messages?')) {
+                const chatMessages = document.getElementById('chatMessages');
+                if (chatMessages) {
+                    chatMessages.innerHTML = '';
+                }
+        
+                // Clear the input field
+                const messageInput = document.getElementById('messageInput');
+                if (messageInput) {
+                    messageInput.value = '';
+                }
+        
+                // Hide typing indicator if visible
+                hideTypingIndicator();
+        
+                // Add welcome message
+                setTimeout(() => {
+                    addMessage('assistant', 'Hello! I\'m your AI Fashion Assistant. Describe what you\'re looking for and I\'ll help you find the perfect outfit!');
+                }, 300);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('messageInput').focus();
             startConnectionMonitoring();

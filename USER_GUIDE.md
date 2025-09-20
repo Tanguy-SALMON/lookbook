@@ -10,14 +10,49 @@ Lookbook-MPC is a FastAPI-based fashion recommendation microservice that provide
 - Ollama installed and running
 - At least 4GB of RAM available
 - Port 8000, 8001, and 11434 available
+- S3/CloudFront URL for image serving (configured in .env)
 
 ## Quick Start
 
-### 1. Starting the Server
+### 1. Environment Setup
 
-The system consists of two main services that need to run simultaneously:
+#### Step 1: Configure Environment Variables
 
-#### Step 1: Start Ollama (LLM Service)
+Copy and configure the environment file:
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit the .env file to ensure all required variables are set
+nano .env
+```
+
+Your `.env` file should contain:
+
+```bash
+# Ollama Configuration
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_VISION_MODEL=qwen2.5vl:7b
+OLLAMA_TEXT_MODEL=qwen3
+VISION_PORT=8001
+
+# Storage & CDN
+S3_BASE_URL=https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/
+
+# Database Configuration
+LOOKBOOK_DB_URL=sqlite:///lookbook.db
+MYSQL_SHOP_URL=mysql+pymysql://lookbook_user:lookbook_password@localhost:3306/magento
+
+# Application Settings
+LOG_LEVEL=INFO
+TZ=UTC
+CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+LOG_FORMAT=json
+LOG_FILE=/var/log/lookbook-mpc.log
+```
+
+#### Step 2: Start Ollama (LLM Service)
 
 ```bash
 # Start Ollama daemon in a terminal
@@ -31,7 +66,7 @@ ollama pull qwen3:4b  # Use 4B variant for faster inference
 ollama list
 ```
 
-#### Step 2: Start Vision Sidecar Service
+#### Step 3: Start Vision Sidecar Service
 
 ```bash
 # In the project directory, start the vision analysis service
@@ -47,7 +82,7 @@ INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8001
 ```
 
-#### Step 3: Start Main API Service
+#### Step 4: Start Main API Service
 
 ```bash
 # In another terminal, in the project directory
@@ -124,6 +159,22 @@ The project is organized with static files and assets in dedicated directories:
 
 ### 4. Testing the Setup
 
+#### Verify All Services are Running
+
+```bash
+# Check Ollama service
+curl http://localhost:11434/api/tags
+
+# Check Vision Sidecar service
+curl http://localhost:8001/health
+
+# Check Main API service
+curl http://localhost:8000/health
+
+# Check Readiness probe (tests all dependencies)
+curl http://localhost:8000/ready
+```
+
 #### Test Vision Sidecar (Optional)
 
 ```bash
@@ -142,6 +193,9 @@ curl -X POST "http://localhost:8001/analyze" \
 # Health check
 curl http://localhost:8000/health
 
+# Test readiness probe (includes S3 and Ollama checks)
+curl http://localhost:8000/ready
+
 # Ingest products (pulls from Magento and analyzes images)
 curl -X POST "http://localhost:8000/v1/ingest/items" \
   -H "Content-Type: application/json" \
@@ -156,21 +210,50 @@ curl -X POST "http://localhost:8000/v1/ingest/items" \
 curl -X POST "http://localhost:8000/v1/recommendations" \
   -H "Content-Type: application/json" \
   -d '{"text_query": "I want to do yoga"}'
+
+# Test image serving (with actual image from S3)
+curl -I "https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/3a4db8e6cba0f753558e37db7eae09614adbbf28_xxl-1.jpg"
+```
+
+#### Run Comprehensive Test Suite
+
+```bash
+# Run all tests
+poetry run pytest
+
+# Run tests with verbose output
+poetry run pytest -v
+
+# Run tests with coverage
+poetry run pytest --cov=lookbook_mpc --cov-report=html
+
+# Run specific test categories
+poetry run pytest -m unit          # Run only unit tests
+poetry run pytest -m integration   # Run only integration tests
+poetry run pytest -m "not slow"    # Skip slow tests
+
+# Run individual test files
+poetry run pytest tests/test_api_integration.py
+poetry run pytest tests/test_domain_entities.py
+poetry run pytest tests/test_services.py
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable              | Description             | Default                  |
-| --------------------- | ----------------------- | ------------------------ |
-| `MYSQL_SHOP_URL`      | MySQL connection string | -                        |
-| `LOOKBOOK_DB_URL`     | Lookbook database URL   | `sqlite:///lookbook.db`  |
-| `OLLAMA_HOST`         | Ollama daemon URL       | `http://localhost:11434` |
-| `OLLAMA_VISION_MODEL` | Vision model name       | `qwen2.5vl`              |
-| `OLLAMA_TEXT_MODEL`   | Text model name         | `qwen3:4b` (faster)      |
-| `S3_BASE_URL`         | S3 base URL             | -                        |
-| `LOG_LEVEL`           | Logging level           | `INFO`                   |
+| Variable              | Description             | Default                     |
+| --------------------- | ----------------------- | --------------------------- |
+| `MYSQL_SHOP_URL`      | MySQL connection string | -                           |
+| `LOOKBOOK_DB_URL`     | Lookbook database URL   | `sqlite:///lookbook.db`     |
+| `OLLAMA_HOST`         | Ollama daemon URL       | `http://localhost:11434`    |
+| `OLLAMA_VISION_MODEL` | Vision model name       | `qwen2.5vl:7b`              |
+| `OLLAMA_TEXT_MODEL`   | Text model name         | `qwen3:4b` (faster)         |
+| `S3_BASE_URL`         | S3 base URL             | -                           |
+| `LOG_LEVEL`           | Logging level           | `INFO`                      |
+| `CORS_ORIGINS`        | Allowed CORS origins    | `http://localhost:3000`     |
+| `LOG_FORMAT`          | Log format              | `json`                      |
+| `LOG_FILE`            | Log file path           | `/var/log/lookbook-mpc.log` |
 
 ### Service Ports
 
@@ -229,15 +312,81 @@ pkill -f ollama
 ollama serve
 ```
 
+#### 6. Readiness probe returns 503 Service Unavailable
+
+```bash
+# The readiness probe checks all dependencies
+# If it returns 503, check individual services:
+
+# Check Ollama
+curl http://localhost:11434/api/tags
+
+# Check S3 image access (test with actual image)
+curl -I "https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/3a4db8e6cba0f753558e37db7eae09614adbbf28_xxl-1.jpg"
+
+# Check database
+curl http://localhost:8000/health
+
+# If S3 is not accessible, the readiness probe will still work
+# but mark S3 as "unreachable" rather than failing the entire check
+```
+
+#### 7. CORS issues in development
+
+```bash
+# The system now has simplified CORS configuration
+# If you're seeing CORS errors, check your .env file:
+
+# Ensure CORS_ORIGINS is set to your frontend URL
+echo $CORS_ORIGINS
+
+# For development, you can use:
+export CORS_ORIGINS=http://localhost:3000,http://localhost:8080
+```
+
+#### 8. Request ID headers missing
+
+```bash
+# The system now includes request ID middleware
+# All responses should include an X-Request-ID header
+
+curl -I http://localhost:8000/health
+# Look for "x-request-id" in the response headers
+```
+
 ### Health Checks
 
 Monitor service health:
 
 ```bash
-# Check all services
+# Check basic health
 curl http://localhost:8000/health
+
+# Check readiness with dependency checks
+curl http://localhost:8000/ready
+
+# Check individual services
 curl http://localhost:11434/api/tags
 curl http://localhost:8001/health
+
+# Check request IDs in responses
+curl -H "X-Request-ID: test-123" http://localhost:8000/health
+```
+
+### Debug Mode
+
+Enable debug logging for troubleshooting:
+
+```bash
+# Set debug logging
+export LOG_LEVEL=DEBUG
+
+# Start services with debug output
+poetry run python main.py
+poetry run python vision_sidecar.py
+
+# Or run with uvicorn for development
+poetry run uvicorn main:app --reload --log-level debug
 ```
 
 ## Development

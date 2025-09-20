@@ -236,10 +236,10 @@ class Item(BaseModel):
         }
 
 
-class ItemDB(Base):
-    """SQLAlchemy model for Item entity."""
+class ProductDB(Base):
+    """SQLAlchemy model for Product entity."""
 
-    __tablename__ = "items"
+    __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
     sku = Column(String(100), unique=True, nullable=False, index=True)
@@ -254,15 +254,15 @@ class ItemDB(Base):
 
     # Indexes for performance
     __table_args__ = (
-        Index('idx_items_price', 'price'),
-        Index('idx_items_in_stock', 'in_stock'),
-        Index('idx_items_created_at', 'created_at'),
-        Index('idx_items_attributes_category', 'attributes', postgresql_using='gin'),
-        Index('idx_items_attributes_color', 'attributes', postgresql_using='gin'),
+        Index('idx_products_price', 'price'),
+        Index('idx_products_in_stock', 'in_stock'),
+        Index('idx_products_created_at', 'created_at'),
+        Index('idx_products_attributes_category', 'attributes', postgresql_using='gin'),
+        Index('idx_products_attributes_color', 'attributes', postgresql_using='gin'),
     )
 
     # Relationships
-    outfit_items = relationship("OutfitItemDB", back_populates="item")
+    outfit_items = relationship("OutfitItemDB", back_populates="product")
 
     def to_domain(self) -> Item:
         """Convert SQLAlchemy model to domain entity."""
@@ -409,7 +409,7 @@ class OutfitItemDB(Base):
     __tablename__ = "outfit_items"
 
     outfit_id = Column(Integer, ForeignKey("outfits.id"), primary_key=True)
-    item_id = Column(Integer, ForeignKey("items.id"), primary_key=True)
+    item_id = Column(Integer, ForeignKey("products.id"), primary_key=True)
     role = Column(String(50), nullable=False)
 
     # Indexes for performance
@@ -421,7 +421,7 @@ class OutfitItemDB(Base):
 
     # Relationships
     outfit = relationship("OutfitDB", back_populates="outfit_items")
-    item = relationship("ItemDB", back_populates="outfit_items")
+    product = relationship("ProductDB", back_populates="outfit_items")
 
     def to_domain(self) -> OutfitItem:
         """Convert SQLAlchemy model to domain entity."""

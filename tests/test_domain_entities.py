@@ -6,6 +6,13 @@ This module contains unit tests for domain entities and validation.
 
 import pytest
 from datetime import datetime
+from pathlib import Path
+import sys
+
+# Add the project root to Python path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 from lookbook_mpc.domain.entities import (
     Item, Outfit, OutfitItem, Rule, Intent,
     Size, Category, Material, Pattern, Season, Occasion, Fit, Role,
