@@ -9,6 +9,7 @@ from typing import Dict, List, Any, Optional, Tuple
 import random
 import logging
 import structlog
+import aiohttp
 
 logger = structlog.get_logger()
 
@@ -341,7 +342,66 @@ class OutfitRecommender:
         intent: Dict[str, Any],
         rules: Dict[str, Any]
     ) -> str:
-        """Generate rationale for an outfit recommendation."""
+        """Generate rationale for an outfit recommendation using qwen3."""
+        try:
+            # Get item details for the rationale
+            items = outfit.get("items", [])
+            item_details = []
+            for item in items:
+                role = item.get("role", "item")
+                title = item.get("title", "item")
+                price = item.get("price", 0)
+                item_details.append(f"{role}: {title} (${price:.2f})")
+
+            items_text = "; ".join(item_details)
+
+            prompt = f"""Given items and constraints, write a 2–3 sentence rationale. JSON: {{"rationale": "..."}}
+
+Items: {items_text}
+Intent: {intent}
+Rules: {rules.get('name', 'fashion recommendation')}
+
+Respond with ONLY the JSON object, no other text."""
+
+            # Call Ollama API for rationale generation
+            ollama_host = "http://localhost:11434"  # Could be configurable
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
+                payload = {
+                    "model": "qwen3",
+                    "prompt": prompt,
+                    "temperature": 0.7,
+                    "max_tokens": 150,
+                    "stream": False
+                }
+
+                async with session.post(f"{ollama_host}/api/generate", json=payload) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        response_text = result.get("response", "")
+
+                        # Parse JSON response
+                        import json
+                        import re
+                        json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                        if json_match:
+                            json_str = json_match.group(0)
+                            rationale_data = json.loads(json_str)
+                            return rationale_data.get("rationale", "Stylish outfit recommendation.")
+
+            # Fallback rationale
+            return self._generate_fallback_rationale(outfit, intent, rules)
+
+        except Exception as e:
+            self.logger.error("Error generating outfit rationale", error=str(e))
+            return self._generate_fallback_rationale(outfit, intent, rules)
+
+    def _generate_fallback_rationale(
+        self,
+        outfit: Dict[str, Any],
+        intent: Dict[str, Any],
+        rules: Dict[str, Any]
+    ) -> str:
+        """Generate fallback rationale when LLM is unavailable."""
         try:
             # Simple rationale generation based on rules and items
             item_count = outfit.get("item_count", 0)
@@ -386,7 +446,7 @@ class OutfitRecommender:
             return rationale
 
         except Exception as e:
-            self.logger.error("Error generating outfit rationale", error=str(e))
+            self.logger.error("Error generating fallback rationale", error=str(e))
             return "Stylish outfit recommendation."
 
     async def _generate_theme_rationale(

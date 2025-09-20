@@ -10,9 +10,11 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import structlog
 from dotenv import load_dotenv
+import os
 
 # Load environment variables
 load_dotenv()
@@ -101,6 +103,17 @@ app.include_router(images_router)
 # Mount MCP endpoints
 mcp_app = create_mcp_app()
 app.mount("/mcp", mcp_app)
+
+# Serve demo HTML file
+@app.get("/demo")
+async def demo_page():
+    """Serve the demo chat interface."""
+    return FileResponse("demo.html")
+
+# Serve static files if they exist
+static_dir = "static"
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 # Request ID middleware

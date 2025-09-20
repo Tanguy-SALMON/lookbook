@@ -1,13 +1,18 @@
 # Standard library
 import base64
+import json
 import logging
 import io
 import os
+import re
 from typing import Dict, Optional, Union, List
 
 # Third-party libraries
 from PIL import Image
-from langchain_ollama import OllamaLLM
+import requests
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
 
 class VisionAnalyzer:
     """
@@ -15,7 +20,7 @@ class VisionAnalyzer:
     descriptions, and colors.
     """
 
-    def __init__(self, model: str = "llama3.2-vision", save_processed: bool = True):
+    def __init__(self, model: str = "qwen2.5-vl:7b", save_processed: bool = True):
         """
         Initialize the VisionAnalyzer with specified model and settings.
 
@@ -26,20 +31,42 @@ class VisionAnalyzer:
         self.model = model
         self.save_processed = save_processed
         self.logger = logging.getLogger(__name__)
-
-        # Initialize LLM
-        self.llm = OllamaLLM(
-            model=self.model,
-            temperature=0,           # More deterministic for image analysis
-            num_ctx=1024,            # Reduced context for faster processing
-            timeout=40,              # Fail fast if too slow
-            repeat_penalty=1.1,      # Slight penalty
-            top_p=0.8,               # More focused
-            num_predict=256,         # Number of tokens to predict
-            seed=42                  # For reproducibility
-        )
+        self.ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
         self.logger.debug(f"VisionAnalyzer initialized with model: {self.model}")
+
+    def _call_ollama(self, prompt: str, image_data: str = None) -> str:
+        """
+        Call Ollama API with optional image data.
+
+        Args:
+            prompt: Text prompt for the model
+            image_data: Base64 encoded image data (optional)
+
+        Returns:
+            Model response text
+        """
+        try:
+            url = f"{self.ollama_host}/api/generate"
+            payload = {
+                "model": self.model,
+                "prompt": prompt,
+                "temperature": 0,
+                "max_tokens": 256,
+                "stream": False,
+            }
+
+            if image_data:
+                payload["images"] = [image_data]
+
+            response = requests.post(url, json=payload, timeout=60)
+            response.raise_for_status()
+
+            return response.json().get("response", "")
+
+        except Exception as e:
+            self.logger.error(f"Error calling Ollama API: {str(e)}")
+            raise
 
     def encode_image(self, image_source: Union[str, bytes]) -> str:
         """
@@ -66,13 +93,13 @@ class VisionAnalyzer:
 
             # Save original image if needed
             if self.save_processed and isinstance(image_source, str):
-                original_save_path = source_path.rsplit('.', 1)[0] + '_original.jpg'
+                original_save_path = source_path.rsplit(".", 1)[0] + "_original.jpg"
                 img.save(original_save_path)
                 self.logger.debug(f"Saved original image to: {original_save_path}")
 
             # Convert to RGBA if not already
-            if img.mode != 'RGBA':
-                img = img.convert('RGBA')
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
 
             # Get image data
             img_data = img.getdata()
@@ -80,19 +107,27 @@ class VisionAnalyzer:
 
             # Find white/transparent bands
             def is_white_or_transparent(pixel):
-                return pixel[3] == 0 or (pixel[0] > 250 and pixel[1] > 250 and pixel[2] > 250)
+                return pixel[3] == 0 or (
+                    pixel[0] > 250 and pixel[1] > 250 and pixel[2] > 250
+                )
 
             # Find left boundary
             left = 0
             for x in range(width):
-                if any(not is_white_or_transparent(img_data[y * width + x]) for y in range(height)):
+                if any(
+                    not is_white_or_transparent(img_data[y * width + x])
+                    for y in range(height)
+                ):
                     left = x
                     break
 
             # Find right boundary
             right = width - 1
             for x in range(width - 1, -1, -1):
-                if any(not is_white_or_transparent(img_data[y * width + x]) for y in range(height)):
+                if any(
+                    not is_white_or_transparent(img_data[y * width + x])
+                    for y in range(height)
+                ):
                     right = x
                     break
 
@@ -103,8 +138,8 @@ class VisionAnalyzer:
 
                 # Save cropped image before resize
                 if self.save_processed and isinstance(image_source, str):
-                    cropped_save_path = source_path.rsplit('.', 1)[0] + '_cropped.jpg'
-                    img.convert('RGB').save(cropped_save_path)
+                    cropped_save_path = source_path.rsplit(".", 1)[0] + "_cropped.jpg"
+                    img.convert("RGB").save(cropped_save_path)
                     self.logger.debug(f"Saved cropped image to: {cropped_save_path}")
 
             # Resize if needed
@@ -117,16 +152,16 @@ class VisionAnalyzer:
 
                 # Save resized image
                 if self.save_processed and isinstance(image_source, str):
-                    resized_save_path = source_path.rsplit('.', 1)[0] + '_resized.jpg'
-                    img.convert('RGB').save(resized_save_path)
+                    resized_save_path = source_path.rsplit(".", 1)[0] + "_resized.jpg"
+                    img.convert("RGB").save(resized_save_path)
                     self.logger.debug(f"Saved resized image to: {resized_save_path}")
 
             # Convert back to RGB for JPEG
-            img = img.convert('RGB')
+            img = img.convert("RGB")
 
             buffer = io.BytesIO()
             img.save(buffer, format="JPEG", quality=85)
-            encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
             return encoded
 
         except Exception as e:
@@ -167,68 +202,53 @@ class VisionAnalyzer:
             self.logger.debug("Starting product analysis")
 
             # Handle URL input
-            if isinstance(image_source, str) and (image_source.startswith('http://') or
-                                                 image_source.startswith('https://')):
+            if isinstance(image_source, str) and (
+                image_source.startswith("http://")
+                or image_source.startswith("https://")
+            ):
                 base64_image = self.encode_from_url(image_source)
             else:
                 base64_image = self.encode_image(image_source)
 
             self.logger.debug("Image successfully encoded to base64")
 
-            prompt = f"""
-            <image>{base64_image}</image>
+            prompt = """You are an expert fashion vision tagger. Analyze this product image and return ONLY valid JSON with no additional text.
 
-            Look at this product image and provide:
-            IMPORTANT - What to analyze:
-            - If the image shows a full-body model: focus on the BOTTOM garment only
-            - If the image is cropped/upper body: focus on the TOP garment only
-            - If single product shot: analyze that item
+Required JSON format:
+{"color":"", "category":"", "material":"", "pattern":"", "style":"", "season":"", "occasion":"", "fit":"", "plus_size":true/false, "description":""}
 
-            1. Main Color:
-            - Identify the primary color using standard fashion color terminology. Be specific about shade and tone (e.g., dusty pink, sage green, etc.)
-            - Primary color with specific tone (one or two words maximum)
-            - Use standard fashion color naming: pink, light pink, dusty pink, blush pink, etc.
-            - Do not limit color options to: black, white, navy, brown, grey, beige
-            - Consider using standard color references like Pantone naming
+STRICT RULES - Use only these exact values:
 
-            2. Product Description:
-            - Style: Professional but friendly
-            - Length: 80-120 words
-            - Include: features, materials, fit details, styling suggestions
-            - Format: Short paragraphs
-            - Tone: Premium but accessible (COS brand voice)
+Color: Use specific fashion colors like "black", "white", "navy", "grey", "beige", "red", "blue", "green", "yellow", "pink", "brown", "burgundy", "olive", "cream", "charcoal", "denim-blue", "forest-green"
 
-            3. Attributes (provide only the values that match exactly with the options):
-            - Plus Size (Yes/No)
-            - Material (select from: Cotton, Fleece, Nylon, Velvet, Leather, Chiffon, Denim, etc.)
-            - Pattern (select from: Plain, Floral, Striped, Print, Checkered / Plaid, etc.)
-            - Style (select from: Athletic, Basic, Boho, Korean, Minimalist, etc.)
-            - Neckline (if applicable, select from: V Neck, Crew Neck, Collar, etc.)
-            - Season (select from: Summer, Winter, Spring, Autumn)
-            - Occasion (select from: Casual, Wedding, Business)
+Category: MUST be one of: "top", "bottom", "dress", "outerwear", "shoes", "accessory", "underwear", "swimwear"
 
-            Format your response exactly like this:
-            COLOR: [single color word]
+Material: MUST be one of: "cotton", "polyester", "nylon", "wool", "silk", "linen", "denim", "leather", "velvet", "chiffon", "fleece"
 
-            DESCRIPTION:
-            [your description here]
+Pattern: MUST be one of: "plain", "striped", "floral", "print", "checked", "plaid", "polka_dot", "animal_print", "geometric"
 
-            ATTRIBUTES:
-            Plus Size: [Yes/No]
-            Material: [material name]
-            Pattern: [pattern name]
-            Style: [style name]
-            Neckline: [neckline type]
-            Season: [season name]
-            Occasion: [occasion name]
-            """
+Season: MUST be one of: "spring", "summer", "autumn", "winter"
+
+Occasion: MUST be one of: "casual", "business", "formal", "party", "wedding", "sport", "beach", "sleep"
+
+Fit: MUST be one of: "slim", "regular", "relaxed", "loose", "tight", "baggy"
+
+Plus_size: MUST be true or false (boolean)
+
+Description: 2-3 sentences describing the garment, fabric, and style
+
+Examples:
+- T-shirt: {"color":"white","category":"top","material":"cotton","pattern":"plain","style":"casual","season":"summer","occasion":"casual","fit":"regular","plus_size":false,"description":"Classic white cotton t-shirt with short sleeves and crew neck. Soft comfortable fabric perfect for everyday wear."}
+- Jeans: {"color":"denim-blue","category":"bottom","material":"denim","pattern":"plain","style":"casual","season":"autumn","occasion":"casual","fit":"slim","plus_size":false,"description":"Slim-fit blue jeans with classic five-pocket styling. Durable denim construction with modern tapered leg."}
+
+Return ONLY the JSON object, no other text."""
 
             self.logger.debug("Sending prompt to model")
-            response = self.llm.invoke(prompt)
+            response = self._call_ollama(prompt, base64_image)
             self.logger.debug("Received response from model")
 
-            # Parse the response
-            result = self._parse_analysis_response(response)
+            # Parse the JSON response
+            result = self._parse_json_response(response)
             return result
 
         except Exception as e:
@@ -247,30 +267,29 @@ class VisionAnalyzer:
         """
         try:
             # Handle URL input
-            if isinstance(image_source, str) and (image_source.startswith('http://') or
-                                                 image_source.startswith('https://')):
+            if isinstance(image_source, str) and (
+                image_source.startswith("http://")
+                or image_source.startswith("https://")
+            ):
                 base64_image = self.encode_from_url(image_source)
             else:
                 base64_image = self.encode_image(image_source)
 
-            prompt = f"""
-            <image>{base64_image}</image>
+            prompt = """What is the main color of the garment in this image?
+Use standard fashion color terminology.
+Respond with ONLY the color name (1-2 words maximum).
+Examples: black, white, navy, denim-blue, forest-green, burgundy"""
 
-            What is the main color of the garment in this image?
-            Please be specific and use standard fashion color terminology with shade and tone.
-            Respond with ONLY the color name (1-2 words maximum).
-            """
-
-            response = self.llm.invoke(prompt)
+            response = self._call_ollama(prompt, base64_image)
             return response.strip()
 
         except Exception as e:
             self.logger.error(f"Error in analyze_color: {str(e)}")
             return "Unknown"
 
-    def _parse_analysis_response(self, response: str) -> Dict:
+    def _parse_json_response(self, response: str) -> Dict:
         """
-        Parse the structured response from the LLM.
+        Parse the JSON response from the LLM.
 
         Args:
             response: Raw text response from LLM
@@ -278,37 +297,72 @@ class VisionAnalyzer:
         Returns:
             Dictionary with parsed information
         """
-        result = {
-            "color": "",
-            "description": "",
-            "attributes": {}
-        }
-
         try:
-            # Extract color
-            color_match = re.search(r"COLOR:\s*(.+?)(?:\n\n|\n|$)", response)
-            if color_match:
-                result["color"] = color_match.group(1).strip()
+            # Clean the response - remove any markdown formatting
+            cleaned_response = response.strip()
+            if cleaned_response.startswith("```json"):
+                cleaned_response = (
+                    cleaned_response.replace("```json", "").replace("```", "").strip()
+                )
 
-            # Extract description
-            desc_match = re.search(r"DESCRIPTION:\s*(.+?)(?=\n\nATTRIBUTES:)", response, re.DOTALL)
-            if desc_match:
-                result["description"] = desc_match.group(1).strip()
+            # Extract JSON from response (may have surrounding text)
+            json_match = re.search(r"\{.*\}", cleaned_response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                result = json.loads(json_str)
 
-            # Extract attributes
-            attr_section = re.search(r"ATTRIBUTES:\s*(.+?)$", response, re.DOTALL)
-            if attr_section:
-                attr_text = attr_section.group(1)
-                attr_pairs = re.findall(r"([^:\n]+):\s*([^\n]+)", attr_text)
+                # Validate and ensure all required fields exist with proper types
+                required_fields = {
+                    "color": str,
+                    "category": str,
+                    "material": str,
+                    "pattern": str,
+                    "style": str,
+                    "season": str,
+                    "occasion": str,
+                    "fit": str,
+                    "plus_size": bool,
+                    "description": str,
+                }
 
-                for key, value in attr_pairs:
-                    result["attributes"][key.strip()] = value.strip()
+                for field, expected_type in required_fields.items():
+                    if field not in result:
+                        if expected_type == bool:
+                            result[field] = False
+                        else:
+                            result[field] = "unknown"
+                    else:
+                        # Type conversion if needed
+                        if expected_type == bool and not isinstance(
+                            result[field], bool
+                        ):
+                            result[field] = str(result[field]).lower() in [
+                                "true",
+                                "1",
+                                "yes",
+                            ]
+                        elif expected_type == str and result[field] is None:
+                            result[field] = "unknown"
 
-            return result
+                return result
+            else:
+                raise ValueError("No JSON found in response")
 
         except Exception as e:
-            self.logger.error(f"Error parsing analysis response: {str(e)}")
-            return result
+            self.logger.error(f"Error parsing JSON response: {str(e)}")
+            # Return fallback response that matches expected schema
+            return {
+                "color": "black",
+                "category": "accessory",
+                "material": "polyester",
+                "pattern": "plain",
+                "style": "modern",
+                "season": "autumn",
+                "occasion": "casual",
+                "fit": "regular",
+                "plus_size": False,
+                "description": "Unable to analyze image due to processing error.",
+            }
 
     def batch_analyze(self, image_sources: List[Union[str, bytes]]) -> List[Dict]:
         """
@@ -332,17 +386,149 @@ class VisionAnalyzer:
         return results
 
 
+# FastAPI HTTP service wrapper
+class AnalyzeRequest(BaseModel):
+    """Request model for vision analysis."""
+
+    image_key: str
+    image_url: Optional[str] = None
+    image_bytes: Optional[str] = None  # Base64 encoded
+
+
+class AnalyzeResponse(BaseModel):
+    """Response model for vision analysis."""
+
+    color: str
+    category: str
+    material: str
+    pattern: str
+    style: str
+    season: str
+    occasion: str
+    fit: str
+    plus_size: bool
+    description: str
+
+
+# Create FastAPI app for vision sidecar
+app = FastAPI(
+    title="Lookbook Vision Analyzer",
+    description="Vision analysis sidecar for fashion product images",
+    version="1.0.0",
+)
+
+# Global analyzer instance
+analyzer = None
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the vision analyzer on startup."""
+    global analyzer
+    model = os.getenv("OLLAMA_VISION_MODEL", "qwen2.5-vl:7b")
+    analyzer = VisionAnalyzer(model=model, save_processed=False)
+    logging.basicConfig(level=logging.INFO)
+
+
+@app.post("/analyze", response_model=AnalyzeResponse)
+async def analyze_image(request: AnalyzeRequest):
+    """
+    Analyze a product image and return fashion attributes.
+
+    Args:
+        request: Analysis request with image data
+
+    Returns:
+        Vision analysis results
+    """
+    try:
+        if not analyzer:
+            raise HTTPException(
+                status_code=500, detail="Vision analyzer not initialized"
+            )
+
+        # Determine image source
+        image_source = None
+        if request.image_url:
+            image_source = request.image_url
+        elif request.image_bytes:
+            # Decode base64 image bytes
+            image_data = base64.b64decode(request.image_bytes)
+            image_source = image_data
+        else:
+            # For now, use a placeholder - in production this would fetch from S3
+            # using the image_key and S3_BASE_URL
+            s3_base_url = os.getenv("S3_BASE_URL", "")
+            if s3_base_url:
+                image_source = f"{s3_base_url}/{request.image_key}"
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail="No image source provided (url, bytes, or S3 configuration)",
+                )
+
+        # Analyze the image
+        result = analyzer.analyze_product(image_source)
+
+        return AnalyzeResponse(**result)
+
+    except Exception as e:
+        logging.error(f"Analysis error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "service": "vision-analyzer",
+        "model": analyzer.model if analyzer else "not_initialized",
+    }
+
+
+@app.get("/")
+async def root():
+    """Root endpoint with service information."""
+    return {
+        "service": "lookbook-vision-analyzer",
+        "version": "1.0.0",
+        "description": "Fashion product image analysis using Ollama vision models",
+        "endpoints": {
+            "analyze": "POST /analyze - Analyze product images",
+            "health": "GET /health - Health check",
+        },
+    }
+
+
 # For direct testing
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
+    import sys
 
-    try:
-        analyzer = VisionAnalyzer()
-        image_path = "/Users/tanguysalmon/PythonPlayGround/Langchain/Loose-Fit-T-shirt.jpg"
-        logger.info("Starting analysis")
-        result = analyzer.analyze_product(image_path)
-        print(f"Analysis result: {result}")
-        logger.info("Analysis completed")
-    except Exception as e:
-        logger.error(f"Main execution error: {str(e)}")
+    if len(sys.argv) > 1 and sys.argv[1] == "serve":
+        # Run as HTTP service
+        import uvicorn
+
+        uvicorn.run(
+            "vision_analyzer:app",
+            host="0.0.0.0",
+            port=int(os.getenv("VISION_PORT", "8001")),
+            reload=True,
+            log_level="info",
+        )
+    else:
+        # Run direct testing
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger(__name__)
+
+        try:
+            analyzer = VisionAnalyzer()
+            image_path = (
+                "/Users/tanguysalmon/PythonPlayGround/Langchain/Loose-Fit-T-shirt.jpg"
+            )
+            logger.info("Starting analysis")
+            result = analyzer.analyze_product(image_path)
+            print(f"Analysis result: {result}")
+            logger.info("Analysis completed")
+        except Exception as e:
+            logger.error(f"Main execution error: {str(e)}")

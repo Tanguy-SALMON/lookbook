@@ -26,38 +26,112 @@ Lookbook-MPC is a FastAPI-based microservice that provides intelligent fashion r
 ### Prerequisites
 
 - Python 3.11+
-- Ollama running with models: `qwen2.5-vl:7b` and `qwen3`
+- Ollama running with vision model: `qwen2.5vl` and text model: `qwen3:4b` (4B variant for faster inference)
 - Optional: MySQL database for Magento integration
 
 ### Installation
 
-1. Clone the repository:
+1. Navigate to the project directory:
 
 ```bash
-git clone <repository-url>
-cd lookbook-mpc
+cd /Users/tanguysalmon/PythonPlayGround/test-roocode
 ```
 
-2. Install dependencies:
+2. Install dependencies (if needed):
 
 ```bash
-pip install -e .
+pip install fastapi uvicorn structlog pydantic
 ```
 
-3. Set up environment:
+### Starting the Services
+
+**Important**: The system consists of two services that need to run simultaneously:
+
+#### Step 1: Start Ollama
 
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
+# Start Ollama daemon
+ollama serve
+
+# In another terminal, pull the required models (if not already installed)
+ollama pull qwen2.5vl
+ollama pull qwen3:4b  # Use 4B variant for faster inference
+
+# Verify the model is available
+ollama list
 ```
 
-4. Run the application:
+#### Step 2: Start the Vision Sidecar Service
 
 ```bash
+# In the project directory
+python vision_sidecar.py
+```
+
+You should see:
+
+```
+INFO:     Started server process
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8001
+```
+
+#### Step 3: Start the Main API Service
+
+```bash
+# In another terminal, in the project directory
 python main.py
 ```
 
-The API will be available at `http://localhost:8000`
+The main API will be available at `http://localhost:8000`
+
+### Testing the Setup
+
+#### Test Vision Sidecar (Optional)
+
+```bash
+# Health check
+curl http://localhost:8001/health
+
+# Test image analysis (replace with actual image URL)
+curl -X POST "http://localhost:8001/analyze" \
+  -H "Content-Type: application/json" \
+  -d '{"image_url": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256"}'
+```
+
+#### Test Main API
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Ingest products (pulls from Magento and analyzes images)
+curl -X POST "http://localhost:8000/v1/ingest/items?limit=5"
+
+# Test recommendations
+curl -X POST "http://localhost:8000/v1/recommendations" \
+  -H "Content-Type: application/json" \
+  -d '{"text_query": "I want to do yoga"}'
+```
+
+### Using the Demo Interface
+
+1. Open your browser and go to: `http://localhost:8000/demo.html`
+2. Type fashion requests like:
+   - "I want to do yoga"
+   - "Restaurant this weekend, attractive for $50"
+   - "I am fat, look slim"
+3. The AI will analyze your request and show outfit recommendations
+
+### Architecture Overview
+
+```
+[Demo UI] → [Main API:8000] → [Vision Sidecar:8001] → [Ollama:11434]
+                ↓                      ↓                     ↓
+           FastAPI Routes        Image Analysis         qwen2.5vl
+           Recommendations      Fashion Attributes      Vision Model
+```
 
 ### API Documentation
 
@@ -165,10 +239,52 @@ The service exposes MCP tools and resources for LLM client integration:
 | `MYSQL_SHOP_URL`      | MySQL connection string | -                        |
 | `LOOKBOOK_DB_URL`     | Lookbook database URL   | `sqlite:///lookbook.db`  |
 | `OLLAMA_HOST`         | Ollama daemon URL       | `http://localhost:11434` |
-| `OLLAMA_VISION_MODEL` | Vision model name       | `qwen2.5-vl:7b`          |
-| `OLLAMA_TEXT_MODEL`   | Text model name         | `qwen3`                  |
+| `OLLAMA_VISION_MODEL` | Vision model name       | `qwen2.5vl`              |
+| `OLLAMA_TEXT_MODEL`   | Text model name         | `qwen3:4b` (faster)      |
 | `S3_BASE_URL`         | S3 base URL             | -                        |
 | `LOG_LEVEL`           | Logging level           | `INFO`                   |
+
+### Service Ports
+
+| Service        | Port  | Description                        |
+| -------------- | ----- | ---------------------------------- |
+| Main API       | 8000  | FastAPI application with endpoints |
+| Vision Sidecar | 8001  | Image analysis service             |
+| Ollama         | 11434 | LLM and vision model server        |
+| Demo UI        | 8000  | Web interface at /demo.html        |
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Model not found" error**
+
+   ```bash
+   # Make sure you have the correct model name
+   ollama pull qwen2.5vl
+   ollama list  # Should show qwen2.5vl
+   ```
+
+2. **Vision Sidecar connection refused**
+
+   ```bash
+   # Make sure vision sidecar is running on port 8001
+   curl http://localhost:8001/health
+   ```
+
+3. **Main API not starting**
+
+   ```bash
+   # Check if port 8000 is available
+   lsof -i :8000
+   # Kill any conflicting process if needed
+   ```
+
+4. **No outfit recommendations returned**
+   ```bash
+   # Make sure you've ingested some products first
+   curl -X POST "http://localhost:8000/v1/ingest/items?limit=10"
+   ```
 
 ### Development
 

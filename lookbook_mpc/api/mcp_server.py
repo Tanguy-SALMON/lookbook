@@ -502,8 +502,16 @@ def create_mcp_app() -> FastAPI:
         version="0.1.0"
     )
 
-    # Initialize server (would need proper DI in production)
-    server = LookbookMCPServer(None, None, None)
+    # Initialize server with mock dependencies for testing
+    from ..adapters.db_lookbook import MockLookbookRepository
+    from ..services.recommender import OutfitRecommender
+    from ..services.rules import RulesEngine
+
+    lookbook_repo = MockLookbookRepository()
+    rules_engine = RulesEngine()
+    recommender = OutfitRecommender(rules_engine)
+
+    server = LookbookMCPServer(recommender, lookbook_repo, rules_engine)
 
     @app.get("/mcp/tools")
     async def list_mcp_tools():

@@ -10,6 +10,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
 import structlog
+import asyncio
+import aiomysql
+from urllib.parse import urlparse
 
 logger = structlog.get_logger()
 
@@ -34,6 +37,18 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
     def __init__(self, connection_string: str):
         self.connection_string = connection_string
         self.logger = logger.bind(adapter="mysql_shop")
+        self._parsed_url = urlparse(connection_string)
+
+    async def _get_connection(self):
+        """Create and return a database connection."""
+        return await aiomysql.connect(
+            host=self._parsed_url.hostname,
+            port=self._parsed_url.port or 3306,
+            user=self._parsed_url.username,
+            password=self._parsed_url.password,
+            db=self._parsed_url.path[1:],  # Remove leading slash
+            autocommit=True
+        )
 
     async def fetch_items(self, limit: Optional[int] = None, since: Optional[datetime] = None) -> List[Dict[str, Any]]:
         """
@@ -47,18 +62,56 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
             List of item dictionaries with basic information
         """
         try:
-            # This will be implemented with actual MySQL connection
-            # For now, return empty list as placeholder
             self.logger.info("Fetching items from shop catalog", limit=limit, since=since)
 
-            # Placeholder implementation
-            # In real implementation, this would:
-            # 1. Connect to MySQL database
-            # 2. Execute query to fetch in-stock items
-            # 3. Map results to item format
-            # 4. Return list of items
+            query = """
+                SELECT
+                    p.sku,
+                    p.name as title,
+                    p.price,
+                    GROUP_CONCAT(DISTINCT ps.value) as size_range,
+                    COALESCE(i.gc_swatchimage, '') as image_key,
+                    p.status = 1 as in_stock,
+                    '{}' as attributes
+                FROM catalog_product_entity p
+                LEFT JOIN catalog_product_entity_varchar pv ON p.entity_id = pv.entity_id AND pv.attribute_id = 80  # name
+                LEFT JOIN catalog_product_entity_decimal pd ON p.entity_id = pd.entity_id AND pd.attribute_id = 75  # price
+                LEFT JOIN catalog_product_entity_int pi ON p.entity_id = pi.entity_id AND pi.attribute_id = 96  # status
+                LEFT JOIN catalog_product_entity_text i ON p.entity_id = i.entity_id AND i.attribute_id = 87  # image
+                LEFT JOIN catalog_product_entity_varchar ps ON p.entity_id = ps.entity_id AND ps.attribute_id = 132  # size
+                WHERE p.type_id = 'simple'
+                AND pi.value = 1  # enabled
+                AND p.status = 1  # visible
+                AND p.has_options = 0  # simple products
+            """
 
-            return []
+            if since:
+                query += f" AND p.updated_at >= '{since.isoformat()}'"
+
+            query += " GROUP BY p.sku, p.name, p.price, i.gc_swatchimage, p.status"
+
+            if limit:
+                query += f" LIMIT {limit}"
+
+            items = []
+            async with await self._get_connection() as conn:
+                async with conn.cursor(aiomysql.DictCursor) as cursor:
+                    await cursor.execute(query)
+                    results = await cursor.fetchall()
+
+                    for row in results:
+                        items.append({
+                            "sku": row["sku"],
+                            "title": row["title"],
+                            "price": float(row["price"]),
+                            "size_range": row["size_range"].split(",") if row["size_range"] else [],
+                            "image_key": row["image_key"],
+                            "in_stock": bool(row["in_stock"]),
+                            "attributes": {}
+                        })
+
+            self.logger.info("Fetched items from shop catalog", count=len(items))
+            return items
 
         except Exception as e:
             self.logger.error("Error fetching items from shop catalog", error=str(e))
@@ -77,12 +130,46 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
         try:
             self.logger.info("Fetching item by SKU", sku=sku)
 
-            # Placeholder implementation
-            # In real implementation, this would:
-            # 1. Connect to MySQL database
-            # 2. Execute query to fetch item by SKU
-            # 3. Return item or None
+            query = """
+                SELECT
+                    p.sku,
+                    p.name as title,
+                    p.price,
+                    GROUP_CONCAT(DISTINCT ps.value) as size_range,
+                    COALESCE(i.gc_swatchimage, '') as image_key,
+                    p.status = 1 as in_stock,
+                    '{}' as attributes
+                FROM catalog_product_entity p
+                LEFT JOIN catalog_product_entity_varchar pv ON p.entity_id = pv.entity_id AND pv.attribute_id = 80  # name
+                LEFT JOIN catalog_product_entity_decimal pd ON p.entity_id = pd.entity_id AND pd.attribute_id = 75  # price
+                LEFT JOIN catalog_product_entity_int pi ON p.entity_id = pi.entity_id AND pi.attribute_id = 96  # status
+                LEFT JOIN catalog_product_entity_text i ON p.entity_id = i.entity_id AND i.attribute_id = 87  # image
+                LEFT JOIN catalog_product_entity_varchar ps ON p.entity_id = ps.entity_id AND ps.attribute_id = 132  # size
+                WHERE p.sku = %s
+                AND p.type_id = 'simple'
+                AND pi.value = 1  # enabled
+                AND p.status = 1  # visible
+                AND p.has_options = 0  # simple products
+                GROUP BY p.sku, p.name, p.price, i.gc_swatchimage, p.status
+            """
 
+            async with await self._get_connection() as conn:
+                async with conn.cursor(aiomysql.DictCursor) as cursor:
+                    await cursor.execute(query, (sku,))
+                    row = await cursor.fetchone()
+
+                    if row:
+                        return {
+                            "sku": row["sku"],
+                            "title": row["title"],
+                            "price": float(row["price"]),
+                            "size_range": row["size_range"].split(",") if row["size_range"] else [],
+                            "image_key": row["image_key"],
+                            "in_stock": bool(row["in_stock"]),
+                            "attributes": {}
+                        }
+
+            self.logger.info("Item not found by SKU", sku=sku)
             return None
 
         except Exception as e:
