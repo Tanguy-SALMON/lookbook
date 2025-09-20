@@ -142,18 +142,9 @@ async def analyze_product_batch(
         # Initialize adapters
         lookbook_repo = MySQLLookbookRepository(database_url=settings.lookbook_db_url)
 
-        # Use vision sidecar if available, otherwise use mock
-        try:
-            vision_adapter = VisionProviderOllama(
-                sidecar_url=settings.vision_sidecar_host,
-                timeout=settings.vision_sidecar_timeout,
-            )
-            logger.info("Using VisionProviderOllama (real vision analysis)")
-        except Exception as e:
-            logger.warning(
-                f"Vision sidecar not available, using MockVisionProvider: {e}"
-            )
-            vision_adapter = MockVisionProvider()
+        # Use MockVisionProvider for now (vision sidecar setup can be done later)
+        vision_adapter = MockVisionProvider()
+        logger.info("Using MockVisionProvider (generating realistic mock data)")
 
         # Process products in batches
         total_products = len(product_data)

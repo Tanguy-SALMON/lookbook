@@ -23,6 +23,7 @@ from .entities import (
     ChatResponse,
     VisionAttributes,
 )
+from ..services.smart_recommender import SmartRecommender
 
 
 class UseCase(ABC):
@@ -223,136 +224,83 @@ class ChatTurn(UseCase):
         self.intent_parser = intent_parser
         self.recommender_service = recommender_service
         self.lookbook_repo = lookbook_repo
+        self.smart_recommender = SmartRecommender(lookbook_repo)
 
     async def execute(self, request: ChatRequest) -> ChatResponse:
         """
-        Execute chat turn processing.
+        Execute chat turn processing with pure LLM responses.
 
         Args:
             request: Chat request with session and message
 
         Returns:
-            ChatResponse with replies and optional recommendations
+            ChatResponse with natural LLM replies and optional recommendations
         """
         try:
-            # Parse user intent from message
+            # Parse user intent from message using LLM
             intent = await self.intent_parser.parse_intent(request.message)
 
-            # Generate appropriate response based on intent
-            replies = []
-            outfits = []
+            # Use the natural response from LLM
+            natural_response = intent.get(
+                "natural_response", "I'm here to help you find the perfect outfit!"
+            )
 
-            # Handle both dict and Intent object
-            if isinstance(intent, dict):
-                intent_str = (
-                    intent.get("intent", "").lower() if intent.get("intent") else ""
+            # Try to generate real outfit recommendations using smart recommender
+            try:
+                outfit_recommendations = await self.smart_recommender.recommend_outfits(
+                    request.message, limit=3
                 )
 
-                if "recommend" in intent_str or "outfit" in intent_str:
-                    # Generate outfit recommendations
-                    recommendation_request = RecommendationRequest(
-                        text_query=request.message,
-                        budget=intent.get("budget_max"),
-                        size=intent.get("size"),
-                        preferences={
-                            "objectives": intent.get("objectives", []),
-                            "palette": intent.get("palette"),
-                        },
-                    )
+                if outfit_recommendations:
+                    # Convert smart recommender output to simple outfit dictionaries
+                    formatted_outfits = []
+                    total_outfits = len(outfit_recommendations)
 
-                    try:
-                        recommendation_response = await RecommendOutfits(
-                            self.recommender_service,
-                            self.lookbook_repo,
-                            self.intent_parser,
-                        ).execute(recommendation_request)
+                    for outfit in outfit_recommendations:
+                        # Create simple outfit dictionary that matches API expectations
+                        formatted_outfit = {
+                            "title": outfit["title"],
+                            "items": outfit["items"],  # Keep original item structure
+                            "total_price": outfit["total_price"],
+                            "explanation": outfit["style_explanation"],
+                            "outfit_type": outfit["outfit_type"],
+                            "item_count": len(outfit["items"]),
+                        }
+                        formatted_outfits.append(formatted_outfit)
 
-                        outfits = recommendation_response.outfits
-                    except Exception as e:
-                        outfits = []
+                    # Enhance the natural response with actual findings
+                    enhanced_response = f"{natural_response}\n\nI found {total_outfits} great outfit{'s' if total_outfits != 1 else ''} for you! Here are the details with links and prices:"
 
-                    # Build response message
-                    if outfits:
-                        replies.append(
-                            {
-                                "type": "recommendations",
-                                "message": f"I found {len(outfits)} outfit(s) for you!",
-                                "outfits": len(outfits),
-                            }
-                        )
-                    else:
-                        replies.append(
-                            {
-                                "type": "no_results",
-                                "message": "I couldn't find any outfits matching your criteria. Let me try a different search.",
-                            }
-                        )
-            else:
-                # Handle Intent object (for real LLM parser)
-                intent_str = intent.intent.lower() if intent.intent else ""
-                if "recommend" in intent_str or "outfit" in intent_str:
-                    # Generate outfit recommendations using Intent object
-                    recommendation_request = RecommendationRequest(
-                        text_query=request.message,
-                        budget=intent.budget_max,
-                        size=intent.size,
-                        preferences={
-                            "objectives": intent.objectives,
-                            "palette": intent.palette,
-                        },
-                    )
+                    replies = [
+                        {
+                            "type": "recommendations",
+                            "message": enhanced_response,
+                            "outfits": total_outfits,
+                        }
+                    ]
 
-                    try:
-                        recommendation_response = await RecommendOutfits(
-                            self.recommender_service,
-                            self.lookbook_repo,
-                            self.intent_parser,
-                        ).execute(recommendation_request)
+                    # Return raw outfit dictionaries instead of entities
+                    outfits = formatted_outfits
+                else:
+                    # No outfits found, use natural response
+                    replies = [
+                        {
+                            "type": "assistant",
+                            "message": natural_response,
+                        }
+                    ]
+                    outfits = []
 
-                        outfits = recommendation_response.outfits
-                    except Exception as e:
-                        outfits = []
-
-                    # Build response message
-                    if outfits:
-                        replies.append(
-                            {
-                                "type": "recommendations",
-                                "message": f"I found {len(outfits)} outfit(s) for you!",
-                                "outfits": len(outfits),
-                            }
-                        )
-                    else:
-                        replies.append(
-                            {
-                                "type": "no_results",
-                                "message": "I couldn't find any outfits matching your criteria. Let me try a different search.",
-                            }
-                        )
-            # Handle help and general cases for both dict and Intent object
-            if isinstance(intent, dict):
-                intent_str = (
-                    intent.get("intent", "").lower() if intent.get("intent") else ""
-                )
-                help_intent = "help" in intent_str
-            else:
-                intent_str = intent.intent.lower() if intent.intent else ""
-                help_intent = "help" in intent_str
-
-            if help_intent:
-                replies.append(
+            except Exception as e:
+                print(f"Smart recommendation error: {e}")
+                # Fallback to natural response only
+                replies = [
                     {
-                        "type": "help",
-                        "message": "I can help you find outfits! Try asking for recommendations based on occasions, activities, or styles.",
+                        "type": "assistant",
+                        "message": natural_response,
                     }
-                )
-            elif not ("recommend" in intent_str or "outfit" in intent_str):
-                replies.append(
-                    {
-                        "type": "general",
-                        "message": "I understand you're looking for fashion help. Could you tell me more about what you need?",
-                    }
-                )
+                ]
+                outfits = []
 
             return ChatResponse(
                 session_id=request.session_id or str(uuid.uuid4()),
@@ -362,17 +310,21 @@ class ChatTurn(UseCase):
             )
 
         except Exception as e:
+            print(f"ChatTurn error: {e}")
+            # Even on error, provide a helpful response
             return ChatResponse(
                 session_id=request.session_id or str(uuid.uuid4()),
                 replies=[
                     {
-                        "type": "error",
-                        "message": "I'm having trouble understanding your request. Could you please rephrase?",
+                        "type": "assistant",
+                        "message": "I'd love to help you find the perfect outfit! Could you tell me more about what you're looking for?",
                     }
                 ],
                 outfits=None,
                 request_id=str(uuid.uuid4()),
             )
+
+    # Removed hardcoded message builders - now using LLM natural responses
 
 
 class SearchItems(UseCase):

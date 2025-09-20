@@ -31,7 +31,8 @@ class Settings(BaseSettings):
         default="http://localhost:11434", description="Ollama service URL"
     )
     ollama_text_model: str = Field(
-        default="qwen3:4b", description="Text model for intent parsing and rationales"
+        default="qwen3:4b-instruct",
+        description="Text model for intent parsing and rationales",
     )
     ollama_vision_model: str = Field(
         default="qwen2.5vl:7b", description="Vision model for image analysis"

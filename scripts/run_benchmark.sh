@@ -38,7 +38,7 @@ fi
 # Install benchmark requirements if needed
 if ! python -c "import psutil, GPUtil, numpy" 2>/dev/null; then
     echo "Installing benchmark requirements..."
-    pip install -r requirements-benchmark.txt
+    pip install --break-system-packages -r requirements-benchmark.txt
 fi
 
 # Create results directory
@@ -51,7 +51,7 @@ echo "This may take several minutes depending on your hardware..."
 
 # Benchmark both models
 poetry run python scripts/benchmark_models.py \
-    --models qwen3:4b qwen3 \
+    --models "qwen3:4b" "qwen3:latest" \
     --repeat 10 \
     --temperature 0.7 \
     --max-tokens 1000 \

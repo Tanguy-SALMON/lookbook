@@ -171,7 +171,7 @@ class MockVisionProvider(VisionProvider):
                     "fit": Fit.SLIM.value,
                     "plus_size": False,
                     "description": "Classic black leather jacket with modern slim fit. Timeless piece for edgy styling.",
-                }
+                },
             ],
             "sneakers": [
                 {
@@ -185,7 +185,7 @@ class MockVisionProvider(VisionProvider):
                     "fit": Fit.REGULAR.value,
                     "plus_size": False,
                     "description": "Clean white leather sneakers with classic athletic styling. Comfortable for daily activities.",
-                }
+                },
             ],
         }
 

@@ -538,7 +538,9 @@ class ChatResponse(BaseModel):
     replies: List[Dict[str, Any]] = Field(
         default_factory=list, description="Response messages"
     )
-    outfits: Optional[List[Outfit]] = Field(None, description="Recommended outfits")
+    outfits: Optional[List[Dict[str, Any]]] = Field(
+        None, description="Recommended outfits"
+    )
     request_id: str = Field(..., description="Request identifier")
 
     @validator("replies")

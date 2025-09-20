@@ -1,0 +1,594 @@
+#!/usr/bin/env python3
+"""
+Direct Chat Testing Script using FastAPI TestClient
+
+This script tests all chat functionality directly using FastAPI's TestClient,
+which doesn't require a running server. It provides comprehensive testing of:
+- Basic chat interactions
+- Session management
+- Context handling
+- Error scenarios
+- Intent parsing
+- Outfit recommendations
+- Chat suggestions
+- Multiple conversation flows
+"""
+
+import json
+import uuid
+import time
+from datetime import datetime
+from typing import Dict, Any, List
+import sys
+import os
+
+# Add the project root to the path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from fastapi.testclient import TestClient
+from main import app
+from lookbook_mpc.domain.entities import ChatRequest, ChatResponse
+
+
+class DirectChatTester:
+    """Direct chat functionality tester using TestClient."""
+
+    def __init__(self):
+        self.client = TestClient(app)
+        self.session_ids = []
+        self.test_results = {"passed": 0, "failed": 0, "errors": []}
+
+    def log(self, message: str, level: str = "INFO"):
+        """Log test messages with timestamp."""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {level}: {message}")
+
+    def assert_test(self, condition: bool, test_name: str, error_msg: str = ""):
+        """Assert a test condition and track results."""
+        if condition:
+            self.test_results["passed"] += 1
+            self.log(f"✅ {test_name}", "PASS")
+            return True
+        else:
+            self.test_results["failed"] += 1
+            full_error = f"{test_name}: {error_msg}" if error_msg else test_name
+            self.test_results["errors"].append(full_error)
+            self.log(f"❌ {test_name} - {error_msg}", "FAIL")
+            return False
+
+    def test_server_health(self) -> bool:
+        """Test if the app is healthy."""
+        self.log("Testing application health...")
+        try:
+            response = self.client.get("/health")
+            healthy = self.assert_test(
+                response.status_code == 200,
+                "Application health check",
+                f"Expected 200, got {response.status_code}",
+            )
+            if healthy:
+                self.log("Application is healthy and ready for testing")
+                data = response.json()
+                self.log(
+                    f"Service: {data.get('service')}, Version: {data.get('version')}"
+                )
+            return healthy
+        except Exception as e:
+            self.assert_test(
+                False, "Application health check", f"Health check failed: {e}"
+            )
+            return False
+
+    def test_basic_chat(self) -> str:
+        """Test basic chat functionality."""
+        self.log("Testing basic chat functionality...")
+
+        # Test simple chat message
+        chat_data = {"message": "I want to do yoga"}
+
+        response = self.client.post("/v1/chat", json=chat_data)
+
+        self.assert_test(
+            response.status_code == 200,
+            "Basic chat request",
+            f"Expected 200, got {response.status_code}",
+        )
+
+        if response.status_code != 200:
+            self.log(f"Response error: {response.text}", "ERROR")
+            return None
+
+        data = response.json()
+
+        # Validate response structure
+        self.assert_test("session_id" in data, "Response has session_id")
+        self.assert_test("replies" in data, "Response has replies")
+        self.assert_test("request_id" in data, "Response has request_id")
+        self.assert_test(
+            len(data.get("replies", [])) > 0, "Response has at least one reply"
+        )
+
+        # Check reply structure
+        if data.get("replies"):
+            reply = data["replies"][0]
+            self.assert_test("type" in reply, "Reply has type field")
+            self.assert_test("message" in reply, "Reply has message field")
+            self.log(f"Bot reply: {reply.get('message', '')[:100]}...")
+
+        session_id = data.get("session_id")
+        if session_id:
+            self.session_ids.append(session_id)
+            self.log(f"Generated session ID: {session_id}")
+
+        # Check for outfit recommendations
+        if data.get("outfits"):
+            self.log(f"Received {len(data['outfits'])} outfit recommendations")
+            outfit = data["outfits"][0]
+            self.assert_test("title" in outfit, "Outfit has title")
+            self.assert_test("score" in outfit, "Outfit has score")
+
+        return session_id
+
+    def test_chat_with_session_id(self, session_id: str) -> bool:
+        """Test chat with existing session ID."""
+        self.log(f"Testing chat with existing session ID: {session_id}")
+
+        chat_data = {
+            "session_id": session_id,
+            "message": "What about business meeting outfit?",
+        }
+
+        response = self.client.post("/v1/chat", json=chat_data)
+
+        success = self.assert_test(
+            response.status_code == 200,
+            "Chat with existing session",
+            f"Expected 200, got {response.status_code}",
+        )
+
+        if success:
+            data = response.json()
+            self.assert_test(
+                data.get("session_id") == session_id,
+                "Session ID preserved",
+                f"Expected {session_id}, got {data.get('session_id')}",
+            )
+
+            if data.get("replies"):
+                self.log(
+                    f"Follow-up reply: {data['replies'][0].get('message', '')[:100]}..."
+                )
+
+        return success
+
+    def test_chat_validation_errors(self) -> bool:
+        """Test chat input validation."""
+        self.log("Testing chat input validation...")
+
+        test_cases = [
+            {"name": "Empty message", "data": {"message": ""}, "expected_status": 422},
+            {
+                "name": "Missing message",
+                "data": {"session_id": "test"},
+                "expected_status": 422,
+            },
+            {
+                "name": "Empty session_id string",
+                "data": {"session_id": "", "message": "test"},
+                "expected_status": 422,
+            },
+            {
+                "name": "Whitespace only message",
+                "data": {"message": "   "},
+                "expected_status": 422,
+            },
+        ]
+
+        all_passed = True
+
+        for test_case in test_cases:
+            response = self.client.post("/v1/chat", json=test_case["data"])
+            passed = self.assert_test(
+                response.status_code == test_case["expected_status"],
+                f"Validation: {test_case['name']}",
+                f"Expected {test_case['expected_status']}, got {response.status_code}",
+            )
+            all_passed = all_passed and passed
+
+        return all_passed
+
+    def test_chat_suggestions(self) -> bool:
+        """Test chat suggestions endpoint."""
+        self.log("Testing chat suggestions...")
+
+        response = self.client.get("/v1/chat/suggestions")
+
+        success = self.assert_test(
+            response.status_code == 200,
+            "Chat suggestions endpoint",
+            f"Expected 200, got {response.status_code}",
+        )
+
+        if success:
+            data = response.json()
+            self.assert_test(
+                "suggestions" in data, "Suggestions response has suggestions field"
+            )
+
+            self.assert_test(
+                "categories" in data, "Suggestions response has categories field"
+            )
+
+            suggestions = data.get("suggestions", [])
+            self.assert_test(len(suggestions) > 0, "Has at least one suggestion")
+            self.log(f"Found {len(suggestions)} chat suggestions")
+
+            # Check suggestion structure
+            if suggestions:
+                suggestion = suggestions[0]
+                required_fields = ["id", "prompt", "category", "description"]
+                for field in required_fields:
+                    self.assert_test(
+                        field in suggestion, f"Suggestion has {field} field"
+                    )
+
+                self.log(f"Sample suggestion: '{suggestion.get('prompt', '')}'")
+
+        return success
+
+    def test_session_management(self, session_id: str) -> bool:
+        """Test session management endpoints."""
+        self.log("Testing session management...")
+
+        # Test list sessions
+        response = self.client.get("/v1/chat/sessions")
+        success = self.assert_test(
+            response.status_code == 200, "List sessions endpoint"
+        )
+
+        if success:
+            data = response.json()
+            self.assert_test("sessions" in data, "Sessions list has sessions field")
+            self.assert_test("pagination" in data, "Sessions list has pagination field")
+            sessions = data.get("sessions", [])
+            self.log(f"Found {len(sessions)} active sessions")
+
+        # Test get specific session
+        response = self.client.get(f"/v1/chat/sessions/{session_id}")
+        success = (
+            self.assert_test(response.status_code == 200, "Get specific session")
+            and success
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            required_fields = [
+                "session_id",
+                "created_at",
+                "messages",
+                "context",
+                "message_count",
+            ]
+            for field in required_fields:
+                self.assert_test(field in data, f"Session details has {field} field")
+
+            message_count = data.get("message_count", 0)
+            self.log(f"Session has {message_count} messages")
+
+        # Test clear session context
+        response = self.client.post(f"/v1/chat/sessions/{session_id}/clear")
+        success = (
+            self.assert_test(response.status_code == 200, "Clear session context")
+            and success
+        )
+
+        if response.status_code == 200:
+            self.log("Session context cleared successfully")
+
+        return success
+
+    def test_conversation_flow(self) -> bool:
+        """Test a complete conversation flow."""
+        self.log("Testing complete conversation flow...")
+
+        conversation_steps = [
+            "I need an outfit for yoga",
+            "What about something for a business meeting?",
+            "Show me casual outfits under ฿2000",
+            "I prefer black and white colors",
+            "Any recommendations for summer season?",
+        ]
+
+        session_id = None
+        all_success = True
+
+        for i, message in enumerate(conversation_steps):
+            self.log(f"Conversation step {i + 1}: {message}")
+
+            chat_data = {"message": message}
+            if session_id:
+                chat_data["session_id"] = session_id
+
+            response = self.client.post("/v1/chat", json=chat_data)
+
+            step_success = self.assert_test(
+                response.status_code == 200,
+                f"Conversation step {i + 1}",
+                f"Expected 200, got {response.status_code}",
+            )
+
+            if step_success and response.status_code == 200:
+                data = response.json()
+                if not session_id:
+                    session_id = data.get("session_id")
+                    if session_id:
+                        self.session_ids.append(session_id)
+
+                # Check for outfit recommendations in responses
+                if data.get("outfits"):
+                    self.log(
+                        f"  → Received {len(data['outfits'])} outfit recommendations"
+                    )
+
+                if data.get("replies"):
+                    reply_msg = data["replies"][0].get("message", "")
+                    self.log(f"  → Reply: {reply_msg[:80]}...")
+
+            all_success = all_success and step_success
+
+        return all_success
+
+    def test_fashion_specific_queries(self) -> bool:
+        """Test fashion-specific chat queries."""
+        self.log("Testing fashion-specific queries...")
+
+        fashion_queries = [
+            "I want to look slim",
+            "Beach vacation outfits",
+            "Party dress for Saturday night",
+            "Professional work clothes",
+            "Comfortable sportswear",
+            "Elegant formal wear",
+            "Casual weekend outfits",
+            "Red dress for date night",
+            "Black suit for interview",
+            "Summer tops under ฿1000",
+        ]
+
+        all_success = True
+
+        for query in fashion_queries:
+            self.log(f"Testing query: {query}")
+
+            chat_data = {"message": query}
+            response = self.client.post("/v1/chat", json=chat_data)
+
+            success = self.assert_test(
+                response.status_code == 200,
+                f"Fashion query: {query[:30]}...",
+                f"Expected 200, got {response.status_code}",
+            )
+
+            if success and response.status_code == 200:
+                data = response.json()
+                session_id = data.get("session_id")
+                if session_id and session_id not in self.session_ids:
+                    self.session_ids.append(session_id)
+
+                # Check if we got meaningful responses
+                has_replies = len(data.get("replies", [])) > 0
+                has_outfits = data.get("outfits") is not None
+
+                self.assert_test(
+                    has_replies or has_outfits,
+                    f"Fashion query has content: {query[:30]}...",
+                    "No replies or outfits returned",
+                )
+
+                if has_replies:
+                    reply = data["replies"][0].get("message", "")
+                    self.log(f"  → Response: {reply[:60]}...")
+
+            all_success = all_success and success
+
+        return all_success
+
+    def test_error_handling(self) -> bool:
+        """Test error handling scenarios."""
+        self.log("Testing error handling...")
+
+        # Test non-existent session
+        fake_session_id = str(uuid.uuid4())
+        response = self.client.get(f"/v1/chat/sessions/{fake_session_id}")
+
+        success = self.assert_test(
+            response.status_code == 404,
+            "Non-existent session handling",
+            f"Expected 404, got {response.status_code}",
+        )
+
+        # Test invalid session ID for deletion
+        response = self.client.delete(f"/v1/chat/sessions/{fake_session_id}")
+        success = (
+            self.assert_test(
+                response.status_code == 404,
+                "Delete non-existent session",
+                f"Expected 404, got {response.status_code}",
+            )
+            and success
+        )
+
+        # Test malformed data
+        response = self.client.post("/v1/chat", json={"invalid": "data"})
+        success = (
+            self.assert_test(
+                response.status_code == 422,
+                "Malformed request handling",
+                f"Expected 422, got {response.status_code}",
+            )
+            and success
+        )
+
+        return success
+
+    def test_session_cleanup(self) -> bool:
+        """Test session cleanup (delete created sessions)."""
+        self.log("Testing session cleanup...")
+
+        success = True
+
+        for session_id in self.session_ids:
+            self.log(f"Deleting session: {session_id}")
+            response = self.client.delete(f"/v1/chat/sessions/{session_id}")
+
+            step_success = self.assert_test(
+                response.status_code == 200,
+                f"Delete session {session_id[:8]}...",
+                f"Expected 200, got {response.status_code}",
+            )
+            success = success and step_success
+
+        return success
+
+    def test_chat_entity_validation(self) -> bool:
+        """Test ChatRequest and ChatResponse entity validation."""
+        self.log("Testing chat entity validation...")
+
+        # Test valid ChatRequest
+        try:
+            valid_request = ChatRequest(session_id="test-123", message="Hello")
+            self.assert_test(True, "Valid ChatRequest creation")
+        except Exception as e:
+            self.assert_test(False, "Valid ChatRequest creation", str(e))
+
+        # Test invalid ChatRequest (empty message)
+        try:
+            ChatRequest(session_id="test", message="")
+            self.assert_test(
+                False, "Invalid ChatRequest rejection", "Should reject empty message"
+            )
+        except ValueError:
+            self.assert_test(True, "Invalid ChatRequest rejection")
+        except Exception as e:
+            self.assert_test(
+                False, "Invalid ChatRequest rejection", f"Wrong exception: {e}"
+            )
+
+        return True
+
+    def run_all_tests(self) -> Dict[str, Any]:
+        """Run all chat tests."""
+        self.log("🚀 Starting comprehensive direct chat testing...")
+        start_time = time.time()
+
+        # Test application health first
+        if not self.test_server_health():
+            self.log("❌ Application health check failed. Aborting tests.", "ERROR")
+            return self.get_results(time.time() - start_time)
+
+        # Run all test suites
+        test_suites = [
+            ("Chat Entity Validation", self.test_chat_entity_validation),
+            ("Basic Chat", self.test_basic_chat),
+            ("Chat Validation", self.test_chat_validation_errors),
+            ("Chat Suggestions", self.test_chat_suggestions),
+            ("Conversation Flow", self.test_conversation_flow),
+            ("Fashion Queries", self.test_fashion_specific_queries),
+            ("Error Handling", self.test_error_handling),
+        ]
+
+        session_id = None
+
+        for suite_name, test_func in test_suites:
+            self.log(f"\n📋 Running {suite_name} tests...")
+            try:
+                if suite_name == "Basic Chat":
+                    session_id = test_func()  # Basic chat returns session_id
+                else:
+                    test_func()
+            except Exception as e:
+                self.log(f"Test suite {suite_name} failed with error: {e}", "ERROR")
+                self.assert_test(False, f"{suite_name} suite execution", str(e))
+
+        # Test session management with any available session
+        if self.session_ids:
+            self.log(f"\n📋 Running Session Management tests...")
+            self.test_session_management(self.session_ids[0])
+            self.test_chat_with_session_id(self.session_ids[0])
+
+        # Cleanup
+        self.log(f"\n🧹 Cleaning up test sessions...")
+        self.test_session_cleanup()
+
+        return self.get_results(time.time() - start_time)
+
+    def get_results(self, duration: float) -> Dict[str, Any]:
+        """Get comprehensive test results."""
+        total_tests = self.test_results["passed"] + self.test_results["failed"]
+        success_rate = (
+            (self.test_results["passed"] / total_tests * 100) if total_tests > 0 else 0
+        )
+
+        return {
+            "summary": {
+                "total_tests": total_tests,
+                "passed": self.test_results["passed"],
+                "failed": self.test_results["failed"],
+                "success_rate": round(success_rate, 2),
+                "duration_seconds": round(duration, 2),
+            },
+            "errors": self.test_results["errors"],
+            "sessions_created": len(self.session_ids),
+        }
+
+    def print_results(self, results: Dict[str, Any]):
+        """Print formatted test results."""
+        summary = results["summary"]
+
+        self.log("\n" + "=" * 60)
+        self.log("📊 DIRECT CHAT TESTING RESULTS")
+        self.log("=" * 60)
+        self.log(f"Total Tests: {summary['total_tests']}")
+        self.log(f"✅ Passed: {summary['passed']}")
+        self.log(f"❌ Failed: {summary['failed']}")
+        self.log(f"🎯 Success Rate: {summary['success_rate']}%")
+        self.log(f"⏱️  Duration: {summary['duration_seconds']}s")
+        self.log(f"🔗 Sessions Created: {results['sessions_created']}")
+
+        if results["errors"]:
+            self.log(f"\n❌ FAILED TESTS ({len(results['errors'])}):")
+            for i, error in enumerate(results["errors"], 1):
+                self.log(f"  {i}. {error}")
+
+        self.log("=" * 60)
+
+        if summary["failed"] == 0:
+            self.log("🎉 ALL CHAT TESTS PASSED!")
+        else:
+            self.log(f"⚠️  {summary['failed']} tests failed. Please review.")
+
+
+def main():
+    """Main execution function."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Direct Chat Testing using TestClient")
+    parser.add_argument("--json", action="store_true", help="Output results as JSON")
+
+    args = parser.parse_args()
+
+    # Create tester and run tests
+    tester = DirectChatTester()
+    results = tester.run_all_tests()
+
+    if args.json:
+        print(json.dumps(results, indent=2))
+    else:
+        tester.print_results(results)
+
+    # Exit with non-zero code if tests failed
+    sys.exit(1 if results["summary"]["failed"] > 0 else 0)
+
+
+if __name__ == "__main__":
+    main()
