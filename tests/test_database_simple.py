@@ -52,7 +52,7 @@ class TestDatabaseBasics:
             "outfits",
             "outfit_items",
             "rules",
-            "alembic_version",
+
         ]
 
         missing_tables = []

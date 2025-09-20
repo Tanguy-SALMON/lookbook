@@ -36,8 +36,8 @@ class Settings(BaseSettings):
 
     # Database Configuration
     lookbook_db_url: str = Field(
-        default="sqlite:///./lookbook.db",
-        description="Database URL for lookbook data (SQLite by default)"
+        default="mysql+pymysql://magento:Magento@COS(*)@127.0.0.1:3306/lookbookMPC",
+        description="Database URL for lookbook data (MySQL by default)"
     )
     mysql_shop_url: Optional[str] = Field(
         default=None,
@@ -115,6 +115,10 @@ class Settings(BaseSettings):
     def get_database_url(self) -> str:
         """Get the database URL with proper dialect handling."""
         return self.lookbook_db_url
+
+    def is_mysql_database(self) -> bool:
+        """Check if using MySQL database."""
+        return self.lookbook_db_url.startswith("mysql+pymysql://")
 
     def get_mysql_url(self) -> Optional[str]:
         """Get the MySQL URL if configured."""

@@ -13,10 +13,11 @@ import structlog
 import sqlite3
 import json
 import asyncio
+import aiomysql
+from urllib.parse import urlparse
 
 from lookbook_mpc.domain.entities import (
-    Item, ProductDB, Outfit, OutfitDB, OutfitItem, OutfitItemDB,
-    Rule, RuleDB, Intent, VisionAttributes
+    Item, Outfit, OutfitItem, Rule, Intent, VisionAttributes
 )
 
 logger = structlog.get_logger()
@@ -56,22 +57,25 @@ class LookbookRepository(ABC):
         pass
 
 
-class SQLiteLookbookRepository(LookbookRepository):
-    """SQLite-based lookbook repository using direct SQLite operations."""
+class MySQLLookbookRepository(LookbookRepository):
+    """MySQL-based lookbook repository using direct MySQL operations."""
 
     def __init__(self, database_url: str):
-        # Extract database path from URL
-        if database_url.startswith("sqlite:///"):
-            self.db_path = database_url[10:]  # Remove "sqlite:///"
-        else:
-            self.db_path = database_url
-
-        self.logger = logger.bind(adapter="sqlite_lookbook")
+        self.database_url = database_url
+        self.logger = logger.bind(adapter="mysql_lookbook")
         self._lock = asyncio.Lock()
+        self._parsed_url = urlparse(database_url)
 
     async def _get_connection(self):
         """Get database connection."""
-        return sqlite3.connect(self.db_path)
+        return await aiomysql.connect(
+            host=self._parsed_url.hostname,
+            port=self._parsed_url.port or 3306,
+            user=self._parsed_url.username,
+            password=self._parsed_url.password,
+            db=self._parsed_url.path[1:],  # Remove leading slash
+            autocommit=True
+        )
 
     async def batch_upsert_products(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
@@ -91,7 +95,7 @@ class SQLiteLookbookRepository(LookbookRepository):
 
             async with self._lock:
                 conn = await self._get_connection()
-                cursor = conn.cursor()
+                cursor = await conn.cursor()
 
                 upserted_count = 0
                 updated_count = 0
@@ -123,19 +127,19 @@ class SQLiteLookbookRepository(LookbookRepository):
                         updated_at = datetime.utcnow().isoformat()
 
                         # Check if product exists
-                        cursor.execute("SELECT id FROM products WHERE sku = ?", (sku,))
-                        existing_id = cursor.fetchone()
+                        await cursor.execute("SELECT id FROM products WHERE sku = %s", (sku,))
+                        existing_id = await cursor.fetchone()
 
                         if existing_id:
                             # Update existing product
-                            cursor.execute("""
+                            await cursor.execute("""
                                 UPDATE products SET
-                                    title = ?, price = ?, size_range = ?, image_key = ?,
-                                    attributes = ?, in_stock = ?, season = ?, url_key = ?,
-                                    product_created_at = ?, stock_qty = ?, category = ?,
-                                    color = ?, material = ?, pattern = ?, occasion = ?,
-                                    updated_at = ?
-                                WHERE sku = ?
+                                    title = %s, price = %s, size_range = %s, image_key = %s,
+                                    attributes = %s, in_stock = %s, season = %s, url_key = %s,
+                                    product_created_at = %s, stock_qty = %s, category = %s,
+                                    color = %s, material = %s, pattern = %s, occasion = %s,
+                                    updated_at = %s
+                                WHERE sku = %s
                             """, (
                                 title, price, size_range, image_key, attributes, in_stock,
                                 season, url_key, product_created_at, stock_qty, category,
@@ -144,12 +148,12 @@ class SQLiteLookbookRepository(LookbookRepository):
                             updated_count += 1
                         else:
                             # Insert new product
-                            cursor.execute("""
+                            await cursor.execute("""
                                 INSERT INTO products (
                                     sku, title, price, size_range, image_key, attributes,
                                     in_stock, season, url_key, product_created_at, stock_qty,
                                     category, color, material, pattern, occasion, updated_at
-                                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             """, (
                                 sku, title, price, size_range, image_key, attributes,
                                 in_stock, season, url_key, product_created_at, stock_qty,
@@ -161,7 +165,7 @@ class SQLiteLookbookRepository(LookbookRepository):
                         self.logger.error(f"Error processing item {item.get('sku', 'unknown')}: {e}")
                         continue
 
-                conn.commit()
+                await cursor.close()
                 conn.close()
 
                 self.logger.info("Successfully batch upserted products",
@@ -184,11 +188,12 @@ class SQLiteLookbookRepository(LookbookRepository):
 
             async with self._lock:
                 conn = await self._get_connection()
-                cursor = conn.cursor()
+                cursor = await conn.cursor(aiomysql.DictCursor)
 
-                cursor.execute("SELECT * FROM products WHERE in_stock = 1")
-                rows = cursor.fetchall()
+                await cursor.execute("SELECT * FROM products WHERE in_stock = 1")
+                rows = await cursor.fetchall()
 
+                await cursor.close()
                 conn.close()
 
                 self.logger.info("Retrieved all items", count=len(rows))
@@ -240,50 +245,50 @@ class SQLiteLookbookRepository(LookbookRepository):
 
             async with self._lock:
                 conn = await self._get_connection()
-                cursor = conn.cursor()
+                cursor = await conn.cursor(aiomysql.DictCursor)
 
                 query = "SELECT * FROM products WHERE in_stock = 1"
                 params = []
 
                 # Apply filters based on intent
                 if intent.budget_max:
-                    query += " AND price <= ?"
+                    query += " AND price <= %s"
                     params.append(intent.budget_max)
 
                 if intent.size:
                     # This is a simplified size filter
-                    query += " AND (size_range LIKE ? OR size_range = ?)"
-                    params.append(f'%"{intent.size}"%')
-                    params.append('["ONE_SIZE"]')
+                    query += " AND (JSON_CONTAINS(size_range, %s) OR size_range = '[\"ONE_SIZE\"]')"
+                    params.append(f'"{intent.size}"')
 
                 # Filter by category using new column
                 if hasattr(intent, 'category') and intent.category:
-                    query += " AND category = ?"
+                    query += " AND category = %s"
                     params.append(intent.category)
 
                 # Filter by color using new column
                 if hasattr(intent, 'color') and intent.color:
-                    query += " AND color = ?"
+                    query += " AND color = %s"
                     params.append(intent.color)
 
                 # Filter by material using new column
                 if hasattr(intent, 'material') and intent.material:
-                    query += " AND material = ?"
+                    query += " AND material = %s"
                     params.append(intent.material)
 
                 # Filter by occasion using new column
                 if intent.occasion:
-                    query += " AND occasion = ?"
+                    query += " AND occasion = %s"
                     params.append(intent.occasion)
 
                 # Filter by season using new column
                 if hasattr(intent, 'season') and intent.season:
-                    query += " AND season = ?"
+                    query += " AND season = %s"
                     params.append(intent.season)
 
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
+                await cursor.execute(query, params)
+                rows = await cursor.fetchall()
 
+                await cursor.close()
                 conn.close()
 
                 self.logger.info("Found items by intent", count=len(rows))
@@ -335,52 +340,52 @@ class SQLiteLookbookRepository(LookbookRepository):
 
             async with self._lock:
                 conn = await self._get_connection()
-                cursor = conn.cursor()
+                cursor = await conn.cursor(aiomysql.DictCursor)
 
                 query = "SELECT * FROM products WHERE in_stock = 1"
                 params = []
 
                 # Apply filters using new columns
                 if 'category' in filters:
-                    query += " AND category = ?"
+                    query += " AND category = %s"
                     params.append(filters['category'])
 
                 if 'color' in filters:
-                    query += " AND color = ?"
+                    query += " AND color = %s"
                     params.append(filters['color'])
 
                 if 'material' in filters:
-                    query += " AND material = ?"
+                    query += " AND material = %s"
                     params.append(filters['material'])
 
                 if 'size' in filters:
-                    query += " AND (size_range LIKE ? OR size_range = ?)"
-                    params.append(f'%"{filters["size"]}%')
-                    params.append('["ONE_SIZE"]')
+                    query += " AND (JSON_CONTAINS(size_range, %s) OR size_range = '[\"ONE_SIZE\"]')"
+                    params.append(f'"{filters["size"]}"')
 
                 if 'max_price' in filters:
-                    query += " AND price <= ?"
+                    query += " AND price <= %s"
                     params.append(filters['max_price'])
 
                 if 'min_price' in filters:
-                    query += " AND price >= ?"
+                    query += " AND price >= %s"
                     params.append(filters['min_price'])
 
                 if 'pattern' in filters:
-                    query += " AND pattern = ?"
+                    query += " AND pattern = %s"
                     params.append(filters['pattern'])
 
                 if 'season' in filters:
-                    query += " AND season = ?"
+                    query += " AND season = %s"
                     params.append(filters['season'])
 
                 if 'occasion' in filters:
-                    query += " AND occasion = ?"
+                    query += " AND occasion = %s"
                     params.append(filters['occasion'])
 
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
+                await cursor.execute(query, params)
+                rows = await cursor.fetchall()
 
+                await cursor.close()
                 conn.close()
 
                 self.logger.info("Found items by search", count=len(rows))
@@ -432,11 +437,12 @@ class SQLiteLookbookRepository(LookbookRepository):
 
             async with self._lock:
                 conn = await self._get_connection()
-                cursor = conn.cursor()
+                cursor = await conn.cursor(aiomysql.DictCursor)
 
-                cursor.execute("SELECT * FROM products WHERE id = ?", (item_id,))
-                row = cursor.fetchone()
+                await cursor.execute("SELECT * FROM products WHERE id = %s", (item_id,))
+                row = await cursor.fetchone()
 
+                await cursor.close()
                 conn.close()
 
                 if row:
@@ -473,7 +479,7 @@ class SQLiteLookbookRepository(LookbookRepository):
 
     async def save_items(self, items: List[Dict[str, Any]]) -> int:
         """
-        Save items to SQLite database (legacy method - use batch_upsert_products for better performance).
+        Save items to MySQL database (legacy method - use batch_upsert_products for better performance).
 
         Args:
             items: List of item dictionaries to save
@@ -491,6 +497,42 @@ class SQLiteLookbookRepository(LookbookRepository):
         except Exception as e:
             self.logger.error("Error saving items to repository", error=str(e))
             raise
+
+    async def save_lookbook(self, theme: str, outfits: List[Outfit]) -> None:
+        """
+        Save lookbook with theme and outfits.
+
+        Args:
+            theme: Lookbook theme
+            outfits: List of Outfit entities
+        """
+        try:
+            self.logger.info("Saving lookbook", theme=theme, outfit_count=len(outfits))
+
+            # For now, just log the action - this would need proper implementation
+            self.logger.info("Lookbook save not implemented yet", theme=theme)
+
+        except Exception as e:
+            self.logger.error("Error saving lookbook", error=str(e))
+            raise
+
+
+class SQLiteLookbookRepository(LookbookRepository):
+    """SQLite-based lookbook repository using direct SQLite operations (legacy)."""
+
+    def __init__(self, database_url: str):
+        # Extract database path from URL
+        if database_url.startswith("sqlite:///"):
+            self.db_path = database_url[10:]  # Remove "sqlite:///"
+        else:
+            self.db_path = database_url
+
+        self.logger = logger.bind(adapter="sqlite_lookbook")
+        self._lock = asyncio.Lock()
+
+    async def _get_connection(self):
+        """Get database connection."""
+        return sqlite3.connect(self.db_path)
 
     async def save_lookbook(self, theme: str, outfits: List[Outfit]) -> None:
         """

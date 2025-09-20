@@ -2,488 +2,332 @@
 
 ## Overview
 
-Lookbook-MPC is a FastAPI-based fashion recommendation microservice that provides intelligent outfit recommendations using vision analysis, intent parsing, and rules-based recommendations. This guide helps you get started quickly and use the system effectively.
+This guide covers how to use the Lookbook-MPC system after setup is complete. For installation instructions, see `SETUP_GUIDE.md`.
 
-## Prerequisites
+## Using the System
 
-- Python 3.11+
-- Ollama installed and running
-- At least 4GB of RAM available
-- Port 8000, 8001, and 11434 available
-- S3/CloudFront URL for image serving (configured in .env)
+### Web Interfaces
 
-## Quick Start
+#### Admin Dashboard (Recommended)
+**URL**: http://localhost:3000
 
-### 1. Environment Setup
+Modern Next.js dashboard providing:
+- **Real-time monitoring** of all services
+- **Product management** with comprehensive attribute editing
+- **Analytics** showing processed items, recommendations, and chat sessions
+- **One-click operations** for ingestion and system control
+- **Visual stats** with category distribution and performance metrics
 
-#### Step 1: Configure Environment Variables
+Key features:
+- Items page with full attribute editing (category, material, pattern, season, occasion, fit, style, etc.)
+- System status monitoring
+- Performance analytics
+- Recent activity feed
 
-Copy and configure the environment file:
+#### Demo Chat Interface
+**URL**: http://localhost:8000/demo
 
+Simple chat interface for testing recommendations:
+- Type natural language fashion requests
+- Get AI-powered outfit suggestions
+- See visual product recommendations
+
+#### API Documentation
+**URL**: http://localhost:8000/docs
+
+Interactive Swagger documentation for all API endpoints.
+
+### API Usage Patterns
+
+#### Basic Workflow
+
+1. **Ingest Products**
 ```bash
-# Copy the example environment file
-cp .env.example .env
-
-# Edit the .env file to ensure all required variables are set
-nano .env
-```
-
-Your `.env` file should contain:
-
-```bash
-# Ollama Configuration
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_VISION_MODEL=qwen2.5vl:7b
-OLLAMA_TEXT_MODEL=qwen3
-VISION_PORT=8001
-
-# Storage & CDN
-S3_BASE_URL=https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/
-
-# Database Configuration
-LOOKBOOK_DB_URL=sqlite:///lookbook.db
-MYSQL_SHOP_URL=mysql+pymysql://lookbook_user:lookbook_password@localhost:3306/magento
-
-# Application Settings
-LOG_LEVEL=INFO
-TZ=UTC
-CORS_ORIGINS=http://localhost:3000,http://localhost:8080
-LOG_FORMAT=json
-LOG_FILE=/var/log/lookbook-mpc.log
-```
-
-#### Step 2: Start Ollama (LLM Service)
-
-```bash
-# Start Ollama daemon in a terminal
-ollama serve
-
-# In another terminal, pull the required models (if not already installed)
-ollama pull qwen2.5vl
-ollama pull qwen3:4b  # Use 4B variant for faster inference
-
-# Verify models are available
-ollama list
-```
-
-#### Step 3: Start Vision Sidecar Service
-
-```bash
-# In the project directory, start the vision analysis service
-poetry run python vision_sidecar.py
-```
-
-You should see output similar to:
-
-```
-INFO:     Started server process
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8001
-```
-
-#### Step 4: Start Main API Service
-
-```bash
-# In another terminal, in the project directory
-poetry run python main.py
-```
-
-The main API will be available at `http://localhost:8000`
-
-### 2. Accessing the Application
-
-#### Web Interface
-
-- **Main API Documentation**: `http://localhost:8000/docs`
-- **Alternative API Documentation**: `http://localhost:8000/redoc`
-- **Demo Chat Interface**: `http://localhost:8000/demo`
-- **Health Check**: `http://localhost:8000/health`
-- **Readiness Check**: `http://localhost:8000/ready`
-
-#### API Endpoints
-
-##### Health and Status
-
-- `GET /health` - Basic health check
-- `GET /ready` - Readiness probe with dependency checks
-
-##### Ingestion
-
-- `POST /v1/ingest/items` - Ingest items from catalog
-- `GET /v1/ingest/items` - List ingested items
-- `GET /v1/ingest/stats` - Get ingestion statistics
-
-##### Recommendations
-
-- `POST /v1/recommendations` - Generate outfit recommendations
-- `GET /v1/recommendations/preview` - Preview recommendations
-- `GET /v1/recommendations/constraints` - Get constraint options
-- `GET /v1/recommendations/popular` - Get popular recommendations
-- `GET /v1/recommendations/trending` - Get trending recommendations
-- `GET /v1/recommendations/similar/{item_id}` - Get similar outfits
-
-##### Chat
-
-- `POST /v1/chat` - Chat interaction
-- `GET /v1/chat/sessions` - List chat sessions
-- `GET /v1/chat/sessions/{session_id}` - Get session details
-- `GET /v1/chat/suggestions` - Get chat suggestions
-
-##### Images
-
-- `GET /v1/images/{image_key}` - Get image with transformations
-- `GET /v1/images/{image_key}/redirect` - Redirect to original image
-- `HEAD /v1/images/{image_key}` - Check image existence
-- `GET /v1/images/info/{image_key}` - Get image information
-
-### 3. Using the Demo Interface
-
-1. Open your browser and go to: `http://localhost:8000/demo`
-2. Type fashion requests like:
-   - "I want to do yoga"
-   - "Restaurant this weekend, attractive for $50"
-   - "I am fat, look slim"
-3. The AI will analyze your request and show outfit recommendations
-
-### 4. Project Structure
-
-The project is organized with static files and assets in dedicated directories:
-
-- **`docs/`**: Contains documentation files like `demo.html` and user guides
-- **`assets/images/`**: Contains image files like `cos-chat.png` and `cos-chat2.png`
-- **`scripts/`**: Contains utility and test scripts
-- **`lookbook_mpc/`**: Main application code
-- **`tests/`**: Test files
-- **`migrations/`**: Database migration files
-
-### 4. Testing the Setup
-
-#### Verify All Services are Running
-
-```bash
-# Check Ollama service
-curl http://localhost:11434/api/tags
-
-# Check Vision Sidecar service
-curl http://localhost:8001/health
-
-# Check Main API service
-curl http://localhost:8000/health
-
-# Check Readiness probe (tests all dependencies)
-curl http://localhost:8000/ready
-```
-
-#### Test Vision Sidecar (Optional)
-
-```bash
-# Health check
-curl http://localhost:8001/health
-
-# Test image analysis (replace with actual image URL)
-curl -X POST "http://localhost:8001/analyze" \
+# Basic ingestion
+curl -X POST "http://localhost:8000/v1/ingest/products" \
   -H "Content-Type: application/json" \
-  -d '{"image_url": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256"}'
+  -d '{"limit": 20}'
+
+# With date filter
+curl -X POST "http://localhost:8000/v1/ingest/products" \
+  -H "Content-Type: application/json" \
+  -d '{"limit": 50, "since": "2025-01-19T00:00:00Z"}'
 ```
 
-#### Test Main API
-
+2. **Get Recommendations**
 ```bash
-# Health check
-curl http://localhost:8000/health
-
-# Test readiness probe (includes S3 and Ollama checks)
-curl http://localhost:8000/ready
-
-# Ingest products (pulls from Magento and analyzes images)
-curl -X POST "http://localhost:8000/v1/ingest/items" \
-  -H "Content-Type: application/json" \
-  -d '{"limit": 5}'
-
-# Ingest products with timestamp filter
-curl -X POST "http://localhost:8000/v1/ingest/items" \
-  -H "Content-Type: application/json" \
-  -d '{"limit": 10, "since": "2025-01-19T00:00:00Z"}'
-
-# Test recommendations
 curl -X POST "http://localhost:8000/v1/recommendations" \
   -H "Content-Type: application/json" \
   -d '{"text_query": "I want to do yoga"}'
-
-# Test image serving (with actual image from S3)
-curl -I "https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/3a4db8e6cba0f753558e37db7eae09614adbbf28_xxl-1.jpg"
 ```
 
-#### Run Comprehensive Test Suite
-
+3. **Chat Interaction**
 ```bash
-# Run all tests
-poetry run pytest
-
-# Run tests with verbose output
-poetry run pytest -v
-
-# Run tests with coverage
-poetry run pytest --cov=lookbook_mpc --cov-report=html
-
-# Run specific test categories
-poetry run pytest -m unit          # Run only unit tests
-poetry run pytest -m integration   # Run only integration tests
-poetry run pytest -m "not slow"    # Skip slow tests
-
-# Run individual test files
-poetry run pytest tests/test_api_integration.py
-poetry run pytest tests/test_domain_entities.py
-poetry run pytest tests/test_services.py
-```
-
-## Configuration
-
-### Environment Variables
-
-| Variable              | Description             | Default                     |
-| --------------------- | ----------------------- | --------------------------- |
-| `MYSQL_SHOP_URL`      | MySQL connection string | -                           |
-| `LOOKBOOK_DB_URL`     | Lookbook database URL   | `sqlite:///lookbook.db`     |
-| `OLLAMA_HOST`         | Ollama daemon URL       | `http://localhost:11434`    |
-| `OLLAMA_VISION_MODEL` | Vision model name       | `qwen2.5vl:7b`              |
-| `OLLAMA_TEXT_MODEL`   | Text model name         | `qwen3:4b` (faster)         |
-| `S3_BASE_URL`         | S3 base URL             | -                           |
-| `LOG_LEVEL`           | Logging level           | `INFO`                      |
-| `CORS_ORIGINS`        | Allowed CORS origins    | `http://localhost:3000`     |
-| `LOG_FORMAT`          | Log format              | `json`                      |
-| `LOG_FILE`            | Log file path           | `/var/log/lookbook-mpc.log` |
-
-### Service Ports
-
-| Service        | Port  | Description                        |
-| -------------- | ----- | ---------------------------------- |
-| Main API       | 8000  | FastAPI application with endpoints |
-| Vision Sidecar | 8001  | Image analysis service             |
-| Ollama         | 11434 | LLM and vision model server        |
-| Demo UI        | 8000  | Web interface at /demo.html        |
-
-## Troubleshooting
-
-### Common Issues
-
-#### 1. "Model not found" error
-
-```bash
-# Make sure you have the correct model names
-ollama pull qwen2.5vl
-ollama pull qwen3:4b
-ollama list  # Should show both models
-```
-
-#### 2. Vision Sidecar connection refused
-
-```bash
-# Make sure vision sidecar is running on port 8001
-curl http://localhost:8001/health
-```
-
-#### 3. Main API not starting
-
-```bash
-# Check if port 8000 is available
-lsof -i :8000
-# Kill any conflicting process if needed
-```
-
-#### 4. No outfit recommendations returned
-
-```bash
-# Make sure you've ingested some products first
-curl -X POST "http://localhost:8000/v1/ingest/items" \
+curl -X POST "http://localhost:8000/v1/chat" \
   -H "Content-Type: application/json" \
-  -d '{"limit": 10}'
+  -d '{"session_id": "user-123", "message": "I need an outfit for a business meeting"}'
 ```
 
-#### 5. Ollama not responding
+#### Common Request Examples
 
+**Activity-based requests:**
+- "I want to do yoga"
+- "Going for a run tomorrow morning"
+- "Need gym clothes"
+
+**Occasion-based requests:**
+- "Restaurant this weekend, attractive for $50"
+- "Business meeting outfit"
+- "Date night outfit under $100"
+
+**Style-based requests:**
+- "I am fat, look slim"
+- "Something casual but stylish"
+- "Professional but comfortable"
+
+**Constraint-based requests:**
+- "Winter outfit under $200"
+- "Formal dress for size L"
+- "Casual top in black or white"
+
+### Advanced Usage
+
+#### Chat Sessions
+
+Create persistent conversations:
 ```bash
-# Check Ollama service
-curl http://localhost:11434/api/tags
+# Start session
+curl -X POST "http://localhost:8000/v1/chat" \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "session-abc", "message": "I need help with my wardrobe"}'
 
-# Restart Ollama if needed
-pkill -f ollama
-ollama serve
+# Continue conversation
+curl -X POST "http://localhost:8000/v1/chat" \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "session-abc", "message": "Show me business casual options"}'
+
+# List sessions
+curl "http://localhost:8000/v1/chat/sessions"
 ```
 
-#### 6. Readiness probe returns 503 Service Unavailable
+#### Product Search and Filtering
 
 ```bash
-# The readiness probe checks all dependencies
-# If it returns 503, check individual services:
+# List products with filters
+curl "http://localhost:8000/v1/ingest/products?category=top&limit=20"
 
-# Check Ollama
-curl http://localhost:11434/api/tags
+# Get ingestion statistics
+curl "http://localhost:8000/v1/ingest/stats"
 
-# Check S3 image access (test with actual image)
-curl -I "https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/3a4db8e6cba0f753558e37db7eae09614adbbf28_xxl-1.jpg"
+# Popular recommendations
+curl "http://localhost:8000/v1/recommendations/popular?limit=10"
 
-# Check database
+# Trending by category
+curl "http://localhost:8000/v1/recommendations/trending?category=outerwear&limit=5"
+```
+
+#### Image Access
+
+```bash
+# Get product image
+curl "http://localhost:8000/v1/images/product_image_key_here"
+
+# Get image info
+curl "http://localhost:8000/v1/images/info/product_image_key_here"
+
+# Redirect to original image
+curl "http://localhost:8000/v1/images/product_image_key_here/redirect"
+```
+
+## Understanding the AI System
+
+### How Recommendations Work
+
+1. **Intent Analysis**: Your text query is analyzed by the qwen3:4b model to extract:
+   - Activity/occasion (yoga, business meeting, date)
+   - Style preferences (casual, formal, attractive)
+   - Constraints (budget, size, color)
+   - Body considerations (slim-fit, flattering)
+
+2. **Product Matching**: The system queries the catalog for items matching your intent
+3. **Vision Analysis**: Product images are analyzed by qwen2.5vl to extract:
+   - Color, material, pattern
+   - Style, fit, season appropriateness
+   - Category and occasion suitability
+
+4. **Rule Engine**: Fashion rules are applied to create coherent outfits:
+   - Color coordination
+   - Style consistency
+   - Occasion appropriateness
+   - Seasonal matching
+
+5. **Outfit Assembly**: Complete outfits are created with 3-7 items each:
+   - Top, bottom, shoes
+   - Outerwear (when appropriate)
+   - Accessories
+
+### Response Format
+
+Recommendations include:
+- **Outfits**: Complete clothing combinations
+- **Rationale**: Why each outfit was recommended
+- **Item Details**: SKU, title, price, attributes
+- **Images**: Product photos when available
+- **Constraints Used**: How your request was interpreted
+
+## Monitoring and Management
+
+### System Health
+
+```bash
+# Quick health check
 curl http://localhost:8000/health
 
-# If S3 is not accessible, the readiness probe will still work
-# but mark S3 as "unreachable" rather than failing the entire check
-```
-
-#### 7. CORS issues in development
-
-```bash
-# The system now has simplified CORS configuration
-# If you're seeing CORS errors, check your .env file:
-
-# Ensure CORS_ORIGINS is set to your frontend URL
-echo $CORS_ORIGINS
-
-# For development, you can use:
-export CORS_ORIGINS=http://localhost:3000,http://localhost:8080
-```
-
-#### 8. Request ID headers missing
-
-```bash
-# The system now includes request ID middleware
-# All responses should include an X-Request-ID header
-
-curl -I http://localhost:8000/health
-# Look for "x-request-id" in the response headers
-```
-
-### Health Checks
-
-Monitor service health:
-
-```bash
-# Check basic health
-curl http://localhost:8000/health
-
-# Check readiness with dependency checks
+# Comprehensive readiness check
 curl http://localhost:8000/ready
-
-# Check individual services
-curl http://localhost:11434/api/tags
-curl http://localhost:8001/health
-
-# Check request IDs in responses
-curl -H "X-Request-ID: test-123" http://localhost:8000/health
 ```
 
-### Debug Mode
+The readiness check verifies:
+- Ollama connectivity and models
+- Vision sidecar availability
+- Image CDN accessibility
+- Database connectivity
 
-Enable debug logging for troubleshooting:
+### Performance Monitoring
+
+Use the admin dashboard (http://localhost:3000) to monitor:
+- **Processing times** for image analysis
+- **Success rates** for recommendations
+- **Error rates** and failed operations
+- **Recent activity** across all components
+
+### Data Management
+
+**View ingestion statistics:**
+```bash
+curl http://localhost:8000/v1/ingest/stats
+```
+
+**Check specific products via admin dashboard:**
+- Navigate to Items page
+- Use search and filtering
+- Edit product attributes
+- View processing status
+
+## Best Practices
+
+### For Better Recommendations
+
+1. **Be specific about context:**
+   - ✅ "Business meeting in winter"
+   - ❌ "Need clothes"
+
+2. **Include constraints:**
+   - ✅ "Casual date outfit under $80"
+   - ❌ "Something nice"
+
+3. **Mention preferences:**
+   - ✅ "I prefer dark colors and loose fit"
+   - ❌ "Whatever looks good"
+
+### For System Management
+
+1. **Regular ingestion:**
+   - Ingest new products daily/weekly
+   - Use date filters to only process new items
+   - Monitor ingestion stats
+
+2. **Monitor performance:**
+   - Check system health regularly
+   - Review error rates in admin dashboard
+   - Ensure all models are loaded
+
+3. **Data quality:**
+   - Use admin dashboard to edit incorrect product attributes
+   - Review vision analysis results for accuracy
+   - Update product information as needed
+
+## Troubleshooting Usage Issues
+
+### No Recommendations Returned
 
 ```bash
-# Set debug logging
-export LOG_LEVEL=DEBUG
+# Check if products are available
+curl http://localhost:8000/v1/ingest/stats
 
-# Start services with debug output
-poetry run python main.py
-poetry run python vision_sidecar.py
-
-# Or run with uvicorn for development
-poetry run uvicorn main:app --reload --log-level debug
+# If no products, ingest some
+curl -X POST "http://localhost:8000/v1/ingest/products" \
+  -d '{"limit": 50}' -H "Content-Type: application/json"
 ```
 
-## Development
+### Poor Quality Recommendations
 
-### Running Tests
+1. **Check product data quality:**
+   - Use admin dashboard to review product attributes
+   - Ensure vision analysis has completed
+   - Verify product categorization
+
+2. **Refine your requests:**
+   - Be more specific about context
+   - Include budget and size constraints
+   - Mention style preferences
+
+### Chat Context Issues
 
 ```bash
-# Run all tests using pytest
-poetry run pytest
+# Use consistent session IDs
+# Each conversation should maintain the same session_id
 
-# Run tests with coverage
-poetry run pytest --cov=lookbook_mpc
+# List active sessions to debug
+curl "http://localhost:8000/v1/chat/sessions"
 
-# Run specific test categories
-poetry run pytest -m unit          # Run only unit tests
-poetry run pytest -m integration   # Run only integration tests
-poetry run pytest -m "not slow"    # Skip slow tests
-
-# Running individual test scripts
-poetry run python scripts/test_api.py
-poetry run python scripts/test_recommender.py
-poetry run python scripts/test_demo.py
+# Review specific session
+curl "http://localhost:8000/v1/chat/sessions/your-session-id"
 ```
 
-### Code Quality Tools
+### Image Loading Issues
 
-```bash
-# Format code
-poetry run black .
+1. **Check CDN connectivity:**
+   ```bash
+   curl -I "https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/sample_image.jpg"
+   ```
 
-# Lint code
-poetry run ruff check .
+2. **Use image proxy:**
+   ```bash
+   # Instead of direct CDN access
+   curl "http://localhost:8000/v1/images/your_image_key"
+   ```
 
-# Type check
-poetry run mypy .
+## Advanced Features
 
-# Run all quality checks
-poetry run black . && poetry run ruff check . && poetry run mypy .
-```
+### MCP Integration
 
-### Running Tests in Development
+For LLM clients that support Model Context Protocol:
 
-```bash
-# Run with auto-reload for development
-poetry run uvicorn main:app --reload
+**Available tools:**
+- `recommend_outfits(query, budget?, size?)` - Get recommendations
+- `search_items(filters)` - Search product catalog
+- `ingest_batch(limit?)` - Trigger product ingestion
 
-# Run specific test file
-poetry run pytest tests/test_api_integration.py
+**MCP server endpoint:** http://localhost:8000/mcp
 
-# Run tests with verbose output
-poetry run pytest -v
-```
+### Custom Rules
 
-## Architecture
+The system uses built-in fashion rules, but you can understand how they work:
 
-### System Components
+1. **Color coordination rules**
+2. **Seasonal appropriateness**
+3. **Occasion matching**
+4. **Style consistency**
+5. **Fit recommendations**
 
-```
-[Demo UI] → [Main API:8000] → [Vision Sidecar:8001] → [Ollama:11434]
-                ↓                      ↓                     ↓
-           FastAPI Routes        Image Analysis         qwen2.5vl
-           Recommendations      Fashion Attributes      Vision Model
-```
+Rules are applied automatically but can be observed in recommendation rationales.
 
-### Core Layers
+## Getting Help
 
-- **Domain Layer**: Entities, use cases
-- **Adapters Layer**: Database, vision, intent, image adapters
-- **Services Layer**: Rules engine, recommender
-- **API Layer**: REST endpoints, MCP server
+- **System issues**: Check `DEBUG_GUIDE.md`
+- **Setup problems**: See `SETUP_GUIDE.md`
+- **API reference**: http://localhost:8000/docs
+- **Admin dashboard help**: Built-in tooltips at http://localhost:3000
 
-## Support
-
-### Getting Help
-
-1. Check the troubleshooting section above
-2. Review the logs for error messages
-3. Test individual components using the provided test scripts
-4. Verify all services are running and accessible
-
-### Creating Issues
-
-When reporting issues, please include:
-
-- System information (OS, Python version)
-- Error messages and stack traces
-- Steps to reproduce the issue
-- Expected vs actual behavior
-
-### Additional Resources
-
-- API Documentation: `http://localhost:8000/docs`
-- Project README: `README.md`
-- Deployment Guide: `DEPLOYMENT.md`
-- Debug Guide: `DEBUG_GUIDE.md`
-- Test Scripts: `scripts/test_*.py`
-
----
-
-_This user guide covers the essential information needed to start, test, and use the Lookbook-MPC system. For more detailed information about specific components or advanced configuration, refer to the project's README.md and source code documentation._
+For optimal experience, use the admin dashboard for most management tasks and the API for automated interactions.

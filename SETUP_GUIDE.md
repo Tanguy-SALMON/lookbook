@@ -1,315 +1,199 @@
 # Lookbook-MPC Setup Guide
 
-This guide provides step-by-step instructions to set up and run the Lookbook-MPC system. Follow these steps in order to ensure everything works correctly.
+This guide provides step-by-step instructions to set up and run the Lookbook-MPC system.
 
 ## Prerequisites
 
-Before starting, make sure you have:
+- Python 3.11+
+- Ollama installed
+- Node.js 18+ (for admin dashboard)
+- 4GB+ RAM available
+- Ports 8000, 8001, 11434, 3000 available
 
-- Python 3.11+ installed
-- Ollama installed and running
-- At least 4GB of RAM available
-- Ports 8000, 8001, and 11434 available
-- A text editor (like VS Code, nano, or vim)
+## Step-by-Step Setup
 
-## Step 1: Clone and Navigate to Project
+### 1. Project Setup
 
 ```bash
-# Navigate to the project directory
 cd /Users/tanguysalmon/PythonPlayGround/test-roocode
-
-# Verify you're in the right directory
-pwd
-ls -la
 ```
 
-## Step 2: Configure Environment Variables
+### 2. Environment Configuration
 
 ```bash
-# Copy the example environment file
+# Copy example environment
 cp .env.example .env
 
-# Edit the environment file
+# Edit configuration
 nano .env
 ```
 
-Your `.env` file should contain these settings:
-
+Required `.env` settings:
 ```bash
-# Ollama Configuration
 OLLAMA_HOST=http://localhost:11434
-OLLAMA_VISION_MODEL=qwen2.5vl:7b
-OLLAMA_TEXT_MODEL=qwen3
-VISION_PORT=8001
-
-# Storage & CDN
+OLLAMA_VISION_MODEL=qwen2.5vl
+OLLAMA_TEXT_MODEL=qwen3:4b
 S3_BASE_URL=https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/
-
-# Database Configuration
 LOOKBOOK_DB_URL=sqlite:///lookbook.db
-MYSQL_SHOP_URL=mysql+pymysql://lookbook_user:lookbook_password@localhost:3306/magento
-
-# Application Settings
 LOG_LEVEL=INFO
-TZ=UTC
-CORS_ORIGINS=http://localhost:3000,http://localhost:8080
-LOG_FORMAT=json
-LOG_FILE=/var/log/lookbook-mpc.log
 ```
 
-## Step 3: Start Ollama Service
+### 3. Start Services in Order
 
-Open **Terminal 1** and run:
-
+**Terminal 1 - Ollama**
 ```bash
-# Start Ollama daemon
 ollama serve
-
-# You should see output like:
-# INFO[0000] using existing socket at /var/run/ollama.sock
-# listening on 127.0.0.1:11434
 ```
 
-Keep this terminal open and running.
-
-## Step 4: Pull Required Models
-
-Open **Terminal 2** and run:
-
+**Terminal 2 - Pull Models**
 ```bash
-# Pull the vision model
 ollama pull qwen2.5vl
-
-# Pull the text model (4B variant for faster inference)
 ollama pull qwen3:4b
-
-# Verify models are available
-ollama list
-
-# You should see both models in the list
+ollama list  # Verify models
 ```
 
-## Step 5: Start Vision Sidecar Service
-
-Open **Terminal 3** and run:
-
+**Terminal 3 - Vision Sidecar**
 ```bash
-# Navigate to project directory (if not already there)
-cd /Users/tanguysalmon/PythonPlayGround/test-roocode
-
-# Start the vision analysis service
-poetry run python vision_sidecar.py
-poetry run python main.py
-# You should see output like:
-# INFO:     Started server process [PID]
-# INFO:     Waiting for application startup.
-# INFO:     Application startup complete.
-# INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+python vision_sidecar.py
+# Should show: Uvicorn running on http://0.0.0.0:8001
 ```
 
-Keep this terminal open and running.
-
-## Step 6: Start Main API Service
-
-Open **Terminal 4** and run:
-
+**Terminal 4 - Main API**
 ```bash
-# Navigate to project directory (if not already there)
-cd /Users/tanguysalmon/PythonPlayGround/test-roocode
-
-# Start the main API service
-poetry run python main.py
-
-# You should see output like:
-# INFO:     Started server process [PID]
-# INFO:     Waiting for application startup.
-# INFO:     Application startup complete.
-# INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+python main.py
+# Should show: Uvicorn running on http://0.0.0.0:8000
 ```
 
-Keep this terminal open and running.
-
-## Step 7: Verify Services are Running
-
-Open **Terminal 5** and run these verification commands:
-
+**Terminal 5 - Admin Dashboard (Optional)**
 ```bash
-# Check Ollama service
-echo "=== Checking Ollama ==="
-curl http://localhost:11434/api/tags
-
-# Check Vision Sidecar service
-echo -e "\n=== Checking Vision Sidecar ==="
-curl http://localhost:8001/health
-
-# Check Main API service
-echo -e "\n=== Checking Main API ==="
-curl http://localhost:8000/health
-
-# Check Readiness probe (tests all dependencies)
-echo -e "\n=== Checking Readiness Probe ==="
-curl http://localhost:8000/ready
-
-# Test image serving
-echo -e "\n=== Testing Image Access ==="
-curl -I "https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/3a4db8e6cba0f753558e37db7eae09614adbbf28_xxl-1.jpg"
+cd shadcn
+npm install
+npm run dev
+# Available at http://localhost:3000
 ```
 
-You should see successful responses from all services.
-
-## Step 8: Test the API Endpoints
+### 4. Verify Installation
 
 ```bash
-# Test basic API functionality
-echo "=== Testing API Endpoints ==="
+# Check all services
+curl http://localhost:11434/api/tags    # Ollama
+curl http://localhost:8001/health       # Vision Sidecar
+curl http://localhost:8000/health       # Main API
+curl http://localhost:8000/ready        # Full readiness check
+```
 
-# Test recommendations endpoint
+### 5. Test the System
+
+```bash
+# Test recommendations
 curl -X POST "http://localhost:8000/v1/recommendations" \
   -H "Content-Type: application/json" \
   -d '{"text_query": "I want to do yoga"}'
 
-# Test ingestion endpoint
-curl -X POST "http://localhost:8000/v1/ingest/items" \
+# Ingest products
+curl -X POST "http://localhost:8000/v1/ingest/products" \
   -H "Content-Type: application/json" \
   -d '{"limit": 5}'
-
-# Test chat endpoint
-curl -X POST "http://localhost:8000/v1/chat" \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "test-session", "message": "Hello"}'
 ```
 
-## Step 9: Access the Web Interface
+### 6. Run Test Suite
 
-Open your browser and navigate to:
+```bash
+# All tests
+pytest
+
+# With coverage
+pytest --cov=lookbook_mpc
+
+# Specific test files
+pytest tests/test_api_integration.py
+```
+
+## Access Points
 
 - **API Documentation**: http://localhost:8000/docs
-- **Alternative API Documentation**: http://localhost:8000/redoc
-- **Demo Chat Interface**: http://localhost:8000/demo
+- **Demo Interface**: http://localhost:8000/demo
+- **Admin Dashboard**: http://localhost:3000
+- **Health Check**: http://localhost:8000/health
 
-## Step 10: Run the Test Suite
+## Troubleshooting
 
-```bash
-# Run all tests
-echo "=== Running Test Suite ==="
-poetry run pytest
+### Services Won't Start
 
-# Run tests with verbose output
-poetry run pytest -v
-
-# Run tests with coverage
-poetry run pytest --cov=lookbook_mpc --cov-report=html
-
-# Run specific test files
-poetry run pytest tests/test_api_integration.py
-poetry run pytest tests/test_domain_entities.py
-poetry run pytest tests/test_services.py
-```
-
-All tests should pass (117/117).
-
-## Step 11: Test Individual Components
-
-```bash
-# Test vision sidecar directly
-echo "=== Testing Vision Sidecar ==="
-curl -X POST "http://localhost:8001/analyze" \
-  -H "Content-Type: application/json" \
-  -d '{"image_url": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256"}'
-
-# Test Ollama directly
-echo -e "\n=== Testing Ollama ==="
-curl -X POST "http://localhost:11434/api/generate" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "qwen3:4b",
-    "prompt": "Hello, how are you?",
-    "stream": false
-  }'
-```
-
-## Troubleshooting Common Issues
-
-### If services don't start:
-
-1. **Port conflicts**: Check if ports are already in use
-
+1. **Port conflicts**
    ```bash
-   lsof -i :8000
-   lsof -i :8001
-   lsof -i :11434
+   lsof -i :8000 :8001 :11434 :3000
+   # Kill conflicting processes
    ```
 
-2. **Missing dependencies**: Install required packages
-
+2. **Missing models**
    ```bash
-   pip install fastapi uvicorn structlog pydantic
+   ollama list  # Should show qwen2.5vl and qwen3:4b
    ```
 
-3. **Environment variables**: Ensure all are set correctly
+3. **Environment variables**
    ```bash
    echo $OLLAMA_HOST
-   echo $S3_BASE_URL
+   cat .env  # Verify all variables set
    ```
 
-### If tests fail:
+### API Tests Fail
 
-1. **Readiness probe returns 503**: This is normal if S3 is not accessible
-2. **Model not found**: Ensure Ollama models are pulled
-3. **Database issues**: Check if `lookbook.db` exists
+1. **Check service health**
+   ```bash
+   curl http://localhost:8000/ready
+   ```
 
-### If API endpoints fail:
+2. **Check logs**
+   - Look for error messages in terminal output
+   - Enable debug logging: `export LOG_LEVEL=DEBUG`
 
-1. **Check service health**: Use the health check endpoints
-2. **Verify environment variables**: Ensure all are set
-3. **Check logs**: Look for error messages in terminal output
+3. **Database issues**
+   ```bash
+   ls -la lookbook.db  # Should exist after first run
+   ```
+
+### No Recommendations
+
+```bash
+# Make sure products are ingested
+curl -X POST "http://localhost:8000/v1/ingest/products?limit=10"
+
+# Check ingestion stats
+curl http://localhost:8000/v1/ingest/stats
+```
 
 ## Daily Usage
 
-### Starting the System
-
+### Starting System
 ```bash
-# Terminal 1: Ollama
-ollama serve
-
-# Terminal 2: Vision Sidecar
-poetry run python vision_sidecar.py
-
-# Terminal 3: Main API
-poetry run python main.py
+# Start in 4 terminals:
+ollama serve                    # Terminal 1
+python vision_sidecar.py        # Terminal 2  
+python main.py                  # Terminal 3
+cd shadcn && npm run dev        # Terminal 4 (optional)
 ```
 
-### Quick Health Checks
-
+### Quick Health Check
 ```bash
-# Check all services
-curl http://localhost:8000/health | jq
 curl http://localhost:8000/ready | jq
-curl http://localhost:8001/health | jq
-curl http://localhost:11434/api/tags | jq
 ```
 
-### Stopping the System
-
-Press `Ctrl+C` in each terminal to stop the services.
+### Stopping System
+Press `Ctrl+C` in each terminal.
 
 ## Next Steps
 
-1. **Explore the API**: Use the documentation at http://localhost:8000/docs
-2. **Try the demo**: Visit http://localhost:8000/demo
-3. **Customize rules**: Edit recommendation rules in the code
-4. **Add more data**: Ingest more products for better recommendations
+1. Explore the API documentation at http://localhost:8000/docs
+2. Try the demo interface at http://localhost:8000/demo
+3. Use the admin dashboard at http://localhost:3000
+4. Review `DEBUG_GUIDE.md` for advanced troubleshooting
+5. Check `DEPLOYMENT.md` for production setup
 
 ## Support
 
-If you encounter issues:
-
-1. Check the troubleshooting section above
-2. Review the terminal output for error messages
-3. Verify all services are running
-4. Check the project documentation in `USER_GUIDE.md` and `DEBUG_GUIDE.md`
-
----
-
-**Note**: This setup guide assumes you're running on a macOS system. If you're on a different OS, some commands may need to be adjusted.
-
+If issues persist:
+1. Check troubleshooting section above
+2. Verify all prerequisites are met
+3. Review terminal output for specific errors
+4. Consult `DEBUG_GUIDE.md` for detailed debugging

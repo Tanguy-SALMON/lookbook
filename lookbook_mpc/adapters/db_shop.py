@@ -88,7 +88,7 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
             """
 
             if since:
-                query += f" AND p.created_at >= '{since.isoformat()}'"
+                query += f" AND p.created_at >= '{since.strftime('%Y-%m-%d %H:%M:%S')}'"
 
             if limit:
                 query += f" LIMIT {limit}"

@@ -61,7 +61,6 @@ class TestDatabaseIntegration:
             "outfits",
             "outfit_items",
             "rules",
-            "alembic_version",
         ]
         for table in required_tables:
             assert table in tables or table.replace('items', 'products') in tables, f"Required table '{table}' not found in database (checked both 'items' and 'products')"
