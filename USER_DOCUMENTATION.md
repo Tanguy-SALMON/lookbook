@@ -364,6 +364,81 @@ poetry run pytest tests/test_api_integration.py
 poetry run pytest -v
 ```
 
+### Model Benchmarking
+
+To compare `qwen3:4b` vs `qwen3` performance and quality:
+
+```bash
+# Install benchmark requirements
+pip install -r requirements-benchmark.txt
+
+# Benchmark both models with default settings
+poetry run python scripts/benchmark_models.py --models qwen3:4b qwen3
+
+# Benchmark with custom settings
+poetry run python scripts/benchmark_models.py \
+  --models qwen3:4b qwen3 \
+  --repeat 20 \
+  --temperature 0.7 \
+  --max-tokens 500
+
+# Benchmark with custom prompts
+poetry run python scripts/benchmark_models.py \
+  --models qwen3:4b \
+  --prompts "I want to do yoga" "Business meeting outfit"
+
+# Benchmark single model with detailed analysis
+poetry run python scripts/benchmark_models.py --models qwen3:4b --repeat 50
+```
+
+#### Benchmark Features
+
+- **Performance Metrics**: Response time, tokens/second, memory usage, CPU/GPU utilization
+- **Quality Metrics**: Response relevance, coherence, grammar scoring
+- **Variability Analysis**: Consistency across different prompts and repeated runs
+- **Reliability Metrics**: Success rate, error analysis
+- **Comprehensive Reporting**: Detailed JSON results, summary reports, and comparisons
+
+#### Benchmark Output
+
+The benchmark generates:
+
+- **Detailed Results**: Raw timing and performance data
+- **Statistical Analysis**: Mean, median, standard deviation, percentiles
+- **Quality Assessment**: Automated scoring of response quality
+- **Comparison Reports**: Head-to-head model comparison
+- **Historical Tracking**: Timestamped results for performance trend analysis
+
+#### Result Files
+
+Results are saved in `benchmark_results/` directory:
+
+- `{model}_results_{timestamp}.json` - Raw benchmark data
+- `{model}_analysis_{timestamp}.json` - Statistical analysis
+- `{model}_summary_{timestamp}.txt` - Human-readable summary
+- `model_comparison_{timestamp}.json` - Multi-model comparison
+
+#### Ollama Parameters Tested
+
+The benchmark tests various Ollama parameters:
+
+- `temperature`: Controls response randomness (default: 0.7)
+- `top_p`: Nucleus sampling parameter (default: 0.9)
+- `repeat_penalty`: Penalizes repetitive text (default: 1.1)
+- `presence_penalty`: Encourages new topics (default: 0.0)
+- `frequency_penalty`: Discourages repetition (default: 0.0)
+- `num_predict`: Maximum tokens to generate (default: 1000)
+
+#### Performance Monitoring
+
+The benchmark tracks:
+
+- **System Resources**: CPU, memory, GPU usage
+- **Inference Speed**: Response time and tokens/second
+- **Response Quality**: Automated quality scoring
+- **Consistency**: Variability across runs and prompts
+- **Reliability**: Success rates and error patterns
+
 ## Architecture
 
 ### System Components

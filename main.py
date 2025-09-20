@@ -108,7 +108,7 @@ app.mount("/mcp", mcp_app)
 @app.get("/demo")
 async def demo_page():
     """Serve the demo chat interface."""
-    return FileResponse("demo.html")
+    return FileResponse("docs/demo.html")
 
 # Serve static files if they exist
 static_dir = "static"

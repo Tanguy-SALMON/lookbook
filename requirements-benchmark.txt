@@ -1,0 +1,5 @@
+# Benchmark script requirements
+httpx>=0.25.0
+psutil>=5.9.0
+GPUtil>=1.4.0
+numpy>=1.21.0
