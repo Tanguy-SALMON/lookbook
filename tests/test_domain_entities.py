@@ -14,10 +14,26 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from lookbook_mpc.domain.entities import (
-    Item, Outfit, OutfitItem, Rule, Intent,
-    Size, Category, Material, Pattern, Season, Occasion, Fit, Role,
-    VisionAttributes, RecommendationRequest, RecommendationResponse,
-    IngestRequest, IngestResponse, ChatRequest, ChatResponse
+    Item,
+    Outfit,
+    OutfitItem,
+    Rule,
+    Intent,
+    Size,
+    Category,
+    Material,
+    Pattern,
+    Season,
+    Occasion,
+    Fit,
+    Role,
+    VisionAttributes,
+    RecommendationRequest,
+    RecommendationResponse,
+    IngestRequest,
+    IngestResponse,
+    ChatRequest,
+    ChatResponse,
 )
 
 
@@ -65,7 +81,7 @@ class TestItem:
             size_range=[Size.S, Size.M, Size.L],
             image_key="test-image.jpg",
             attributes={"color": "blue", "material": "cotton"},
-            in_stock=True
+            in_stock=True,
         )
 
         assert item.sku == "TEST001"
@@ -80,7 +96,13 @@ class TestItem:
         """Test item validation."""
         # Test negative price
         with pytest.raises(ValueError, match="price cannot be negative"):
-            Item(sku="TEST001", title="Test", price=-10.0, size_range=[], image_key="test.jpg")
+            Item(
+                sku="TEST001",
+                title="Test",
+                price=-10.0,
+                size_range=[],
+                image_key="test.jpg",
+            )
 
         # Test empty SKU
         with pytest.raises(ValueError):
@@ -88,12 +110,25 @@ class TestItem:
 
         # Test invalid size range
         with pytest.raises(ValueError):
-            Item(sku="TEST001", title="Test", price=10.0, size_range="invalid", image_key="test.jpg")
+            Item(
+                sku="TEST001",
+                title="Test",
+                price=10.0,
+                size_range="invalid",
+                image_key="test.jpg",
+            )
 
         # Test too many sizes
-        with pytest.raises(ValueError, match="size_range cannot have more than 20 sizes"):
-            Item(sku="TEST001", title="Test", price=10.0,
-                 size_range=[Size.S] * 25, image_key="test.jpg")
+        with pytest.raises(
+            ValueError, match="size_range cannot have more than 20 sizes"
+        ):
+            Item(
+                sku="TEST001",
+                title="Test",
+                price=10.0,
+                size_range=[Size.S] * 25,
+                image_key="test.jpg",
+            )
 
 
 class TestOutfit:
@@ -105,7 +140,7 @@ class TestOutfit:
             title="Summer Casual",
             intent_tags={"occasion": "casual", "season": "summer"},
             rationale="Perfect for warm weather",
-            score=0.85
+            score=0.85,
         )
 
         assert outfit.title == "Summer Casual"
@@ -129,11 +164,7 @@ class TestOutfitItem:
 
     def test_outfit_item_creation(self):
         """Test creating a valid outfit item."""
-        outfit_item = OutfitItem(
-            outfit_id=1,
-            item_id=2,
-            role=Role.TOP
-        )
+        outfit_item = OutfitItem(outfit_id=1, item_id=2, role=Role.TOP)
 
         assert outfit_item.outfit_id == 1
         assert outfit_item.item_id == 2
@@ -150,7 +181,9 @@ class TestOutfitItem:
             OutfitItem(outfit_id=1, item_id=-2, role=Role.TOP)
 
         # Test same outfit and item ID
-        with pytest.raises(ValueError, match="outfit_id and item_id cannot be the same"):
+        with pytest.raises(
+            ValueError, match="outfit_id and item_id cannot be the same"
+        ):
             OutfitItem(outfit_id=1, item_id=1, role=Role.TOP)
 
 
@@ -164,7 +197,7 @@ class TestRule:
             intent="yoga",
             constraints={"category": ["activewear"], "material": ["stretch"]},
             priority=5,
-            is_active=True
+            is_active=True,
         )
 
         assert rule.name == "Yoga Rule"
@@ -202,7 +235,7 @@ class TestIntent:
             palette=["dark", "monochrome"],
             formality="casual",
             timeframe="this_weekend",
-            size=Size.L
+            size=Size.L,
         )
 
         assert intent.intent == "recommend_outfits"
@@ -222,7 +255,9 @@ class TestIntent:
             Intent(intent="")
 
         # Test negative budget
-        with pytest.raises(ValueError, match="budget_max must be positive when specified"):
+        with pytest.raises(
+            ValueError, match="budget_max must be positive when specified"
+        ):
             Intent(intent="test", budget_max=-10.0)
 
         # Test invalid objectives
@@ -230,7 +265,9 @@ class TestIntent:
             Intent(intent="test", objectives="invalid")
 
         # Test too many objectives
-        with pytest.raises(ValueError, match="objectives cannot have more than 10 items"):
+        with pytest.raises(
+            ValueError, match="objectives cannot have more than 10 items"
+        ):
             Intent(intent="test", objectives=["obj"] * 15)
 
 
@@ -249,7 +286,7 @@ class TestVisionAttributes:
             occasion=Occasion.CASUAL,
             fit=Fit.REGULAR,
             plus_size=False,
-            description="A casual blue cotton top"
+            description="A casual blue cotton top",
         )
 
         assert attrs.color == "blue"
@@ -284,7 +321,7 @@ class TestRecommendationRequest:
             budget=80.0,
             size=Size.L,
             week="2025-W40",
-            preferences={"palette": ["dark"]}
+            preferences={"palette": ["dark"]},
         )
 
         assert request.text_query == "I want to do yoga"
@@ -311,8 +348,10 @@ class TestRecommendationResponse:
         """Test creating a valid recommendation response."""
         response = RecommendationResponse(
             constraints_used={"intent": "yoga", "budget_max": 50.0},
-            outfits=[{"items": [], "score": 0.8, "rationale": "test"}],
-            request_id="test123"
+            outfits=[
+                Outfit(title="Test Outfit", items=[], score=0.8, rationale="test")
+            ],
+            request_id="test123",
         )
 
         assert response.constraints_used == {"intent": "yoga", "budget_max": 50.0}
@@ -331,7 +370,10 @@ class TestRecommendationResponse:
 
         # Test too many outfits
         with pytest.raises(ValueError, match="cannot return more than 20 outfits"):
-            outfits = [{"items": [], "score": 0.8, "rationale": "test"}] * 25
+            outfits = [
+                Outfit(title=f"Test Outfit {i}", items=[], score=0.8, rationale="test")
+                for i in range(25)
+            ]
             RecommendationResponse(constraints_used={}, outfits=outfits)
 
 
@@ -361,9 +403,7 @@ class TestIngestResponse:
     def test_ingest_response_creation(self):
         """Test creating a valid ingest response."""
         response = IngestResponse(
-            status="completed",
-            items_processed=50,
-            request_id="ingest_123"
+            status="completed", items_processed=50, request_id="ingest_123"
         )
 
         assert response.status == "completed"
@@ -387,8 +427,7 @@ class TestChatRequest:
     def test_chat_request_creation(self):
         """Test creating a valid chat request."""
         request = ChatRequest(
-            session_id="session_123",
-            message="Hello, I need help finding an outfit"
+            session_id="session_123", message="Hello, I need help finding an outfit"
         )
 
         assert request.session_id == "session_123"
@@ -413,8 +452,10 @@ class TestChatResponse:
         response = ChatResponse(
             session_id="session_123",
             replies=[{"type": "text", "message": "Hello!"}],
-            outfits=[{"items": [], "score": 0.8, "rationale": "test"}],
-            request_id="chat_123"
+            outfits=[
+                Outfit(title="Test Outfit", items=[], score=0.8, rationale="test")
+            ],
+            request_id="chat_123",
         )
 
         assert response.session_id == "session_123"

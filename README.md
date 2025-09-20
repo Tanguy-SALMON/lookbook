@@ -231,6 +231,21 @@ The service exposes MCP tools for LLM clients:
 
 MCP server available at: `http://localhost:8000/mcp`
 
+## Knowledge Base & Documentation
+
+For detailed technical information, troubleshooting, and development guidance:
+
+- **📖 [PROJECT_KNOWLEDGE_BASE.md](PROJECT_KNOWLEDGE_BASE.md)** - Complete technical documentation
+- **⚡ [QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Essential commands and configuration
+- **🔧 Product Import System** - Transfer products from Magento (cos-magento-4) to lookbookMPC
+- **💰 Thai Market Focus** - Pricing in Thai Baht (THB), localized for Thailand
+
+### Key Information for Developers:
+- **Database:** MySQL setup with Magento source and application destination
+- **Currency:** Thai Baht (฿1,090 - ฿10,990 product range)
+- **Tests:** 117 tests passing ✅
+- **Environment:** Requires `MYSQL_SHOP_URL` and `MYSQL_APP_URL` configuration
+
 ## Contributing
 
 1. Fork the repository

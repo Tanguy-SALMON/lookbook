@@ -17,7 +17,12 @@ import aiomysql
 from urllib.parse import urlparse
 
 from lookbook_mpc.domain.entities import (
-    Item, Outfit, OutfitItem, Rule, Intent, VisionAttributes
+    Item,
+    Outfit,
+    OutfitItem,
+    Rule,
+    Intent,
+    VisionAttributes,
 )
 
 logger = structlog.get_logger()
@@ -66,6 +71,12 @@ class MySQLLookbookRepository(LookbookRepository):
         self._lock = asyncio.Lock()
         self._parsed_url = urlparse(database_url)
 
+        # Handle special characters in password
+        if self._parsed_url.password and "@COS(*)" in self._parsed_url.password:
+            self.password = self._parsed_url.password.replace("@COS(*)", "@COS(*)")
+        else:
+            self.password = self._parsed_url.password
+
     async def _get_connection(self):
         """Get database connection."""
         return await aiomysql.connect(
@@ -74,10 +85,12 @@ class MySQLLookbookRepository(LookbookRepository):
             user=self._parsed_url.username,
             password=self._parsed_url.password,
             db=self._parsed_url.path[1:],  # Remove leading slash
-            autocommit=True
+            autocommit=True,
         )
 
-    async def batch_upsert_products(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    async def batch_upsert_products(
+        self, items: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """
         Efficiently upsert products in batch using INSERT OR REPLACE.
 
@@ -113,68 +126,117 @@ class MySQLLookbookRepository(LookbookRepository):
                         price = float(item.get("price", 0.0))
                         size_range = json.dumps(item.get("size_range", []))
                         image_key = str(item.get("image_key", ""))
-                        attributes = json.dumps(item.get("attributes", {}))
                         in_stock = int(item.get("in_stock", True))
                         season = str(item.get("season")) if item.get("season") else None
-                        url_key = str(item.get("url_key")) if item.get("url_key") else None
+                        url_key = (
+                            str(item.get("url_key")) if item.get("url_key") else None
+                        )
                         product_created_at = item.get("product_created_at")
                         stock_qty = int(item.get("stock_qty", 0))
-                        category = str(item.get("category")) if item.get("category") else None
+                        category = (
+                            str(item.get("category")) if item.get("category") else None
+                        )
                         color = str(item.get("color")) if item.get("color") else None
-                        material = str(item.get("material")) if item.get("material") else None
-                        pattern = str(item.get("pattern")) if item.get("pattern") else None
-                        occasion = str(item.get("occasion")) if item.get("occasion") else None
+                        material = (
+                            str(item.get("material")) if item.get("material") else None
+                        )
+                        pattern = (
+                            str(item.get("pattern")) if item.get("pattern") else None
+                        )
+                        occasion = (
+                            str(item.get("occasion")) if item.get("occasion") else None
+                        )
                         updated_at = datetime.utcnow().isoformat()
 
                         # Check if product exists
-                        await cursor.execute("SELECT id FROM products WHERE sku = %s", (sku,))
+                        await cursor.execute(
+                            "SELECT id FROM products WHERE sku = %s", (sku,)
+                        )
                         existing_id = await cursor.fetchone()
 
                         if existing_id:
                             # Update existing product
-                            await cursor.execute("""
+                            await cursor.execute(
+                                """
                                 UPDATE products SET
                                     title = %s, price = %s, size_range = %s, image_key = %s,
-                                    attributes = %s, in_stock = %s, season = %s, url_key = %s,
+                                    in_stock = %s, season = %s, url_key = %s,
                                     product_created_at = %s, stock_qty = %s, category = %s,
                                     color = %s, material = %s, pattern = %s, occasion = %s,
                                     updated_at = %s
                                 WHERE sku = %s
-                            """, (
-                                title, price, size_range, image_key, attributes, in_stock,
-                                season, url_key, product_created_at, stock_qty, category,
-                                color, material, pattern, occasion, updated_at, sku
-                            ))
+                            """,
+                                (
+                                    title,
+                                    price,
+                                    size_range,
+                                    image_key,
+                                    in_stock,
+                                    season,
+                                    url_key,
+                                    product_created_at,
+                                    stock_qty,
+                                    category,
+                                    color,
+                                    material,
+                                    pattern,
+                                    occasion,
+                                    updated_at,
+                                    sku,
+                                ),
+                            )
                             updated_count += 1
                         else:
                             # Insert new product
-                            await cursor.execute("""
+                            await cursor.execute(
+                                """
                                 INSERT INTO products (
-                                    sku, title, price, size_range, image_key, attributes,
+                                    sku, title, price, size_range, image_key,
                                     in_stock, season, url_key, product_created_at, stock_qty,
                                     category, color, material, pattern, occasion, updated_at
-                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            """, (
-                                sku, title, price, size_range, image_key, attributes,
-                                in_stock, season, url_key, product_created_at, stock_qty,
-                                category, color, material, pattern, occasion, updated_at
-                            ))
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """,
+                                (
+                                    sku,
+                                    title,
+                                    price,
+                                    size_range,
+                                    image_key,
+                                    in_stock,
+                                    season,
+                                    url_key,
+                                    product_created_at,
+                                    stock_qty,
+                                    category,
+                                    color,
+                                    material,
+                                    pattern,
+                                    occasion,
+                                    updated_at,
+                                ),
+                            )
                             upserted_count += 1
 
                     except Exception as e:
-                        self.logger.error(f"Error processing item {item.get('sku', 'unknown')}: {e}")
+                        self.logger.error(
+                            f"Error processing item {item.get('sku', 'unknown')}: {e}"
+                        )
                         continue
 
                 await cursor.close()
                 conn.close()
 
-                self.logger.info("Successfully batch upserted products",
-                               upserted=upserted_count, updated=updated_count, total=len(items))
+                self.logger.info(
+                    "Successfully batch upserted products",
+                    upserted=upserted_count,
+                    updated=updated_count,
+                    total=len(items),
+                )
                 return {
                     "upserted": upserted_count,
                     "updated": updated_count,
                     "skus": [item["sku"] for item in items],
-                    "total_in_db": upserted_count + updated_count
+                    "total_in_db": upserted_count + updated_count,
                 }
 
         except Exception as e:
@@ -220,7 +282,7 @@ class MySQLLookbookRepository(LookbookRepository):
                         "color": row[15],
                         "material": row[16],
                         "pattern": row[17],
-                        "occasion": row[18]
+                        "occasion": row[18],
                     }
                     items.append(item)
 
@@ -261,17 +323,17 @@ class MySQLLookbookRepository(LookbookRepository):
                     params.append(f'"{intent.size}"')
 
                 # Filter by category using new column
-                if hasattr(intent, 'category') and intent.category:
+                if hasattr(intent, "category") and intent.category:
                     query += " AND category = %s"
                     params.append(intent.category)
 
                 # Filter by color using new column
-                if hasattr(intent, 'color') and intent.color:
+                if hasattr(intent, "color") and intent.color:
                     query += " AND color = %s"
                     params.append(intent.color)
 
                 # Filter by material using new column
-                if hasattr(intent, 'material') and intent.material:
+                if hasattr(intent, "material") and intent.material:
                     query += " AND material = %s"
                     params.append(intent.material)
 
@@ -281,7 +343,7 @@ class MySQLLookbookRepository(LookbookRepository):
                     params.append(intent.occasion)
 
                 # Filter by season using new column
-                if hasattr(intent, 'season') and intent.season:
+                if hasattr(intent, "season") and intent.season:
                     query += " AND season = %s"
                     params.append(intent.season)
 
@@ -315,7 +377,7 @@ class MySQLLookbookRepository(LookbookRepository):
                         "color": row[15],
                         "material": row[16],
                         "pattern": row[17],
-                        "occasion": row[18]
+                        "occasion": row[18],
                     }
                     items.append(item)
 
@@ -346,41 +408,41 @@ class MySQLLookbookRepository(LookbookRepository):
                 params = []
 
                 # Apply filters using new columns
-                if 'category' in filters:
+                if "category" in filters:
                     query += " AND category = %s"
-                    params.append(filters['category'])
+                    params.append(filters["category"])
 
-                if 'color' in filters:
+                if "color" in filters:
                     query += " AND color = %s"
-                    params.append(filters['color'])
+                    params.append(filters["color"])
 
-                if 'material' in filters:
+                if "material" in filters:
                     query += " AND material = %s"
-                    params.append(filters['material'])
+                    params.append(filters["material"])
 
-                if 'size' in filters:
+                if "size" in filters:
                     query += " AND (JSON_CONTAINS(size_range, %s) OR size_range = '[\"ONE_SIZE\"]')"
                     params.append(f'"{filters["size"]}"')
 
-                if 'max_price' in filters:
+                if "max_price" in filters:
                     query += " AND price <= %s"
-                    params.append(filters['max_price'])
+                    params.append(filters["max_price"])
 
-                if 'min_price' in filters:
+                if "min_price" in filters:
                     query += " AND price >= %s"
-                    params.append(filters['min_price'])
+                    params.append(filters["min_price"])
 
-                if 'pattern' in filters:
+                if "pattern" in filters:
                     query += " AND pattern = %s"
-                    params.append(filters['pattern'])
+                    params.append(filters["pattern"])
 
-                if 'season' in filters:
+                if "season" in filters:
                     query += " AND season = %s"
-                    params.append(filters['season'])
+                    params.append(filters["season"])
 
-                if 'occasion' in filters:
+                if "occasion" in filters:
                     query += " AND occasion = %s"
-                    params.append(filters['occasion'])
+                    params.append(filters["occasion"])
 
                 await cursor.execute(query, params)
                 rows = await cursor.fetchall()
@@ -412,7 +474,7 @@ class MySQLLookbookRepository(LookbookRepository):
                         "color": row[15],
                         "material": row[16],
                         "pattern": row[17],
-                        "occasion": row[18]
+                        "occasion": row[18],
                     }
                     items.append(item)
 
@@ -466,7 +528,7 @@ class MySQLLookbookRepository(LookbookRepository):
                         "color": row[15],
                         "material": row[16],
                         "pattern": row[17],
-                        "occasion": row[18]
+                        "occasion": row[18],
                     }
                     return item
                 else:
@@ -570,10 +632,10 @@ class MockLookbookRepository(LookbookRepository):
                         "color": "white",
                         "category": "top",
                         "material": "cotton",
-                        "pattern": "plain"
+                        "pattern": "plain",
                     }
                 },
-                "in_stock": True
+                "in_stock": True,
             },
             {
                 "id": 2,
@@ -587,11 +649,11 @@ class MockLookbookRepository(LookbookRepository):
                         "color": "blue",
                         "category": "bottom",
                         "material": "denim",
-                        "pattern": "plain"
+                        "pattern": "plain",
                     }
                 },
-                "in_stock": True
-            }
+                "in_stock": True,
+            },
         ]
 
     async def save_items(self, items: List[Dict[str, Any]]) -> int:
@@ -603,7 +665,12 @@ class MockLookbookRepository(LookbookRepository):
         """Get mock items by intent."""
         # Simple mock filtering
         if intent.get("occasion") == "casual":
-            return [item for item in self.mock_items if item["attributes"].get("vision_attributes", {}).get("category") in ["top", "bottom"]]
+            return [
+                item
+                for item in self.mock_items
+                if item["attributes"].get("vision_attributes", {}).get("category")
+                in ["top", "bottom"]
+            ]
         return self.mock_items
 
     async def get_all_items(self) -> List[Dict[str, Any]]:
@@ -616,7 +683,12 @@ class MockLookbookRepository(LookbookRepository):
         results = self.mock_items
         if filters.get("category"):
             category = filters["category"]
-            results = [item for item in results if item["attributes"].get("vision_attributes", {}).get("category") == category]
+            results = [
+                item
+                for item in results
+                if item["attributes"].get("vision_attributes", {}).get("category")
+                == category
+            ]
         return results
 
     async def get_item_by_id(self, item_id: int) -> Optional[Dict[str, Any]]:

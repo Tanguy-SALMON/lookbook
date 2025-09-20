@@ -6,14 +6,22 @@ domain operations and coordinate between adapters and services.
 """
 
 from abc import ABC, abstractmethod
+import uuid
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from .entities import (
-    Item, Outfit, OutfitItem, Rule, Intent,
-    RecommendationRequest, RecommendationResponse,
-    IngestRequest, IngestResponse,
-    ChatRequest, ChatResponse,
-    VisionAttributes
+    Item,
+    Outfit,
+    OutfitItem,
+    Rule,
+    Intent,
+    RecommendationRequest,
+    RecommendationResponse,
+    IngestRequest,
+    IngestResponse,
+    ChatRequest,
+    ChatResponse,
+    VisionAttributes,
 )
 
 
@@ -47,8 +55,7 @@ class IngestItems(UseCase):
         try:
             # Fetch items from shop catalog
             shop_items = await self.shop_adapter.fetch_items(
-                limit=request.limit,
-                since=request.since
+                limit=request.limit, since=request.since
             )
 
             # Process items through vision analysis
@@ -56,7 +63,9 @@ class IngestItems(UseCase):
             for item in shop_items:
                 try:
                     # Analyze item image
-                    vision_attrs = await self.vision_adapter.analyze_image(item.image_key)
+                    vision_attrs = await self.vision_adapter.analyze_image(
+                        item.image_key
+                    )
 
                     # Create enhanced item with vision attributes
                     enhanced_item = Item(
@@ -67,9 +76,9 @@ class IngestItems(UseCase):
                         image_key=item.image_key,
                         attributes={
                             **item.attributes,
-                            "vision_attributes": vision_attrs.dict()
+                            "vision_attributes": vision_attrs.dict(),
                         },
-                        in_stock=item.in_stock
+                        in_stock=item.in_stock,
                     )
 
                     processed_items.append(enhanced_item)
@@ -85,14 +94,14 @@ class IngestItems(UseCase):
             return IngestResponse(
                 status="completed",
                 items_processed=saved_count,
-                request_id=f"ingest_{datetime.now().isoformat()}"
+                request_id=f"ingest_{datetime.now().isoformat()}",
             )
 
         except Exception as e:
             return IngestResponse(
                 status="failed",
                 items_processed=0,
-                request_id=f"ingest_{datetime.now().isoformat()}"
+                request_id=f"ingest_{datetime.now().isoformat()}",
             )
 
 
@@ -135,9 +144,7 @@ class RecommendOutfits(UseCase):
 
             # Generate recommendations
             recommendations = await self.recommender_service.generate_recommendations(
-                intent=intent,
-                candidate_items=candidate_items,
-                max_outfits=7
+                intent=intent, candidate_items=candidate_items, max_outfits=7
             )
 
             # Build constraints used for response
@@ -150,13 +157,13 @@ class RecommendOutfits(UseCase):
                 "palette": intent.palette,
                 "formality": intent.formality,
                 "timeframe": intent.timeframe,
-                "size": intent.size
+                "size": intent.size,
             }
 
             return RecommendationResponse(
                 constraints_used=constraints_used,
                 outfits=recommendations,
-                request_id=f"recommend_{datetime.now().isoformat()}"
+                request_id=f"recommend_{datetime.now().isoformat()}",
             )
 
         except Exception as e:
@@ -164,7 +171,7 @@ class RecommendOutfits(UseCase):
             return RecommendationResponse(
                 constraints_used={},
                 outfits=[],
-                request_id=f"recommend_{datetime.now().isoformat()}"
+                request_id=f"recommend_{datetime.now().isoformat()}",
             )
 
 
@@ -194,9 +201,7 @@ class BuildLookbook(UseCase):
             outfits = []
             for i in range(5):  # Generate 5 outfits per theme
                 outfit = await self.recommender_service.generate_outfit_for_theme(
-                    theme=theme,
-                    items=all_items,
-                    constraints=constraints
+                    theme=theme, items=all_items, constraints=constraints
                 )
                 if outfit:
                     outfits.append(outfit)
@@ -239,25 +244,27 @@ class ChatTurn(UseCase):
 
             # Handle both dict and Intent object
             if isinstance(intent, dict):
-                intent_str = intent.get('intent', '').lower() if intent.get('intent') else ""
+                intent_str = (
+                    intent.get("intent", "").lower() if intent.get("intent") else ""
+                )
 
                 if "recommend" in intent_str or "outfit" in intent_str:
                     # Generate outfit recommendations
                     recommendation_request = RecommendationRequest(
                         text_query=request.message,
-                        budget=intent.get('budget_max'),
-                        size=intent.get('size'),
+                        budget=intent.get("budget_max"),
+                        size=intent.get("size"),
                         preferences={
-                            "objectives": intent.get('objectives', []),
-                            "palette": intent.get('palette')
-                        }
+                            "objectives": intent.get("objectives", []),
+                            "palette": intent.get("palette"),
+                        },
                     )
 
                     try:
                         recommendation_response = await RecommendOutfits(
                             self.recommender_service,
                             self.lookbook_repo,
-                            self.intent_parser
+                            self.intent_parser,
                         ).execute(recommendation_request)
 
                         outfits = recommendation_response.outfits
@@ -266,16 +273,20 @@ class ChatTurn(UseCase):
 
                     # Build response message
                     if outfits:
-                        replies.append({
-                            "type": "recommendations",
-                            "message": f"I found {len(outfits)} outfit(s) for you!",
-                            "outfits": len(outfits)
-                        })
+                        replies.append(
+                            {
+                                "type": "recommendations",
+                                "message": f"I found {len(outfits)} outfit(s) for you!",
+                                "outfits": len(outfits),
+                            }
+                        )
                     else:
-                        replies.append({
-                            "type": "no_results",
-                            "message": "I couldn't find any outfits matching your criteria. Let me try a different search."
-                        })
+                        replies.append(
+                            {
+                                "type": "no_results",
+                                "message": "I couldn't find any outfits matching your criteria. Let me try a different search.",
+                            }
+                        )
             else:
                 # Handle Intent object (for real LLM parser)
                 intent_str = intent.intent.lower() if intent.intent else ""
@@ -287,15 +298,15 @@ class ChatTurn(UseCase):
                         size=intent.size,
                         preferences={
                             "objectives": intent.objectives,
-                            "palette": intent.palette
-                        }
+                            "palette": intent.palette,
+                        },
                     )
 
                     try:
                         recommendation_response = await RecommendOutfits(
                             self.recommender_service,
                             self.lookbook_repo,
-                            self.intent_parser
+                            self.intent_parser,
                         ).execute(recommendation_request)
 
                         outfits = recommendation_response.outfits
@@ -304,51 +315,63 @@ class ChatTurn(UseCase):
 
                     # Build response message
                     if outfits:
-                        replies.append({
-                            "type": "recommendations",
-                            "message": f"I found {len(outfits)} outfit(s) for you!",
-                            "outfits": len(outfits)
-                        })
+                        replies.append(
+                            {
+                                "type": "recommendations",
+                                "message": f"I found {len(outfits)} outfit(s) for you!",
+                                "outfits": len(outfits),
+                            }
+                        )
                     else:
-                        replies.append({
-                            "type": "no_results",
-                            "message": "I couldn't find any outfits matching your criteria. Let me try a different search."
-                        })
+                        replies.append(
+                            {
+                                "type": "no_results",
+                                "message": "I couldn't find any outfits matching your criteria. Let me try a different search.",
+                            }
+                        )
             # Handle help and general cases for both dict and Intent object
             if isinstance(intent, dict):
-                intent_str = intent.get('intent', '').lower() if intent.get('intent') else ""
+                intent_str = (
+                    intent.get("intent", "").lower() if intent.get("intent") else ""
+                )
                 help_intent = "help" in intent_str
             else:
                 intent_str = intent.intent.lower() if intent.intent else ""
                 help_intent = "help" in intent_str
 
             if help_intent:
-                replies.append({
-                    "type": "help",
-                    "message": "I can help you find outfits! Try asking for recommendations based on occasions, activities, or styles."
-                })
+                replies.append(
+                    {
+                        "type": "help",
+                        "message": "I can help you find outfits! Try asking for recommendations based on occasions, activities, or styles.",
+                    }
+                )
             elif not ("recommend" in intent_str or "outfit" in intent_str):
-                replies.append({
-                    "type": "general",
-                    "message": "I understand you're looking for fashion help. Could you tell me more about what you need?"
-                })
+                replies.append(
+                    {
+                        "type": "general",
+                        "message": "I understand you're looking for fashion help. Could you tell me more about what you need?",
+                    }
+                )
 
             return ChatResponse(
-                session_id=request.session_id or f"chat_{datetime.now().isoformat()}",
+                session_id=request.session_id or str(uuid.uuid4()),
                 replies=replies,
                 outfits=outfits if outfits else None,
-                request_id=f"chat_{datetime.now().isoformat()}"
+                request_id=str(uuid.uuid4()),
             )
 
         except Exception as e:
             return ChatResponse(
-                session_id=request.session_id or f"chat_{datetime.now().isoformat()}",
-                replies=[{
-                    "type": "error",
-                    "message": "I'm having trouble understanding your request. Could you please rephrase?"
-                }],
+                session_id=request.session_id or str(uuid.uuid4()),
+                replies=[
+                    {
+                        "type": "error",
+                        "message": "I'm having trouble understanding your request. Could you please rephrase?",
+                    }
+                ],
                 outfits=None,
-                request_id=f"chat_{datetime.now().isoformat()}"
+                request_id=str(uuid.uuid4()),
             )
 
 

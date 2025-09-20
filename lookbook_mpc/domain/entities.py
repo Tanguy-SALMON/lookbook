@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field, validator, root_validator, model_validato
 
 class Size(str, Enum):
     """Size enumeration for clothing items."""
+
     XS = "XS"
     S = "S"
     M = "M"
@@ -29,6 +30,7 @@ class Size(str, Enum):
 
 class Category(str, Enum):
     """Product category enumeration."""
+
     TOP = "top"
     BOTTOM = "bottom"
     DRESS = "dress"
@@ -54,6 +56,7 @@ class Category(str, Enum):
 
 class Material(str, Enum):
     """Material enumeration."""
+
     COTTON = "cotton"
     POLYESTER = "polyester"
     NYLON = "nylon"
@@ -80,6 +83,7 @@ class Material(str, Enum):
 
 class Pattern(str, Enum):
     """Pattern enumeration."""
+
     PLAIN = "plain"
     STRIPED = "striped"
     FLORAL = "floral"
@@ -104,6 +108,7 @@ class Pattern(str, Enum):
 
 class Season(str, Enum):
     """Season enumeration."""
+
     SPRING = "spring"
     SUMMER = "summer"
     AUTUMN = "autumn"
@@ -117,6 +122,7 @@ class Season(str, Enum):
 
 class Occasion(str, Enum):
     """Occasion enumeration."""
+
     CASUAL = "casual"
     BUSINESS = "business"
     FORMAL = "formal"
@@ -144,6 +150,7 @@ class Occasion(str, Enum):
 
 class Fit(str, Enum):
     """Fit enumeration."""
+
     SLIM = "slim"
     REGULAR = "regular"
     RELAXED = "relaxed"
@@ -166,6 +173,7 @@ class Fit(str, Enum):
 
 class Role(str, Enum):
     """Role enumeration for outfit items."""
+
     TOP = "top"
     BOTTOM = "bottom"
     SHOES = "shoes"
@@ -191,42 +199,46 @@ class Item(BaseModel):
     """Domain entity representing a fashion item."""
 
     id: Optional[int] = None
-    sku: str = Field(..., min_length=1, max_length=100, description="Stock Keeping Unit")
+    sku: str = Field(
+        ..., min_length=1, max_length=100, description="Stock Keeping Unit"
+    )
     title: str = Field(..., min_length=1, max_length=500, description="Product title")
     price: float = Field(..., ge=0, description="Product price")
     size_range: List[Size] = Field(default_factory=list, description="Available sizes")
-    image_key: str = Field(..., min_length=1, max_length=255, description="S3 image key")
-    attributes: Dict[str, Any] = Field(default_factory=dict, description="Product attributes")
+    image_key: str = Field(
+        ..., min_length=1, max_length=255, description="S3 image key"
+    )
+    attributes: Dict[str, Any] = Field(
+        default_factory=dict, description="Product attributes"
+    )
     in_stock: bool = Field(default=True, description="Item availability")
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    @validator('size_range')
+    @validator("size_range")
     def validate_size_range(cls, v):
         if not isinstance(v, list):
-            raise ValueError('size_range must be a list')
+            raise ValueError("size_range must be a list")
         if len(v) > 20:  # Reasonable limit
-            raise ValueError('size_range cannot have more than 20 sizes')
+            raise ValueError("size_range cannot have more than 20 sizes")
         return v
 
-    @validator('attributes')
+    @validator("attributes")
     def validate_attributes(cls, v):
         if not isinstance(v, dict):
-            raise ValueError('attributes must be a dictionary')
+            raise ValueError("attributes must be a dictionary")
         return v
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_item(cls, values):
-        if values.get('price') is not None and values.get('price') < 0:
-            raise ValueError('price cannot be negative')
+        if values.get("price") is not None and values.get("price") < 0:
+            raise ValueError("price cannot be negative")
         return values
 
     class Config:
         use_enum_values = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+        json_encoders = {datetime: lambda v: v.isoformat() if v else None}
 
 
 class Outfit(BaseModel):
@@ -239,23 +251,21 @@ class Outfit(BaseModel):
     score: Optional[float] = Field(None, description="Outfit score")
     created_at: Optional[datetime] = None
 
-    @validator('title')
+    @validator("title")
     def validate_title(cls, v):
         if not v or not v.strip():
-            raise ValueError('title cannot be empty')
+            raise ValueError("title cannot be empty")
         return v.strip()
 
-    @validator('intent_tags')
+    @validator("intent_tags")
     def validate_intent_tags(cls, v):
         if not isinstance(v, dict):
-            raise ValueError('intent_tags must be a dictionary')
+            raise ValueError("intent_tags must be a dictionary")
         return v
 
     class Config:
         use_enum_values = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+        json_encoders = {datetime: lambda v: v.isoformat() if v else None}
 
 
 class OutfitItem(BaseModel):
@@ -265,27 +275,27 @@ class OutfitItem(BaseModel):
     item_id: int = Field(..., ge=1, description="Foreign key to item")
     role: Role = Field(..., description="Role of item in outfit")
 
-    @validator('outfit_id')
+    @validator("outfit_id")
     def validate_outfit_id(cls, v):
         if v < 1:
-            raise ValueError('outfit_id must be positive')
+            raise ValueError("outfit_id must be positive")
         return v
 
-    @validator('item_id')
+    @validator("item_id")
     def validate_item_id(cls, v):
         if v < 1:
-            raise ValueError('item_id must be positive')
+            raise ValueError("item_id must be positive")
         return v
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_relationship(cls, values):
-        outfit_id = values.get('outfit_id')
-        item_id = values.get('item_id')
+        outfit_id = values.get("outfit_id")
+        item_id = values.get("item_id")
         if outfit_id and item_id:
             # Basic validation - in real app might check if relationship exists
             if outfit_id == item_id:
-                raise ValueError('outfit_id and item_id cannot be the same')
+                raise ValueError("outfit_id and item_id cannot be the same")
         return values
 
     class Config:
@@ -297,50 +307,53 @@ class Rule(BaseModel):
 
     id: Optional[int] = None
     name: str = Field(..., min_length=1, max_length=100, description="Rule name")
-    intent: str = Field(..., min_length=1, max_length=100, description="Intent this rule applies to")
-    constraints: Dict[str, Any] = Field(default_factory=dict, description="Rule constraints")
+    intent: str = Field(
+        ..., min_length=1, max_length=100, description="Intent this rule applies to"
+    )
+    constraints: Dict[str, Any] = Field(
+        default_factory=dict, description="Rule constraints"
+    )
     priority: int = Field(default=1, ge=1, le=10, description="Rule priority")
     is_active: bool = Field(default=True, description="Whether rule is active")
     created_at: Optional[datetime] = None
 
-    @validator('name')
+    @validator("name")
     def validate_name(cls, v):
         if not v or not v.strip():
-            raise ValueError('name cannot be empty')
+            raise ValueError("name cannot be empty")
         return v.strip()
 
-    @validator('intent')
+    @validator("intent")
     def validate_intent(cls, v):
         if not v or not v.strip():
-            raise ValueError('intent cannot be empty')
+            raise ValueError("intent cannot be empty")
         return v.strip()
 
-    @validator('constraints')
+    @validator("constraints")
     def validate_constraints(cls, v):
         if not isinstance(v, dict):
-            raise ValueError('constraints must be a dictionary')
+            raise ValueError("constraints must be a dictionary")
         return v
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_rule(cls, values):
-        name = values.get('name')
-        intent = values.get('intent')
+        name = values.get("name")
+        intent = values.get("intent")
         if name and intent and name == intent:
-            raise ValueError('name and intent cannot be the same')
+            raise ValueError("name and intent cannot be the same")
         return values
 
     class Config:
         use_enum_values = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+        json_encoders = {datetime: lambda v: v.isoformat() if v else None}
 
 
 class Intent(BaseModel):
     """Domain entity representing user intent."""
 
-    budget_max: Optional[float] = Field(None, ge=0, description="Maximum budget")
+    intent: Optional[str] = Field(None, description="Intent type")
+    budget_max: Optional[float] = Field(None, description="Maximum budget")
     size: Optional[Size] = Field(None, description="Preferred size")
     category: Optional[Category] = Field(None, description="Preferred category")
     color: Optional[str] = Field(None, description="Preferred color")
@@ -349,6 +362,38 @@ class Intent(BaseModel):
     season: Optional[Season] = Field(None, description="Preferred season")
     occasion: Optional[Occasion] = Field(None, description="Preferred occasion")
     fit: Optional[Fit] = Field(None, description="Preferred fit")
+    activity: Optional[str] = Field(None, description="Activity type")
+    objectives: Optional[List[str]] = Field(None, description="Objectives")
+    palette: Optional[List[str]] = Field(None, description="Color palette")
+    formality: Optional[str] = Field(None, description="Formality level")
+    timeframe: Optional[str] = Field(None, description="Timeframe")
+
+    @validator("intent")
+    def validate_intent(cls, v):
+        if v is not None and v == "":
+            raise ValueError("intent cannot be empty")
+        return v
+
+    @validator("budget_max")
+    def validate_budget_max(cls, v):
+        if v is not None and v < 0:
+            raise ValueError("budget_max must be positive when specified")
+        return v
+
+    @validator("objectives")
+    def validate_objectives(cls, v):
+        if v is not None:
+            if not isinstance(v, list):
+                raise ValueError("objectives must be a list")
+            if len(v) > 10:
+                raise ValueError("objectives cannot have more than 10 items")
+        return v
+
+    @validator("palette")
+    def validate_palette(cls, v):
+        if v is not None and not isinstance(v, list):
+            raise ValueError("palette must be a list")
+        return v
 
     class Config:
         use_enum_values = True
@@ -364,6 +409,17 @@ class VisionAttributes(BaseModel):
     fit: Optional[Fit] = Field(None, description="Detected fit")
     occasion: Optional[Occasion] = Field(None, description="Detected occasion")
     season: Optional[Season] = Field(None, description="Detected season")
+    style: Optional[str] = Field(None, description="Detected style")
+    plus_size: Optional[bool] = Field(None, description="Plus size indicator")
+    description: Optional[str] = Field(None, description="Human-readable description")
+
+    @validator("color")
+    def validate_color(cls, v):
+        if v is not None:
+            if not v or not v.strip():
+                raise ValueError("color cannot be empty")
+            return v.strip().lower()
+        return v
 
     class Config:
         use_enum_values = True
@@ -373,11 +429,28 @@ class VisionAttributes(BaseModel):
 class RecommendationRequest(BaseModel):
     """Request model for outfit recommendations."""
 
-    text_query: str = Field(..., description="User's text query")
+    text_query: str = Field(..., min_length=1, description="User's text query")
     budget: Optional[float] = Field(None, ge=0, description="Maximum budget")
     size: Optional[Size] = Field(None, description="Preferred size")
     week: Optional[str] = Field(None, description="Timeframe/week")
-    preferences: Optional[Dict[str, Any]] = Field(None, description="Additional preferences")
+    preferences: Optional[Dict[str, Any]] = Field(
+        None, description="Additional preferences"
+    )
+
+    @validator("text_query")
+    def validate_text_query(cls, v):
+        if not v or not v.strip():
+            raise ValueError("text_query cannot be empty")
+        return v.strip()
+
+    @validator("preferences")
+    def validate_preferences(cls, v):
+        if v is not None:
+            if "objectives" in v and not isinstance(v["objectives"], list):
+                raise ValueError("objectives must be a list")
+            if "palette" in v and not isinstance(v["palette"], (str, list)):
+                raise ValueError("palette must be a string or list")
+        return v
 
     class Config:
         use_enum_values = True
@@ -386,26 +459,42 @@ class RecommendationRequest(BaseModel):
 class RecommendationResponse(BaseModel):
     """Response model for outfit recommendations."""
 
-    constraints_used: Dict[str, Any] = Field(default_factory=dict, description="Constraints used for recommendations")
-    outfits: List[Outfit] = Field(default_factory=list, description="Recommended outfits")
+    constraints_used: Dict[str, Any] = Field(
+        default_factory=dict, description="Constraints used for recommendations"
+    )
+    outfits: List[Outfit] = Field(
+        default_factory=list, description="Recommended outfits"
+    )
     request_id: str = Field(..., description="Request identifier")
 
+    @validator("outfits")
+    def validate_outfits(cls, v):
+        if len(v) > 20:
+            raise ValueError("cannot return more than 20 outfits")
+        return v
+
+    @validator("request_id")
+    def validate_request_id(cls, v):
+        if not v or not v.strip():
+            raise ValueError("request_id cannot be empty")
+        return v.strip()
+
     class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+        json_encoders = {datetime: lambda v: v.isoformat() if v else None}
 
 
 class IngestRequest(BaseModel):
     """Request model for item ingestion."""
 
-    limit: Optional[int] = Field(None, ge=1, le=1000, description="Maximum number of items to ingest")
-    since: Optional[datetime] = Field(None, description="Ingest items updated since this timestamp")
+    limit: Optional[int] = Field(
+        None, ge=1, le=1000, description="Maximum number of items to ingest"
+    )
+    since: Optional[datetime] = Field(
+        None, description="Ingest items updated since this timestamp"
+    )
 
     class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+        json_encoders = {datetime: lambda v: v.isoformat() if v else None}
 
 
 class IngestResponse(BaseModel):
@@ -416,33 +505,59 @@ class IngestResponse(BaseModel):
     request_id: str = Field(..., description="Request identifier")
 
     class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+        json_encoders = {datetime: lambda v: v.isoformat() if v else None}
 
 
 class ChatRequest(BaseModel):
     """Request model for chat interactions."""
 
     session_id: Optional[str] = Field(None, description="Session identifier")
-    message: str = Field(..., description="User message")
+    message: str = Field(..., min_length=1, description="User message")
     context: Optional[Dict[str, Any]] = Field(None, description="Chat context")
 
+    @validator("message")
+    def validate_message(cls, v):
+        if not v or not v.strip():
+            raise ValueError("message cannot be empty")
+        return v.strip()
+
+    @validator("session_id")
+    def validate_session_id(cls, v):
+        if v is not None and (not v.strip() or v.strip() == ""):
+            raise ValueError("session_id cannot be empty string")
+        return v
+
     class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+        json_encoders = {datetime: lambda v: v.isoformat() if v else None}
 
 
 class ChatResponse(BaseModel):
     """Response model for chat interactions."""
 
     session_id: str = Field(..., description="Session identifier")
-    replies: List[Dict[str, Any]] = Field(default_factory=list, description="Response messages")
+    replies: List[Dict[str, Any]] = Field(
+        default_factory=list, description="Response messages"
+    )
     outfits: Optional[List[Outfit]] = Field(None, description="Recommended outfits")
     request_id: str = Field(..., description="Request identifier")
 
+    @validator("replies")
+    def validate_replies(cls, v):
+        if len(v) > 10:
+            raise ValueError("cannot return more than 10 replies")
+        return v
+
+    @validator("session_id")
+    def validate_session_id(cls, v):
+        if not v or not v.strip():
+            raise ValueError("session_id cannot be empty")
+        return v.strip()
+
+    @validator("request_id")
+    def validate_request_id(cls, v):
+        if not v or not v.strip():
+            raise ValueError("request_id cannot be empty")
+        return v.strip()
+
     class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat() if v else None
-        }
+        json_encoders = {datetime: lambda v: v.isoformat() if v else None}

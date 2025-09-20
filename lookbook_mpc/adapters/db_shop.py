@@ -21,7 +21,9 @@ class ShopCatalogAdapter(ABC):
     """Abstract base class for shop catalog adapters."""
 
     @abstractmethod
-    async def fetch_items(self, limit: Optional[int] = None, since: Optional[datetime] = None) -> List[Dict[str, Any]]:
+    async def fetch_items(
+        self, limit: Optional[int] = None, since: Optional[datetime] = None
+    ) -> List[Dict[str, Any]]:
         """Fetch items from shop catalog."""
         pass
 
@@ -47,10 +49,12 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
             user=self._parsed_url.username,
             password=self._parsed_url.password,
             db=self._parsed_url.path[1:],  # Remove leading slash
-            autocommit=True
+            autocommit=True,
         )
 
-    async def fetch_items(self, limit: Optional[int] = None, since: Optional[datetime] = None) -> List[Dict[str, Any]]:
+    async def fetch_items(
+        self, limit: Optional[int] = None, since: Optional[datetime] = None
+    ) -> List[Dict[str, Any]]:
         """
         Fetch in-stock items from Magento catalog.
 
@@ -62,29 +66,53 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
             List of item dictionaries with basic information
         """
         try:
-            self.logger.info("Fetching items from shop catalog", limit=limit, since=since)
+            self.logger.info(
+                "Fetching items from shop catalog", limit=limit, since=since
+            )
 
             query = """
                 SELECT DISTINCT
                     p.sku,
                     eav.value as gc_swatchimage,
-                    price.value as price,
+                    COALESCE(
+                        price.value,
+                        (SELECT MIN(child_price.value)
+                         FROM catalog_product_super_link super_link
+                         JOIN catalog_product_entity child ON super_link.product_id = child.entity_id
+                         JOIN catalog_product_entity_decimal child_price ON child.entity_id = child_price.entity_id
+                         WHERE super_link.parent_id = p.entity_id
+                         AND child_price.attribute_id = 77
+                         AND child_price.store_id = 0
+                         AND child_price.value > 0)
+                    ) as price,
                     name.value as product_name,
                     url.value as url_key,
                     status.value as status,
-                    csi.qty as stock_qty,
+                    COALESCE(csi.qty, 0) as stock_qty,
                     season.value as season,
-                    p.created_at
+                    color_option.value as color,
+                    material.value as material,
+                    p.created_at,
+                    p.type_id
                 FROM catalog_product_entity p
                 JOIN catalog_product_entity_text eav ON p.entity_id = eav.entity_id AND eav.store_id = 0
-                LEFT JOIN catalog_product_entity_decimal price ON p.entity_id = price.entity_id AND price.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'price' AND entity_type_id = 4) AND price.store_id = 0
-                LEFT JOIN catalog_product_entity_varchar name ON p.entity_id = name.entity_id AND name.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'name' AND entity_type_id = 4) AND name.store_id = 0
+                LEFT JOIN catalog_product_entity_decimal price ON p.entity_id = price.entity_id AND price.attribute_id = 77 AND price.store_id = 0
+                LEFT JOIN catalog_product_entity_varchar name ON p.entity_id = name.entity_id AND name.attribute_id = 73 AND name.store_id = 0
                 LEFT JOIN catalog_product_entity_varchar url ON p.entity_id = url.entity_id AND url.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'url_key' AND entity_type_id = 4) AND url.store_id = 0
-                LEFT JOIN catalog_product_entity_int status ON p.entity_id = status.entity_id AND status.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'status' AND entity_type_id = 4) AND status.store_id = 0
+                LEFT JOIN catalog_product_entity_int status ON p.entity_id = status.entity_id AND status.attribute_id = 97 AND status.store_id = 0
                 LEFT JOIN cataloginventory_stock_item csi ON p.entity_id = csi.product_id
                 LEFT JOIN catalog_product_entity_varchar season ON p.entity_id = season.entity_id AND season.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'season' AND entity_type_id = 4) AND season.store_id = 0
+                LEFT JOIN eav_attribute_option_value color_option ON EXISTS (
+                    SELECT 1 FROM catalog_product_entity_int color_attr
+                    WHERE color_attr.entity_id = p.entity_id
+                    AND color_attr.attribute_id = 93
+                    AND color_attr.value = color_option.option_id
+                    AND color_option.store_id = 0
+                )
+                LEFT JOIN catalog_product_entity_text material ON p.entity_id = material.entity_id AND material.attribute_id = 148 AND material.store_id = 0
                 WHERE eav.attribute_id = 358
-                AND p.type_id = 'configurable'
+                AND p.type_id IN ('configurable', 'simple')
+                AND status.value = 1
             """
 
             if since:
@@ -101,22 +129,41 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
 
                     for row in results:
                         # Convert datetime to ISO format string for JSON serialization
-                        created_at = row["created_at"].isoformat() if row["created_at"] else None
+                        created_at = (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        )
 
-                        items.append({
-                            "sku": row["sku"],
-                            "title": row["product_name"],
-                            "price": float(row["price"]) if row["price"] else 0.0,
-                            "size_range": ["M", "L", "XL"],  # Default sizes for configurable products
-                            "image_key": row["gc_swatchimage"] or f"{row['sku']}.jpg",
-                            "in_stock": bool(row["status"] == 1),
-                            "attributes": {
+                        # Price is already in Thai Baht (THB)
+                        price = (
+                            float(row["price"])
+                            if row["price"] and row["price"] > 0
+                            else 29.99
+                        )
+
+                        items.append(
+                            {
+                                "sku": row["sku"],
+                                "title": row["product_name"] or f"Product {row['sku']}",
+                                "price": price,
+                                "size_range": ["S", "M", "L", "XL"]
+                                if row["type_id"] == "configurable"
+                                else ["ONE_SIZE"],
+                                "image_key": row["gc_swatchimage"]
+                                or f"{row['sku']}.jpg",
+                                "in_stock": bool(row["status"] == 1),
                                 "season": row["season"],
                                 "url_key": row["url_key"],
-                                "created_at": created_at,
-                                "stock_qty": float(row["stock_qty"]) if row["stock_qty"] else 0
+                                "product_created_at": created_at,
+                                "stock_qty": int(row["stock_qty"])
+                                if row["stock_qty"]
+                                else 0,
+                                "category": "fashion",  # Default category
+                                "color": row["color"],
+                                "material": row["material"],
+                                "pattern": "solid",  # Default pattern
+                                "occasion": "casual",  # Default occasion
                             }
-                        })
+                        )
 
             self.logger.info("Fetched items from shop catalog", count=len(items))
             return items
@@ -168,21 +215,29 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
 
                     if row:
                         # Convert datetime to ISO format string for JSON serialization
-                        created_at = row["created_at"].isoformat() if row["created_at"] else None
+                        created_at = (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        )
 
                         return {
                             "sku": row["sku"],
                             "title": row["product_name"],
                             "price": float(row["price"]) if row["price"] else 0.0,
-                            "size_range": ["M", "L", "XL"],  # Default sizes for configurable products
+                            "size_range": [
+                                "M",
+                                "L",
+                                "XL",
+                            ],  # Default sizes for configurable products
                             "image_key": row["gc_swatchimage"] or f"{row['sku']}.jpg",
                             "in_stock": bool(row["status"] == 1),
                             "attributes": {
                                 "season": row["season"],
                                 "url_key": row["url_key"],
                                 "created_at": created_at,
-                                "stock_qty": float(row["stock_qty"]) if row["stock_qty"] else 0
-                            }
+                                "stock_qty": float(row["stock_qty"])
+                                if row["stock_qty"]
+                                else 0,
+                            },
                         }
 
             self.logger.info("Item not found by SKU", sku=sku)
@@ -205,7 +260,7 @@ class MockShopCatalogAdapter(ShopCatalogAdapter):
                 "size_range": ["S", "M", "L", "XL"],
                 "image_key": "e341e2f3a4b5c6d7e8f9.jpg",
                 "in_stock": True,
-                "attributes": {}
+                "attributes": {},
             },
             {
                 "sku": "1295990011",
@@ -214,11 +269,13 @@ class MockShopCatalogAdapter(ShopCatalogAdapter):
                 "size_range": ["M", "L", "XL"],
                 "image_key": "f567g8h9i0j1k2l3m4n5.jpg",
                 "in_stock": True,
-                "attributes": {}
-            }
+                "attributes": {},
+            },
         ]
 
-    async def fetch_items(self, limit: Optional[int] = None, since: Optional[datetime] = None) -> List[Dict[str, Any]]:
+    async def fetch_items(
+        self, limit: Optional[int] = None, since: Optional[datetime] = None
+    ) -> List[Dict[str, Any]]:
         """Fetch mock items."""
         items = self.mock_items
         if limit:

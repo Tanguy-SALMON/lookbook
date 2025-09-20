@@ -63,6 +63,12 @@ async def get_recommendations(request: RecommendationRequest) -> RecommendationR
 
         return response
 
+    except ValueError as e:
+        logger.error("Validation error in recommendations", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e)
+        )
     except Exception as e:
         logger.error("Recommendation generation failed", error=str(e))
         raise HTTPException(

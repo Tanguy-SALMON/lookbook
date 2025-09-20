@@ -23,25 +23,29 @@ class Settings(BaseSettings):
 
     # Model configuration
     model_config = SettingsConfigDict(
-        env_file='.env',
-        env_file_encoding='utf-8',
-        case_sensitive=False,
-        extra='ignore'
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     # LLM Configuration
-    ollama_host: str = Field(default="http://localhost:11434", description="Ollama service URL")
-    ollama_text_model: str = Field(default="qwen3:4b", description="Text model for intent parsing and rationales")
-    ollama_vision_model: str = Field(default="qwen2.5vl:7b", description="Vision model for image analysis")
+    ollama_host: str = Field(
+        default="http://localhost:11434", description="Ollama service URL"
+    )
+    ollama_text_model: str = Field(
+        default="qwen3:4b", description="Text model for intent parsing and rationales"
+    )
+    ollama_vision_model: str = Field(
+        default="qwen2.5vl:7b", description="Vision model for image analysis"
+    )
 
     # Database Configuration
     lookbook_db_url: str = Field(
         default="mysql+pymysql://magento:Magento@COS(*)@127.0.0.1:3306/lookbookMPC",
-        description="Database URL for lookbook data (MySQL by default)"
+        description="Database URL for lookbook data (MySQL by default)",
+        alias="MYSQL_APP_URL",
     )
     mysql_shop_url: Optional[str] = Field(
         default=None,
-        description="MySQL connection string for Magento catalog (optional)"
+        description="MySQL connection string for Magento catalog (optional)",
     )
 
     # S3/CDN Configuration
@@ -53,24 +57,32 @@ class Settings(BaseSettings):
 
     # Feature Flags
     feature_mcp: bool = Field(default=True, description="Enable MCP server")
-    feature_redis_queue: bool = Field(default=False, description="Enable Redis job queue")
+    feature_redis_queue: bool = Field(
+        default=False, description="Enable Redis job queue"
+    )
     feature_metrics: bool = Field(default=True, description="Enable metrics endpoint")
 
     # Security Configuration
     api_token: Optional[str] = Field(
-        default=None,
-        description="Bearer token for protecting write/vision endpoints"
+        default=None, description="Bearer token for protecting write/vision endpoints"
     )
     allowed_image_domains: List[str] = Field(
-        default_factory=lambda: [],
-        description="List of allowed image URL domains"
+        default_factory=lambda: [], description="List of allowed image URL domains"
     )
 
     # Vision Service Configuration
-    vision_sidecar_host: str = Field(default="http://localhost:8001", description="Vision sidecar URL")
-    vision_sidecar_timeout: int = Field(default=30, description="Vision analysis timeout in seconds")
-    vision_max_batch_size: int = Field(default=20, description="Maximum batch size for vision analysis")
-    vision_max_workers: int = Field(default=2, description="Number of vision worker threads")
+    vision_sidecar_host: str = Field(
+        default="http://localhost:8001", description="Vision sidecar URL"
+    )
+    vision_sidecar_timeout: int = Field(
+        default=30, description="Vision analysis timeout in seconds"
+    )
+    vision_max_batch_size: int = Field(
+        default=20, description="Maximum batch size for vision analysis"
+    )
+    vision_max_workers: int = Field(
+        default=2, description="Number of vision worker threads"
+    )
 
     # API Configuration
     api_host: str = Field(default="0.0.0.0", description="API host bind address")
@@ -78,32 +90,46 @@ class Settings(BaseSettings):
     api_workers: int = Field(default=1, description="Number of API worker processes")
 
     # Request Configuration
-    request_timeout: int = Field(default=30, description="Total request timeout in seconds")
+    request_timeout: int = Field(
+        default=30, description="Total request timeout in seconds"
+    )
     connect_timeout: int = Field(default=2, description="Connection timeout in seconds")
     read_timeout: int = Field(default=8, description="Read timeout in seconds")
 
     # Retry Configuration
-    max_retries: int = Field(default=2, description="Maximum number of retries for failed requests")
-    retry_backoff_factor: float = Field(default=1.0, description="Exponential backoff factor for retries")
+    max_retries: int = Field(
+        default=2, description="Maximum number of retries for failed requests"
+    )
+    retry_backoff_factor: float = Field(
+        default=1.0, description="Exponential backoff factor for retries"
+    )
 
     # Nginx Configuration
-    nginx_server_name: str = Field(default="lookbook.internal", description="Nginx server name for co-existence")
+    nginx_server_name: str = Field(
+        default="lookbook.internal", description="Nginx server name for co-existence"
+    )
     nginx_path_prefix: str = Field(default="/lookbook", description="Nginx path prefix")
 
     # Rate Limiting
-    rate_limit_requests: int = Field(default=5, description="Rate limit requests per second")
+    rate_limit_requests: int = Field(
+        default=5, description="Rate limit requests per second"
+    )
     rate_limit_burst: int = Field(default=10, description="Rate limit burst size")
 
     # Image Processing
-    max_image_size_bytes: int = Field(default=5 * 1024 * 1024, description="Maximum image size in bytes (5MB)")
+    max_image_size_bytes: int = Field(
+        default=5 * 1024 * 1024, description="Maximum image size in bytes (5MB)"
+    )
 
     # Feature Flags Table
-    feature_flags_table: str = Field(default="feature_flags", description="Name of feature flags table")
+    feature_flags_table: str = Field(
+        default="feature_flags", description="Name of feature flags table"
+    )
 
     @property
     def s3_base_url_with_trailing_slash(self) -> str:
         """Ensure S3 base URL ends with a slash."""
-        return self.s3_base_url.rstrip('/') + '/'
+        return self.s3_base_url.rstrip("/") + "/"
 
     @property
     def allowed_image_domains_regex(self) -> str:

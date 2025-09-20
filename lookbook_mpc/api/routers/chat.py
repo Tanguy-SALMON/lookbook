@@ -58,30 +58,30 @@ async def chat_turn(request: ChatRequest) -> ChatResponse:
                    session_id=request.session_id,
                    message=request.message)
 
+        # Execute chat use case
+        response = await chat_use_case.execute(request)
+
         # Generate session ID if not provided
-        if not request.session_id:
-            request.session_id = str(uuid.uuid4())
+        if not response.session_id:
+            response.session_id = str(uuid.uuid4())
 
         # Initialize session if new
-        if request.session_id not in sessions:
-            sessions[request.session_id] = {
+        if response.session_id not in sessions:
+            sessions[response.session_id] = {
                 "created_at": datetime.now().isoformat(),
                 "messages": [],
                 "context": {}
             }
 
         # Add message to session history
-        sessions[request.session_id]["messages"].append({
+        sessions[response.session_id]["messages"].append({
             "timestamp": datetime.now().isoformat(),
             "role": "user",
             "content": request.message
         })
 
-        # Execute chat use case
-        response = await chat_use_case.execute(request)
-
         # Add assistant response to session history
-        sessions[request.session_id]["messages"].append({
+        sessions[response.session_id]["messages"].append({
             "timestamp": datetime.now().isoformat(),
             "role": "assistant",
             "content": response.replies[0]["message"] if response.replies else "I'm here to help!"
@@ -89,7 +89,7 @@ async def chat_turn(request: ChatRequest) -> ChatResponse:
 
         # Update session context with recommendations
         if response.outfits:
-            sessions[request.session_id]["context"]["last_recommendations"] = response.outfits
+            sessions[response.session_id]["context"]["last_recommendations"] = response.outfits
 
         logger.info("Chat turn completed",
                    session_id=response.session_id,
@@ -98,6 +98,12 @@ async def chat_turn(request: ChatRequest) -> ChatResponse:
 
         return response
 
+    except ValueError as e:
+        logger.error("Validation error in chat", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e)
+        )
     except Exception as e:
         logger.error("Chat processing failed", error=str(e))
         raise HTTPException(
