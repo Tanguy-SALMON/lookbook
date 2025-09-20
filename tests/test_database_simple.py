@@ -48,7 +48,7 @@ class TestDatabaseBasics:
 
         # Check required tables exist
         required_tables = [
-            "items",
+            "products",  # Changed from "items"
             "outfits",
             "outfit_items",
             "rules",
@@ -70,7 +70,7 @@ class TestDatabaseBasics:
         cursor = conn.cursor()
 
         # Get table schema
-        cursor.execute("PRAGMA table_info(items);")
+        cursor.execute("PRAGMA table_info(products);")
         columns = {col[1]: col[2] for col in cursor.fetchall()}
 
         # Check required columns exist
@@ -94,6 +94,11 @@ class TestDatabaseBasics:
 
         conn.close()
 
+        # For backward compatibility, check if products table has the equivalent columns
+        expected_columns = ['id', 'sku', 'title', 'price', 'size_range', 'image_key', 'attributes', 'in_stock', 'created_at', 'updated_at']
+        products_columns = {col.replace('item', 'product') if col in expected_columns else col: col_type for col, col_type in columns.items()}
+        missing_columns = [col for col in expected_columns if col not in columns and col.replace('item', 'product') not in products_columns]
+
         assert not missing_columns, (
             f"Missing required columns in items table: {missing_columns}"
         )
@@ -104,21 +109,38 @@ class TestDatabaseBasics:
         cursor = conn.cursor()
 
         # Count items
-        cursor.execute("SELECT COUNT(*) FROM items;")
-        item_count = cursor.fetchone()[0]
+        # Try both table names for backward compatibility
+        try:
+            cursor.execute("SELECT COUNT(*) FROM products;")
+            result = cursor.fetchone()
+            item_count = result[0] if result else 0
+        except sqlite3.OperationalError:
+            cursor.execute("SELECT COUNT(*) FROM items;")
+            result = cursor.fetchone()
+            item_count = result[0] if result else 0
 
         print(f"\nItems in database: {item_count}")
 
         # Get sample data if exists
         if item_count > 0:
-            cursor.execute("SELECT id, sku, title, price FROM items LIMIT 3;")
-            items = cursor.fetchall()
+            try:
+                cursor.execute("SELECT id, sku, title, price FROM products LIMIT 3;")
+                items = cursor.fetchall()
 
-            print("Sample items:")
-            for item in items:
-                print(
-                    f"  ID: {item[0]}, SKU: {item[1]}, Title: {item[2]}, Price: ${item[3]}"
-                )
+                print("Sample items:")
+                for item in items:
+                    print(
+                        f"  ID: {item[0]}, SKU: {item[1]}, Title: {item[2]}, Price: ${item[3]}"
+                    )
+            except sqlite3.OperationalError:
+                cursor.execute("SELECT id, sku, title, price FROM items LIMIT 3;")
+                items = cursor.fetchall()
+
+                print("Sample items:")
+                for item in items:
+                    print(
+                        f"  ID: {item[0]}, SKU: {item[1]}, Title: {item[2]}, Price: ${item[3]}"
+                    )
 
         conn.close()
 
@@ -131,7 +153,13 @@ class TestDatabaseBasics:
         cursor = conn.cursor()
 
         # Check if we have any items with JSON fields
-        cursor.execute("SELECT id, size_range, attributes FROM items LIMIT 5;")
+        # Try both table names
+        try:
+            cursor.execute("SELECT id, size_range, attributes FROM products LIMIT 5;")
+            items = cursor.fetchall()
+        except sqlite3.OperationalError:
+            cursor.execute("SELECT id, size_range, attributes FROM items LIMIT 5;")
+            items = cursor.fetchall()
         items = cursor.fetchall()
 
         json_errors = []
@@ -196,8 +224,13 @@ class TestDatabaseBasics:
 
         # Time a simple query
         start_time = time.time()
-        cursor.execute("SELECT COUNT(*) FROM items;")
-        result = cursor.fetchone()
+        # Try both table names
+        try:
+            cursor.execute("SELECT COUNT(*) FROM products;")
+            result = cursor.fetchone()
+        except sqlite3.OperationalError:
+            cursor.execute("SELECT COUNT(*) FROM items;")
+            result = cursor.fetchone()
         end_time = time.time()
 
         query_time = end_time - start_time
@@ -208,7 +241,7 @@ class TestDatabaseBasics:
 
         # Query should complete quickly
         assert query_time < 1.0, f"Database query took too long: {query_time:.4f}s"
-        assert result is not None, "Query should return a result"
+        assert result is not None and result[0] is not None, "Query should return a valid result from products table"
 
 
 class TestDatabaseContent:
@@ -220,7 +253,13 @@ class TestDatabaseContent:
         cursor = conn.cursor()
 
         # Get all items
-        cursor.execute("SELECT * FROM items;")
+        # Try both table names
+        try:
+            cursor.execute("SELECT * FROM products;")
+            items = cursor.fetchall()
+        except sqlite3.OperationalError:
+            cursor.execute("SELECT * FROM items;")
+            items = cursor.fetchall()
         items = cursor.fetchall()
 
         if not items:
@@ -268,13 +307,25 @@ class TestDatabaseContent:
         print(f"{'=' * 60}")
 
         # Show items
-        cursor.execute("SELECT COUNT(*) FROM items;")
-        item_count = cursor.fetchone()[0]
+        # Try both table names
+        try:
+            cursor.execute("SELECT COUNT(*) FROM products;")
+            result = cursor.fetchone()
+            item_count = result[0] if result else 0
+        except sqlite3.OperationalError:
+            cursor.execute("SELECT COUNT(*) FROM items;")
+            result = cursor.fetchone()
+            item_count = result[0] if result else 0
         print(f"Items: {item_count}")
 
         if item_count > 0:
-            cursor.execute("SELECT id, sku, title, price, in_stock FROM items LIMIT 5;")
-            items = cursor.fetchall()
+            # Try both table names
+            try:
+                cursor.execute("SELECT id, sku, title, price, in_stock FROM products LIMIT 5;")
+                items = cursor.fetchall()
+            except sqlite3.OperationalError:
+                cursor.execute("SELECT id, sku, title, price, in_stock FROM items LIMIT 5;")
+                items = cursor.fetchall()
 
             print("\nSample Items:")
             print("ID | SKU | Title | Price | In Stock")
@@ -287,12 +338,14 @@ class TestDatabaseContent:
 
         # Show outfits
         cursor.execute("SELECT COUNT(*) FROM outfits;")
-        outfit_count = cursor.fetchone()[0]
+        result = cursor.fetchone()
+        outfit_count = result[0] if result else 0
         print(f"\nOutfits: {outfit_count}")
 
         # Show rules
         cursor.execute("SELECT COUNT(*) FROM rules;")
-        rule_count = cursor.fetchone()[0]
+        result = cursor.fetchone()
+        rule_count = result[0] if result else 0
         print(f"Rules: {rule_count}")
 
         print(f"{'=' * 60}\n")

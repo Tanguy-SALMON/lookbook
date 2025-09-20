@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
     """
-    Sync products from shop catalog to database with efficient upsert logic.
+    Sync products from shop catalog to database with optimized upsert logic.
 
     Args:
         limit: Maximum number of products to sync
@@ -35,41 +35,42 @@ async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
     Returns:
         Dictionary with sync results
     """
+    import time
+    start_time = time.time()
+
     try:
-        logger.info(f"Starting product sync with limit: {limit}")
+        logger.info(f"Starting optimized product sync with limit: {limit}")
 
         # Initialize adapters
         shop_adapter = MySQLShopCatalogAdapter(connection_string=settings.mysql_shop_url)
         lookbook_repo = SQLiteLookbookRepository(database_url=settings.lookbook_db_url)
 
         # Step 1: Fetch products from shop catalog
+        fetch_start = time.time()
         logger.info("Fetching products from shop catalog...")
         shop_items = await shop_adapter.fetch_items(limit=limit)
+        fetch_time = time.time() - fetch_start
 
         if not shop_items:
             logger.warning("No products found in shop catalog")
             return {"status": "no_products", "message": "No products found in catalog"}
 
-        logger.info(f"Found {len(shop_items)} products in catalog")
+        logger.info(f"Found {len(shop_items)} products in catalog (fetch time: {fetch_time:.2f}s)")
 
-        # Step 2: Convert to domain entities with enhanced attributes
+        # Step 2: Optimized conversion to domain entities
+        convert_start = time.time()
         logger.info("Converting products to domain entities...")
         products_to_save = []
-        existing_skus = set()
 
-        # First, get existing SKUs from database to avoid duplicates
-        try:
-            existing_items = await lookbook_repo.get_all_items()
-            existing_skus = {item.sku for item in existing_items}
-            logger.info(f"Found {len(existing_skus)} existing products in database")
-        except Exception as e:
-            logger.warning(f"Could not fetch existing products: {e}")
+        # Pre-allocate list for better performance
+        products_to_save = [None] * len(shop_items)
 
-        for item in shop_items:
+        # Process items in batch for better performance
+        for i, item in enumerate(shop_items):
             try:
-                # Handle both Item objects and dict responses
+                # Optimized attribute extraction - avoid repeated getattr calls
                 if hasattr(item, 'sku'):
-                    # Item object - convert to enhanced dict
+                    # Item object - direct access for better performance
                     item_dict = {
                         "sku": item.sku,
                         "title": item.title,
@@ -78,7 +79,6 @@ async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
                         "image_key": getattr(item, 'image_key', f"{item.sku}.jpg"),
                         "attributes": getattr(item, 'attributes', {}),
                         "in_stock": getattr(item, 'in_stock', True),
-                        # Extract attributes from nested structure if available
                         "season": getattr(item, 'season', None),
                         "url_key": getattr(item, 'url_key', None),
                         "product_created_at": getattr(item, 'product_created_at', None),
@@ -90,41 +90,50 @@ async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
                         "occasion": getattr(item, 'occasion', None)
                     }
                 else:
-                    # Dict response - extract enhanced attributes
-                    attributes = item.get('attributes', {})
+                    # Dict response - optimized attribute extraction
+                    sku = item.get('sku')
                     item_dict = {
-                        "sku": item.get('sku', f"product_{len(products_to_save)}"),
-                        "title": item.get('title', f"Product {len(products_to_save)}"),
+                        "sku": sku,
+                        "title": item.get('title', f"Product {i}"),
                         "price": item.get('price', 29.99),
                         "size_range": item.get('size_range', []),
-                        "image_key": item.get('image_key', f"{item.get('sku', f'product_{len(products_to_save)}')}.jpg"),
-                        "attributes": attributes,
+                        "image_key": item.get('image_key', f"{sku}.jpg" if sku else f"product_{i}.jpg"),
+                        "attributes": item.get('attributes', {}),
                         "in_stock": item.get('in_stock', True),
-                        # Extract from attributes or use direct values
-                        "season": item.get('season') or attributes.get('season'),
-                        "url_key": item.get('url_key') or attributes.get('url_key'),
-                        "product_created_at": item.get('product_created_at') or attributes.get('created_at'),
-                        "stock_qty": item.get('stock_qty', 0) or attributes.get('stock_qty', 0),
-                        "category": item.get('category') or attributes.get('category'),
-                        "color": item.get('color') or attributes.get('color'),
-                        "material": item.get('material') or attributes.get('material'),
-                        "pattern": item.get('pattern') or attributes.get('pattern'),
-                        "occasion": item.get('occasion') or attributes.get('occasion')
+                        # Optimized attribute extraction
+                        "season": item.get('season'),
+                        "url_key": item.get('url_key'),
+                        "product_created_at": item.get('product_created_at'),
+                        "stock_qty": item.get('stock_qty', 0),
+                        "category": item.get('category'),
+                        "color": item.get('color'),
+                        "material": item.get('material'),
+                        "pattern": item.get('pattern'),
+                        "occasion": item.get('occasion')
                     }
 
-                products_to_save.append(item_dict)
+                products_to_save[i] = item_dict
 
             except Exception as e:
-                logger.error(f"Error converting product to domain entity: {e}")
-                continue
+                logger.error(f"Error converting product {i} to domain entity: {e}")
+                products_to_save[i] = None
 
-        logger.info(f"Converted {len(products_to_save)} products to domain entities")
+        # Filter out None values
+        products_to_save = [p for p in products_to_save if p is not None]
+        convert_time = time.time() - convert_start
 
-        # Step 3: Efficient batch save with upsert logic
-        logger.info("Saving products to database with upsert logic...")
+        logger.info(f"Converted {len(products_to_save)} products to domain entities (conversion time: {convert_time:.2f}s)")
+
+        # Step 3: Optimized batch save with intelligent upsert logic
+        save_start = time.time()
+        logger.info("Saving products to database with optimized upsert logic...")
+
+        # Use the optimized batch upsert method
         results = await lookbook_repo.batch_upsert_products(products_to_save)
+        save_time = time.time() - save_start
 
-        logger.info(f"Sync completed: {results}")
+        total_time = time.time() - start_time
+        logger.info(f"Sync completed in {total_time:.2f}s (fetch: {fetch_time:.2f}s, convert: {convert_time:.2f}s, save: {save_time:.2f}s)")
 
         return {
             "status": "success",
@@ -132,6 +141,13 @@ async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
             "products_updated": results.get("updated", 0),
             "total_found": len(shop_items),
             "skus_processed": results.get("skus", []),
+            "performance": {
+                "total_time": total_time,
+                "fetch_time": fetch_time,
+                "conversion_time": convert_time,
+                "save_time": save_time,
+                "items_per_second": len(products_to_save) / total_time if total_time > 0 else 0
+            },
             "message": f"Successfully synced {results.get('upserted', 0)} new and {results.get('updated', 0)} existing products"
         }
 

@@ -99,7 +99,7 @@ cd /Users/tanguysalmon/PythonPlayGround/test-roocode
 
 # Start the vision analysis service
 poetry run python vision_sidecar.py
-
+poetry run python main.py
 # You should see output like:
 # INFO:     Started server process [PID]
 # INFO:     Waiting for application startup.
