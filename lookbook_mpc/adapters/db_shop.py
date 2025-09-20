@@ -65,30 +65,30 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
             self.logger.info("Fetching items from shop catalog", limit=limit, since=since)
 
             query = """
-                SELECT
+                SELECT DISTINCT
                     p.sku,
-                    p.name as title,
-                    p.price,
-                    GROUP_CONCAT(DISTINCT ps.value) as size_range,
-                    COALESCE(i.gc_swatchimage, '') as image_key,
-                    p.status = 1 as in_stock,
-                    '{}' as attributes
+                    eav.value as gc_swatchimage,
+                    price.value as price,
+                    name.value as product_name,
+                    url.value as url_key,
+                    status.value as status,
+                    csi.qty as stock_qty,
+                    season.value as season,
+                    p.created_at
                 FROM catalog_product_entity p
-                LEFT JOIN catalog_product_entity_varchar pv ON p.entity_id = pv.entity_id AND pv.attribute_id = 80  # name
-                LEFT JOIN catalog_product_entity_decimal pd ON p.entity_id = pd.entity_id AND pd.attribute_id = 75  # price
-                LEFT JOIN catalog_product_entity_int pi ON p.entity_id = pi.entity_id AND pi.attribute_id = 96  # status
-                LEFT JOIN catalog_product_entity_text i ON p.entity_id = i.entity_id AND i.attribute_id = 87  # image
-                LEFT JOIN catalog_product_entity_varchar ps ON p.entity_id = ps.entity_id AND ps.attribute_id = 132  # size
-                WHERE p.type_id = 'simple'
-                AND pi.value = 1  # enabled
-                AND p.status = 1  # visible
-                AND p.has_options = 0  # simple products
+                JOIN catalog_product_entity_text eav ON p.entity_id = eav.entity_id AND eav.store_id = 0
+                LEFT JOIN catalog_product_entity_decimal price ON p.entity_id = price.entity_id AND price.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'price' AND entity_type_id = 4) AND price.store_id = 0
+                LEFT JOIN catalog_product_entity_varchar name ON p.entity_id = name.entity_id AND name.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'name' AND entity_type_id = 4) AND name.store_id = 0
+                LEFT JOIN catalog_product_entity_varchar url ON p.entity_id = url.entity_id AND url.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'url_key' AND entity_type_id = 4) AND url.store_id = 0
+                LEFT JOIN catalog_product_entity_int status ON p.entity_id = status.entity_id AND status.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'status' AND entity_type_id = 4) AND status.store_id = 0
+                LEFT JOIN cataloginventory_stock_item csi ON p.entity_id = csi.product_id
+                LEFT JOIN catalog_product_entity_varchar season ON p.entity_id = season.entity_id AND season.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'season' AND entity_type_id = 4) AND season.store_id = 0
+                WHERE eav.attribute_id = 358
+                AND p.type_id = 'configurable'
             """
 
             if since:
-                query += f" AND p.updated_at >= '{since.isoformat()}'"
-
-            query += " GROUP BY p.sku, p.name, p.price, i.gc_swatchimage, p.status"
+                query += f" AND p.created_at >= '{since.isoformat()}'"
 
             if limit:
                 query += f" LIMIT {limit}"
@@ -100,14 +100,22 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
                     results = await cursor.fetchall()
 
                     for row in results:
+                        # Convert datetime to ISO format string for JSON serialization
+                        created_at = row["created_at"].isoformat() if row["created_at"] else None
+
                         items.append({
                             "sku": row["sku"],
-                            "title": row["title"],
-                            "price": float(row["price"]),
-                            "size_range": row["size_range"].split(",") if row["size_range"] else [],
-                            "image_key": row["image_key"],
-                            "in_stock": bool(row["in_stock"]),
-                            "attributes": {}
+                            "title": row["product_name"],
+                            "price": float(row["price"]) if row["price"] else 0.0,
+                            "size_range": ["M", "L", "XL"],  # Default sizes for configurable products
+                            "image_key": row["gc_swatchimage"] or f"{row['sku']}.jpg",
+                            "in_stock": bool(row["status"] == 1),
+                            "attributes": {
+                                "season": row["season"],
+                                "url_key": row["url_key"],
+                                "created_at": created_at,
+                                "stock_qty": float(row["stock_qty"]) if row["stock_qty"] else 0
+                            }
                         })
 
             self.logger.info("Fetched items from shop catalog", count=len(items))
@@ -159,14 +167,22 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
                     row = await cursor.fetchone()
 
                     if row:
+                        # Convert datetime to ISO format string for JSON serialization
+                        created_at = row["created_at"].isoformat() if row["created_at"] else None
+
                         return {
                             "sku": row["sku"],
-                            "title": row["title"],
-                            "price": float(row["price"]),
-                            "size_range": row["size_range"].split(",") if row["size_range"] else [],
-                            "image_key": row["image_key"],
-                            "in_stock": bool(row["in_stock"]),
-                            "attributes": {}
+                            "title": row["product_name"],
+                            "price": float(row["price"]) if row["price"] else 0.0,
+                            "size_range": ["M", "L", "XL"],  # Default sizes for configurable products
+                            "image_key": row["gc_swatchimage"] or f"{row['sku']}.jpg",
+                            "in_stock": bool(row["status"] == 1),
+                            "attributes": {
+                                "season": row["season"],
+                                "url_key": row["url_key"],
+                                "created_at": created_at,
+                                "stock_qty": float(row["stock_qty"]) if row["stock_qty"] else 0
+                            }
                         }
 
             self.logger.info("Item not found by SKU", sku=sku)

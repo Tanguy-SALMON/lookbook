@@ -77,7 +77,7 @@ class SQLiteLookbookRepository(LookbookRepository):
 
     async def save_items(self, items: List[Dict[str, Any]]) -> int:
         """
-        Save items to SQLite database.
+        Save items to SQLite database (legacy method - use batch_upsert_products for better performance).
 
         Args:
             items: List of item dictionaries to save
@@ -89,44 +89,194 @@ class SQLiteLookbookRepository(LookbookRepository):
             self.logger.info("Saving items to lookbook repository", count=len(items))
 
             async with self._get_session() as session:
-                saved_count = 0
-                for item in items:
-                    # Check if item already exists
-                    existing_result = await session.execute(
-                        select(ProductDB).where(ProductDB.sku == item["sku"])
-                    )
-                    existing_item = existing_result.scalar_one_or_none()
-
-                    if existing_item:
-                        # Update existing item
-                        existing_item.title = item["title"]
-                        existing_item.price = item["price"]
-                        existing_item.size_range = item["size_range"]
-                        existing_item.image_key = item["image_key"]
-                        existing_item.attributes = item["attributes"]
-                        existing_item.in_stock = item["in_stock"]
-                        existing_item.updated_at = datetime.utcnow()
-                    else:
-                        # Create new item
-                        new_item = ProductDB(
-                            sku=item["sku"],
-                            title=item["title"],
-                            price=item["price"],
-                            size_range=item["size_range"],
-                            image_key=item["image_key"],
-                            attributes=item["attributes"],
-                            in_stock=item["in_stock"]
+                async with session.no_autoflush:
+                    saved_count = 0
+                    for item in items:
+                        # Check if item already exists
+                        existing_result = await session.execute(
+                            select(ProductDB).where(ProductDB.sku == item["sku"])
                         )
-                        session.add(new_item)
+                        existing_item = existing_result.scalar_one_or_none()
 
-                    saved_count += 1
+                        if existing_item:
+                            # Update existing item
+                            existing_item.title = item["title"]
+                            existing_item.price = item["price"]
+                            existing_item.size_range = item["size_range"]
+                            existing_item.image_key = item["image_key"]
+                            existing_item.attributes = item["attributes"]
+                            existing_item.in_stock = item["in_stock"]
+                            existing_item.updated_at = datetime.utcnow()
 
-                await session.commit()
-                self.logger.info("Successfully saved items", count=saved_count)
-                return saved_count
+                            # Update new columns
+                            existing_item.season = item.get("season")
+                            existing_item.url_key = item.get("url_key")
+                            existing_item.product_created_at = item.get("product_created_at")
+                            existing_item.stock_qty = item.get("stock_qty", 0)
+                            existing_item.category = item.get("category")
+                            existing_item.color = item.get("color")
+                            existing_item.material = item.get("material")
+                            existing_item.pattern = item.get("pattern")
+                            existing_item.occasion = item.get("occasion")
+                        else:
+                            # Create new item
+                            new_item = ProductDB(
+                                sku=item["sku"],
+                                title=item["title"],
+                                price=item["price"],
+                                size_range=item["size_range"],
+                                image_key=item["image_key"],
+                                attributes=item["attributes"],
+                                in_stock=item["in_stock"],
+                                season=item.get("season"),
+                                url_key=item.get("url_key"),
+                                product_created_at=item.get("product_created_at"),
+                                stock_qty=item.get("stock_qty", 0),
+                                category=item.get("category"),
+                                color=item.get("color"),
+                                material=item.get("material"),
+                                pattern=item.get("pattern"),
+                                occasion=item.get("occasion")
+                            )
+                            session.add(new_item)
+
+                        saved_count += 1
+
+                    await session.commit()
+                    self.logger.info("Successfully saved items", count=saved_count)
+                    return saved_count
 
         except Exception as e:
             self.logger.error("Error saving items to repository", error=str(e))
+            raise
+
+    async def batch_upsert_products(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Efficiently upsert products in batch using INSERT OR REPLACE.
+
+        Args:
+            items: List of item dictionaries to upsert
+
+        Returns:
+            Dictionary with upsert results
+        """
+        try:
+            self.logger.info("Batch upserting products", count=len(items))
+
+            if not items:
+                return {"upserted": 0, "updated": 0, "skus": []}
+
+            # Prepare data for bulk insert
+            upsert_data = []
+            for item in items:
+                # Ensure all required fields are present
+                row_data = {
+                    "sku": item.get("sku"),
+                    "title": item.get("title", ""),
+                    "price": item.get("price", 0.0),
+                    "size_range": json.dumps(item.get("size_range", [])),
+                    "image_key": item.get("image_key", ""),
+                    "attributes": json.dumps(item.get("attributes", {})),
+                    "in_stock": item.get("in_stock", True),
+                    "season": item.get("season"),
+                    "url_key": item.get("url_key"),
+                    "product_created_at": item.get("product_created_at"),
+                    "stock_qty": item.get("stock_qty", 0),
+                    "category": item.get("category"),
+                    "color": item.get("color"),
+                    "material": item.get("material"),
+                    "pattern": item.get("pattern"),
+                    "occasion": item.get("occasion"),
+                    "updated_at": datetime.utcnow()
+                }
+                upsert_data.append(row_data)
+
+            async with self._get_session() as session:
+                # Use SQLite's INSERT OR REPLACE for efficient upsert
+                # This is much faster than individual row-by-row operations
+                columns = list(upsert_data[0].keys())
+                placeholders = [f":{col}" for col in columns]
+                column_names = ", ".join(columns)
+                placeholder_str = ", ".join(placeholders)
+
+                # Build the INSERT OR REPLACE query
+                # SQLite doesn't support INSERT OR REPLACE directly with all columns,
+                # so we need to use a temporary table approach
+                temp_table_name = f"temp_upsert_{int(datetime.utcnow().timestamp())}"
+
+                # Create temporary table
+                create_temp_table = f"""
+                CREATE TEMPORARY TABLE {temp_table_name} (
+                    sku TEXT PRIMARY KEY,
+                    title TEXT,
+                    price REAL,
+                    size_range TEXT,
+                    image_key TEXT,
+                    attributes TEXT,
+                    in_stock INTEGER,
+                    season TEXT,
+                    url_key TEXT,
+                    product_created_at TEXT,
+                    stock_qty INTEGER,
+                    category TEXT,
+                    color TEXT,
+                    material TEXT,
+                    pattern TEXT,
+                    occasion TEXT,
+                    updated_at TEXT
+                )
+                """
+
+                # Insert into temporary table
+                insert_temp = f"""
+                INSERT INTO {temp_table_name} ({column_names})
+                VALUES ({placeholder_str})
+                """
+
+                # Replace from temp to main table
+                replace_query = f"""
+                REPLACE INTO products ({column_names})
+                SELECT {column_names} FROM {temp_table_name}
+                """
+
+                # Drop temp table
+                drop_temp = f"DROP TABLE {temp_table_name}"
+
+                try:
+                    # Create temp table
+                    await session.execute(create_temp_table)
+
+                    # Bulk insert into temp table
+                    for row in upsert_data:
+                        await session.execute(insert_temp, row)
+
+                    # Replace into main table
+                    await session.execute(replace_query)
+
+                    # Get counts
+                    result = await session.execute(
+                        "SELECT COUNT(*) FROM products WHERE sku IN (:skus)",
+                        {"skus": [item["sku"] for item in items]}
+                    )
+                    total_count = result.scalar()
+
+                    await session.commit()
+
+                    self.logger.info("Successfully batch upserted products", count=len(items))
+                    return {
+                        "upserted": len(items),
+                        "updated": len(items),  # With REPLACE, all are treated as updates
+                        "skus": [item["sku"] for item in items],
+                        "total_in_db": total_count
+                    }
+
+                except Exception as e:
+                    await session.rollback()
+                    self.logger.error("Error during batch upsert", error=str(e))
+                    raise
+
+        except Exception as e:
+            self.logger.error("Error in batch upsert products", error=str(e))
             raise
 
     async def get_items_by_intent(self, intent: Intent) -> List[Item]:
@@ -158,37 +308,27 @@ class SQLiteLookbookRepository(LookbookRepository):
                         )
                     )
 
-                # Filter by category if specified in attributes
+                # Filter by category using new column
                 if hasattr(intent, 'category') and intent.category:
-                    query = query.where(
-                        ProductDB.attributes.op('->>')('category').astext == intent.category
-                    )
+                    query = query.where(ProductDB.category == intent.category)
 
-                # Filter by color if specified in attributes
+                # Filter by color using new column
                 if hasattr(intent, 'color') and intent.color:
-                    query = query.where(
-                        ProductDB.attributes.op('->>')('color').astext == intent.color
-                    )
+                    query = query.where(ProductDB.color == intent.color)
 
-                # Filter by material if specified in attributes
+                # Filter by material using new column
                 if hasattr(intent, 'material') and intent.material:
-                    query = query.where(
-                        ProductDB.attributes.op('->>')('material').astext == intent.material
-                    )
+                    query = query.where(ProductDB.material == intent.material)
 
-                # Filter by occasion if specified in attributes
+                # Filter by occasion using new column
                 if intent.occasion:
-                    query = query.where(
-                        ProductDB.attributes.op('->>')('occasion').astext == intent.occasion
-                    )
+                    query = query.where(ProductDB.occasion == intent.occasion)
 
-                # Filter by season if specified in attributes
+                # Filter by season using new column
                 if hasattr(intent, 'season') and intent.season:
-                    query = query.where(
-                        ProductDB.attributes.op('->>')('season').astext == intent.season
-                    )
+                    query = query.where(ProductDB.season == intent.season)
 
-                # Filter by objectives (e.g., slimming)
+                # Filter by objectives (e.g., slimming) - still use JSON for this
                 if intent.objectives:
                     for objective in intent.objectives:
                         query = query.where(
@@ -198,9 +338,7 @@ class SQLiteLookbookRepository(LookbookRepository):
                 # Filter by palette if specified
                 if intent.palette:
                     for color in intent.palette:
-                        query = query.where(
-                            ProductDB.attributes.op('->>')('color').astext.in_(intent.palette)
-                        )
+                        query = query.where(ProductDB.color.in_(intent.palette))
 
                 result = await session.execute(query)
                 items_db = result.scalars().all()
@@ -218,11 +356,13 @@ class SQLiteLookbookRepository(LookbookRepository):
             self.logger.info("Getting all items")
 
             async with self._get_session() as session:
-                result = await session.execute(select(ItemDB).where(ItemDB.in_stock == True))
+                result = await session.execute(select(ProductDB).where(ProductDB.in_stock == True))
                 items_db = result.scalars().all()
 
                 self.logger.info("Retrieved all items", count=len(items_db))
-                return [item.to_domain() for item in items_db]
+                # Filter out None values and convert to domain objects
+                valid_items = [item for item in items_db if item is not None]
+                return [item.to_domain() for item in valid_items]
 
         except Exception as e:
             self.logger.error("Error getting all items", error=str(e))
@@ -244,24 +384,15 @@ class SQLiteLookbookRepository(LookbookRepository):
             async with self._get_session() as session:
                 query = select(ProductDB).where(ProductDB.in_stock == True)
 
-                # Apply filters
+                # Apply filters using new columns
                 if 'category' in filters:
-                    # SQLite JSON path syntax
-                    query = query.where(
-                        text(f"json_extract(attributes, '$.category') = '{filters['category']}'")
-                    )
+                    query = query.where(ProductDB.category == filters['category'])
 
                 if 'color' in filters:
-                    # SQLite JSON path syntax
-                    query = query.where(
-                        text(f"json_extract(attributes, '$.color') = '{filters['color']}'")
-                    )
+                    query = query.where(ProductDB.color == filters['color'])
 
                 if 'material' in filters:
-                    # SQLite JSON path syntax
-                    query = query.where(
-                        text(f"json_extract(attributes, '$.material') = '{filters['material']}'")
-                    )
+                    query = query.where(ProductDB.material == filters['material'])
 
                 if 'size' in filters:
                     query = query.where(

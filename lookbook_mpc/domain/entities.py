@@ -247,18 +247,33 @@ class ProductDB(Base):
     price = Column(Float, nullable=False)
     size_range = Column(JSON, default=[])
     image_key = Column(String(255), nullable=False)
-    attributes = Column(JSON, default={})
+    attributes = Column(JSON, default={})  # Keep for backward compatibility
     in_stock = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # New attribute columns
+    season = Column(String(50), nullable=True)
+    url_key = Column(String(255), nullable=True, unique=True)
+    product_created_at = Column(DateTime, nullable=True)
+    stock_qty = Column(Integer, nullable=True, server_default='0')
+    category = Column(String(100), nullable=True)
+    color = Column(String(100), nullable=True)
+    material = Column(String(100), nullable=True)
+    pattern = Column(String(100), nullable=True)
+    occasion = Column(String(100), nullable=True)
 
     # Indexes for performance
     __table_args__ = (
         Index('idx_products_price', 'price'),
         Index('idx_products_in_stock', 'in_stock'),
         Index('idx_products_created_at', 'created_at'),
-        Index('idx_products_attributes_category', 'attributes', postgresql_using='gin'),
-        Index('idx_products_attributes_color', 'attributes', postgresql_using='gin'),
+        Index('idx_products_url_key', 'url_key'),
+        Index('idx_products_category', 'category'),
+        Index('idx_products_color', 'color'),
+        Index('idx_products_material', 'material'),
+        Index('idx_products_season', 'season'),
+        Index('idx_products_occasion', 'occasion'),
     )
 
     # Relationships
@@ -280,7 +295,7 @@ class ProductDB(Base):
         )
 
     @classmethod
-    def from_domain(cls, item: Item) -> 'ItemDB':
+    def from_domain(cls, item: Item) -> 'ProductDB':
         """Create SQLAlchemy model from domain entity."""
         return cls(
             sku=item.sku,
