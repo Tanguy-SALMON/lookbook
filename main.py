@@ -103,12 +103,17 @@ async def lifespan(app: FastAPI):
         "S3_BASE_URL",
     ]
 
-    missing_vars = [var for var in required_vars if not getattr(settings, var.lower().replace('_', ''), None)]
+    missing_vars = [
+        var
+        for var in required_vars
+        if not getattr(settings, var.lower().replace("_", ""), None)
+    ]
     if missing_vars:
         logger.warning("Missing required environment variables", missing=missing_vars)
 
     # Log configuration
-    logger.info("Configuration loaded",
+    logger.info(
+        "Configuration loaded",
         ollama_host=settings.ollama_host,
         vision_model=settings.ollama_vision_model,
         text_model=settings.ollama_text_model,
@@ -155,18 +160,23 @@ if settings.feature_mcp:
     mcp_app = create_mcp_app()
     app.mount("/mcp", mcp_app)
 
+
 # Serve demo HTML file
 @app.get("/demo")
 async def demo_page():
     """Serve the demo chat interface."""
     return FileResponse("docs/demo.html")
 
+
 # Serve static files if they exist
 static_dir = "static"
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-
+# Serve assets directory for images
+assets_dir = "assets"
+if os.path.exists(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
 
 # Health check endpoints
@@ -178,7 +188,7 @@ async def health_check():
         "service": "lookbook-mpc",
         "version": "0.1.0",
         "environment": settings.log_level,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
@@ -198,16 +208,12 @@ async def readiness_check():
 
         async with httpx.AsyncClient(
             timeout=settings.connect_timeout,
-            limits=httpx.Limits(
-                max_connections=10,
-                max_keepalive_connections=5
-            )
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
         ) as client:
             # Check Ollama
             try:
                 response = await client.get(
-                    f"{settings.ollama_host}/api/tags",
-                    timeout=settings.connect_timeout
+                    f"{settings.ollama_host}/api/tags", timeout=settings.connect_timeout
                 )
                 if response.status_code == 200:
                     checks["ollama"] = "ready"
@@ -227,8 +233,7 @@ async def readiness_check():
                     # Test with a known image URL that should be accessible
                     test_image_url = f"{settings.s3_base_url}3a4db8e6cba0f753558e37db7eae09614adbbf28_xxl-1.jpg"
                     response = await client.head(
-                        test_image_url,
-                        timeout=settings.connect_timeout
+                        test_image_url, timeout=settings.connect_timeout
                     )
                     checks["s3"] = (
                         "reachable" if response.status_code < 500 else "unhealthy"
@@ -257,7 +262,7 @@ async def readiness_check():
                 "checks": checks,
                 "timestamp": datetime.utcnow().isoformat() + "Z",
                 "request_id": request_id,
-            }
+            },
         )
 
     except Exception as e:
