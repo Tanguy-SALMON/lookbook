@@ -3,11 +3,11 @@
 
 ## 🚀 PROJECT OVERVIEW
 
-**Project Name:** Modern Chat Dashboard  
-**Purpose:** Advanced chat interface for fashion e-commerce customer support with AI-powered recommendations  
-**Market:** Thailand fashion e-commerce (COS Thailand)  
-**Currency:** Thai Baht (THB)  
-**Technology Stack:** HTML5 + Tailwind CSS + Vanilla JavaScript + FastAPI Backend  
+**Project Name:** Modern Chat Dashboard
+**Purpose:** Advanced chat interface for fashion e-commerce customer support with AI-powered recommendations
+**Market:** Thailand fashion e-commerce (COS Thailand)
+**Currency:** Thai Baht (THB)
+**Technology Stack:** HTML5 + Tailwind CSS + Vanilla JavaScript + FastAPI Backend
 
 ## 🎯 CORE FUNCTIONALITY
 
@@ -89,7 +89,7 @@ The modern chat dashboard provides:
 
 **Status Types:**
 - **Online** - Green dot (`#52c41a`)
-- **Away** - Amber dot (`#faad14`) 
+- **Away** - Amber dot (`#faad14`)
 - **Offline** - Gray dot (`#8c8c8c`)
 
 ## 🛠️ TECHNICAL IMPLEMENTATION
@@ -274,7 +274,7 @@ docs/
 - No product suggestions
 - Repetitive fallback messages
 
-**After (AI-Powered):**  
+**After (AI-Powered):**
 - Natural responses: "Perfect! I'll help you find stylish outfits for dancing..."
 - **2 real outfit suggestions** with products, prices, and images
 - Each conversation generates unique, contextual responses
@@ -294,7 +294,7 @@ Response: Natural LLM text + 2 outfit suggestions with real products
 ```json
 {
   "replies": [{
-    "type": "recommendations", 
+    "type": "recommendations",
     "message": "Perfect! I'll help you find stylish outfits for dancing...",
     "outfits": 2
   }],
@@ -302,7 +302,7 @@ Response: Natural LLM text + 2 outfit suggestions with real products
     "title": "Casual And Comfortable Coordinated Set",
     "items": [{
       "sku": "0888940046012",
-      "title": "RIBBED TANK TOP", 
+      "title": "RIBBED TANK TOP",
       "price": 790.0,
       "image_url": "https://cdn.../image.jpg",
       "color": "black",
@@ -317,10 +317,45 @@ Response: Natural LLM text + 2 outfit suggestions with real products
 
 ---
 
-**Last Updated:** December 2024  
-**Interface Status:** ✅ **PRODUCTION READY** - Modern Chat Dashboard Fully Implemented  
+**Last Updated:** December 2024
+**Interface Status:** ✅ **PRODUCTION READY** - Modern Chat Dashboard Fully Implemented
 **AI Backend:** ✅ **READY FOR INTEGRATION** - LLM recommendation engine operational
-**Design System:** ✅ Tailwind CSS architecture with custom enhancements  
-**Responsive Coverage:** ✅ Mobile, tablet, desktop, and 4K display support  
-**Performance:** ✅ Optimized for speed and accessibility  
+**Design System:** ✅ Tailwind CSS architecture with custom enhancements
+**Responsive Coverage:** ✅ Mobile, tablet, desktop, and 4K display support
+**Performance:** ✅ Optimized for speed and accessibility
 **Next Phase:** Connect frontend chat interface with AI recommendation backend
+
+🔒 OPERATIONS, QA, AND ROLLOUT
+
+    Environments and routing
+        Canonical admin root: /admin for all backend pages. /dashboard may redirect to /admin.
+        Shared layout: app/admin/layout.tsx provides the left rail + secondary panel + header for every /admin/** page.
+    Navigation IA (wired)
+        Rail icons (top→bottom): Dashboard → Data/CRUD → Chat Suite → Agents/Rules → Settings/Admin.
+        Secondary subnav lists context links; active states derive from pathname; aria-current="page" on active link.
+    CRUD and data integrity
+        Keep existing handlers and API routes; only visual/class changes on pages.
+        Primary CRUD routes: /admin/items, /admin/outfit-items, /admin/outfits, /admin/products, /admin/chat-logs, /admin/chat-sessions, /admin/chat-strategies, /admin/rules, /admin/users.
+        Product Vision Attributes are managed via the Products page modal; no standalone CRUD required.
+    Priority pages and acceptance criteria
+        Chat History (/admin/chat-history): must mirror docs/demo.html exactly (chat list, thread, composer, sticky toolbars, avatars/badges).
+        System Status, Settings, Users: adopt common shell, consistent tables, filters, empty/loading states.
+    Test checklist (manual, low-tech)
+        Layout parity vs demo at 1440px and 768px; no horizontal scroll.
+        Sidebar rail visible on all /admin routes; correct group and link highlighting on refresh and navigation.
+        Keyboard: Tab order, focus-visible rings, Enter to submit, Esc to close modals.
+        Tables: Row height, hover, sticky header, pagination and CRUD actions still work.
+    Performance and stability
+        Tailwind-first: remove ad-hoc CSS when equivalent utilities exist; allow arbitrary values only if demo requires.
+        Image policy: prefer WebP; avatars via ui-avatars.com acceptable for demo.
+        Avoid heavy JS; throttled scroll handlers only where needed; no third-party UI libs beyond Shadcn/Radix.
+    Security and access
+        Admin auth check in app/admin/layout.tsx using lib/auth; block unauthenticated access.
+        Sanitize user-rendered content in chat bubbles; no HTML injection.
+    Delivery artifacts
+        Unified git-style diffs per modified file, plus a brief rationale per change.
+        Per-page verification sheet: sidebar/header, gutters, grids, buttons/inputs, tables, tabs, empty/loading, dark mode.
+    Next steps after visual unification
+        Wire chat to backend (WebSocket or SSE); debounce search; persist composer draft per session.
+        Product preview modal on Products page; inline edit for key attributes; tie to vision attributes.
+        Lightweight telemetry: console.time marks for initial render; Core Web Vitals check in Chromium/Firefox.
