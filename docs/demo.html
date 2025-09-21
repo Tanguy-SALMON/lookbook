@@ -14,13 +14,10 @@
     <link rel="prefetch" href="/assets/images/avatar_1.webp">
     <link rel="prefetch" href="/assets/images/avatar_2.webp">
     <!-- Using inline SVG icons instead of CDN -->
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* CSS Variables */
         :root {
             --primary-bg: #f8f9fb;
             --sidebar-bg: #ffffff;
@@ -33,8 +30,6 @@
             --text-muted: #9ca3af;
             --accent-blue: #1890ff;
             --accent-green: #52c41a;
-            --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
-            --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
             --border-radius: 8px;
             --border-radius-lg: 12px;
             --font-family: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -56,84 +51,17 @@
             --line-height-relaxed: 1.6;
         }
 
+        /* Global styles that can't be replaced with Tailwind */
         body {
             font-family: var(--font-family);
             background-color: var(--primary-bg);
             color: var(--text-primary);
-            height: 100vh;
-            overflow: hidden;
             font-size: var(--font-size-base);
             line-height: var(--line-height-normal);
             font-weight: var(--font-weight-normal);
         }
 
-        .chat-container {
-            display: flex;
-            height: 100vh;
-            width: 100%;
-            background: white;
-            box-shadow: var(--shadow-medium);
-        }
-
-        /* Left Navigation Sidebar */
-        .nav-sidebar {
-            width: 80px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 0;
-        }
-
-        .nav-user-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            overflow: hidden;
-            margin-bottom: 32px;
-        }
-
-        .nav-user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .nav-menu {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 24px;
-            flex: 1;
-        }
-
-        .nav-item {
-            width: 48px;
-            height: 48px;
-            border: none;
-            background: transparent;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--text-muted);
-            font-size: 20px;
-            position: relative;
-        }
-
-        .nav-item:hover {
-            background: var(--message-bg);
-            color: var(--text-primary);
-        }
-
-        .nav-item.active {
-            background: var(--accent-blue);
-            color: white;
-        }
-
+        /* Navigation active state with pseudo-element */
         .nav-item.active::after {
             content: '';
             position: absolute;
@@ -146,240 +74,39 @@
             border-radius: 2px;
         }
 
-        .nav-logout {
-            margin-top: auto;
-        }
-
-        /* Main Sidebar */
-        .sidebar {
-            width: 340px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--sidebar-bg);
-        }
-
-        .categories-dropdown {
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
-        }
-
-        .search-container {
-            position: relative;
-            flex: 1;
-            margin-left: 12px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 12px 16px 12px 16px;
-            border: none;
-            border-radius: 24px;
-            font-size: 14px;
-            background: #f5f5f5;
-            color: var(--text-secondary);
-            outline: none;
-        }
-
-        .search-input::placeholder {
-            color: #999;
-        }
-
-        .search-actions {
+        /* Complex gradients and masks for intent bar */
+        .intent-bar {
             position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .search-clear-btn {
-            width: 20px;
-            height: 20px;
-            border: none;
-            background: #ccc;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 12px;
-            color: white;
-        }
-
-        .search-submit-btn {
-            width: 28px;
-            height: 28px;
-            border: none;
-            background: var(--text-muted);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: white;
-            font-size: 14px;
-        }
-
-        /* Stories Section */
-        .stories-section {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .stories-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .stories-title {
-            font-size: var(--font-size-lg);
-            font-weight: var(--font-weight-semibold);
-            color: var(--text-primary);
-        }
-
-        .stories-list {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding: 4px 0;
-        }
-
-        .story-item {
-            flex-shrink: 0;
-            position: relative;
-        }
-
-        .story-avatar {
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            border: 2px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .story-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .story-live {
-            position: absolute;
-            bottom: -2px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ff4d4f;
-            color: white;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 10px;
-            text-transform: uppercase;
-        }
-
-        /* Messages Section */
-        .messages-section {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .messages-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .messages-title {
-            font-size: var(--font-size-lg);
-            font-weight: var(--font-weight-semibold);
-            color: var(--text-primary);
-        }
-
-        .messages-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 20px;
-        }
-
-        .message-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .message-item:hover {
-            background: var(--message-bg);
-            margin: 0 -20px;
-            padding: 12px 20px;
-            border-radius: var(--border-radius);
-        }
-
-        .message-item.active {
-            background: #e6f7ff;
-            margin: 0 -20px;
-            padding: 12px 20px;
-            border-radius: var(--border-radius);
-            border-left: 3px solid var(--accent-blue);
-        }
-
-        .message-avatar {
+            top: 0;
+            left: 0;
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            position: relative;
+            z-index: 0;
+            opacity: 0.8;
             overflow: hidden;
-            flex-shrink: 0;
+            pointer-events: none;
         }
 
-        .message-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .online-status {
+        .intent-bar span {
             position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 12px;
-            height: 12px;
+            top: -1px;
+            left: -1px;
+            width: 46px;
+            height: 46px;
             border-radius: 50%;
-            border: 2px solid white;
-            z-index: 1;
+            background: conic-gradient(
+                #ff6b6b 0deg,
+                #ffa726 calc(360deg * 0.25),
+                #ffcc02 calc(360deg * 0.5),
+                #66bb6a calc(360deg * 0.75),
+                #4caf50 360deg
+            );
+            mask: radial-gradient(circle at center, transparent 20px, black 22px);
+            -webkit-mask: radial-gradient(circle at center, transparent 20px, black 22px);
         }
 
+        /* Status indicator colors */
         .online-status.online {
             background-color: #52c41a;
         }
@@ -392,169 +119,25 @@
             background-color: #8c8c8c;
         }
 
-        .notification-badge {
+        /* Live story indicator */
+        .story-live {
             position: absolute;
-            top: -2px;
-            right: -2px;
-            width: 16px;
-            height: 16px;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
             background: #ff4d4f;
             color: white;
-            border-radius: 50%;
             font-size: 10px;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            text-transform: uppercase;
         }
 
-        .message-content {
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-        }
+        /* Message item states */
+        .message-item.active {
+            background-color: #e6f7ff;
 
-        .message-sender {
-            font-weight: var(--font-weight-semibold);
-            font-size: var(--font-size-base);
-            color: var(--text-primary);
-            margin-bottom: 2px;
-            line-height: var(--line-height-tight);
-        }
-
-        .message-preview {
-            font-size: var(--font-size-sm);
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            line-height: var(--line-height-normal);
-        }
-
-        .message-meta {
-            text-align: right;
-            flex-shrink: 0;
-        }
-
-        .message-time {
-            font-size: var(--font-size-xs);
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .message-status {
-            color: var(--accent-green);
-            font-size: 14px;
-        }
-
-        /* Main Chat Area */
-        .main-chat {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--chat-bg);
-        }
-
-        .chat-header {
-            padding: 24px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .chat-title {
-            font-size: var(--font-size-3xl);
-            font-weight: var(--font-weight-bold);
-            color: var(--text-primary);
-            margin-bottom: 24px;
-            line-height: var(--line-height-tight);
-        }
-
-        .chat-user-section {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .chat-user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .chat-user-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            overflow: hidden;
-        }
-
-        .chat-user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .chat-user-details h3 {
-            font-size: var(--font-size-md);
-            font-weight: var(--font-weight-semibold);
-            color: var(--text-primary);
-            margin-bottom: 2px;
-            line-height: var(--line-height-tight);
-        }
-
-        .chat-user-details p {
-            font-size: var(--font-size-sm);
-            color: var(--text-secondary);
-            line-height: var(--line-height-normal);
-        }
-
-        .chat-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--message-bg);
-            padding: 8px;
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-        }
-
-        .chat-action-btn {
-            width: 36px;
-            height: 36px;
-            border: none;
-            background: transparent;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s;
-            color: var(--text-secondary);
-            font-size: 16px;
-        }
-
-        .chat-action-btn svg {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 1.5;
-        }
-
-        .chat-action-btn:hover {
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-
-        /* Chat Messages */
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            max-height: calc(100vh - 280px);
         }
 
         .chat-messages::-webkit-scrollbar {
@@ -574,595 +157,51 @@
             background: var(--text-muted);
         }
 
-        .message-date {
-            display: flex;
-            justify-content: center;
-            margin: 16px 0;
-        }
-
-        .date-dropdown {
-            background: var(--message-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 8px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .date-dropdown:hover {
-            background: var(--border-color);
-        }
-
-        .date-dropdown-text {
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
-            color: var(--text-muted);
-        }
-
-        .date-dropdown-arrow {
-            width: 12px;
-            height: 12px;
-            stroke: var(--text-muted);
-            transition: transform 0.2s;
-        }
-
         .date-dropdown.active .date-dropdown-arrow {
             transform: rotate(180deg);
-        }
-
-        .date-dropdown-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 100;
-            margin-top: 4px;
-            display: none;
         }
 
         .date-dropdown.active .date-dropdown-menu {
             display: block;
         }
 
-        .date-dropdown-item {
-            padding: 8px 16px;
-            font-size: var(--font-size-xs);
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: background 0.2s;
+        /* Header scroll behavior */
+        .chat-header {
+            transition: transform 0.3s ease-in-out;
         }
 
-        .date-dropdown-item:hover {
-            background: var(--message-bg);
+        .chat-header.hidden {
+            transform: translateY(-100%);
         }
 
-        .date-dropdown-item:first-child {
-            border-radius: 12px 12px 0 0;
-        }
-
-        .date-dropdown-item:last-child {
-            border-radius: 0 0 12px 12px;
-        }
-
-        .message-bubble {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            font-size: var(--font-size-base);
-            line-height: var(--line-height-normal);
-            font-weight: var(--font-weight-normal);
-        }
-
-        .message-bubble.received {
-            background: var(--message-bg);
-            color: var(--text-primary);
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-bubble.sent {
-            background: var(--accent-blue);
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-
-        .message-bubble.dark {
-            background: #374151;
-            color: white;
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-reaction {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            margin-top: 8px;
-            font-size: 12px;
-        }
-
-        .message-images {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .message-image {
-            width: 200px;
-            height: 150px;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-        }
-
-        .message-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .message-timestamp {
-            font-size: var(--font-size-xs);
-            color: var(--text-muted);
-            margin-top: 4px;
-            text-align: right;
-            font-weight: var(--font-weight-normal);
-        }
-
-        .message-bubble.sent .message-timestamp {
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .product-recommendation {
+        .mini-toolbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease-in-out;
             background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 12px;
-            max-width: 400px;
+            border-bottom: 1px solid #e5e7eb;
+            opacity: 0;
         }
 
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .product-grid.dress-showcase {
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            max-width: 400px;
-        }
-
-        .dress-images {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .dress-image {
-            flex: 1;
-            height: 160px;
-            object-fit: cover;
-            object-position: top center;
-            border-radius: 6px;
-        }
-
-        .dress-image.detail {
-            object-fit: contain;
-            background: #f8f9fb;
-        }
-
-        .product-item {
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-            background: white;
-            transition: transform 0.2s;
-        }
-
-        .product-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .product-image {
-            width: 100%;
-            height: 160px;
-            object-fit: cover;
-            object-position: top center;
-        }
-
-        .product-image.dress-detail {
-            object-fit: contain;
-            background: #f8f9fb;
-        }
-
-        .product-info {
-            padding: 8px;
-        }
-
-        .product-name {
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
-            color: var(--text-primary);
-            margin-bottom: 4px;
-            line-height: 1.2;
-        }
-
-        .product-price {
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-semibold);
-            color: var(--accent-blue);
-        }
-
-        .recommendation-text {
-            font-size: var(--font-size-sm);
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-
-        .product-link {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
-
-        .product-link:hover {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        /* Image optimization styles */
-        img {
-            will-change: auto;
-        }
-
-        img {
+        .mini-toolbar.show {
+            transform: translateY(0);
             opacity: 1;
         }
 
-        /* Chat Input */
-        .chat-input-container {
-            padding: 20px 32px;
-            background: #f8f9fb;
-            border-top: 1px solid var(--border-color);
-        }
 
-        .chat-input-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .chat-input-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            overflow: hidden;
-            flex-shrink: 0;
-            border: 2px solid #e1e5e9;
-        }
-
-        .chat-input-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .input-actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-left: auto;
-        }
-
-        .drafts-indicator {
-            background: #f0f7b4;
-            color: #7c7c00;
-            padding: 10px 18px;
-            border-radius: 24px;
-            font-size: var(--font-size-sm);
-            font-weight: var(--font-weight-medium);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid #d4d4aa;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        .attachment-btn {
-            width: 44px;
-            height: 44px;
-            border: none;
-            background: #e8eaed;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 16px;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        .attachment-btn:hover {
-            background: #dadce0;
-            transform: scale(1.02);
-        }
-
-        .send-btn {
-            background: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: var(--font-size-sm);
-            font-weight: var(--font-weight-semibold);
-            box-shadow: 0 3px 8px rgba(24, 144, 255, 0.3);
-            min-width: 80px;
-        }
-
-        .send-btn:hover {
-            background: #1674cc;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
-        }
-
-        /* Right Sidebar */
-        .right-sidebar {
-            width: 300px;
-            background: var(--sidebar-bg);
-            border-left: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .profile-header {
-            padding: 24px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .profile-avatar {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            overflow: hidden;
-            margin: 0 auto 12px;
-        }
-
-        .profile-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .profile-name {
-            font-size: var(--font-size-md);
-            font-weight: var(--font-weight-semibold);
-            color: var(--text-primary);
-            margin-bottom: 4px;
-            line-height: var(--line-height-tight);
-        }
-
-        .profile-status {
-            font-size: var(--font-size-sm);
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-            line-height: var(--line-height-normal);
-        }
-
-        .customer-info {
-            background: #f8f9fb;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
-        }
-
-        .customer-info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .customer-info-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .customer-label {
-            font-size: var(--font-size-xs);
-            color: var(--text-secondary);
-            font-weight: var(--font-weight-medium);
-        }
-
-        .customer-value {
-            font-size: var(--font-size-xs);
-            color: var(--text-primary);
-            font-weight: var(--font-weight-semibold);
-        }
-
-        .customer-value.amount {
-            color: var(--accent-blue);
-        }
-
-        .social-links {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            background: #f8f9fb;
-            padding: 12px 16px;
-            border-radius: 24px;
-            border: 1px solid var(--border-color);
-        }
-
-        .social-link {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 18px;
-            transition: transform 0.2s;
-        }
-
-        .social-link:hover {
-            transform: scale(1.05);
-        }
 
         .social-link.line { background: #00C300; color: white; }
         .social-link.facebook { background: #1877f2; color: white; }
         .social-link.instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; }
         .social-link.shopee { background: #ee4d2d; color: white; }
 
-        /* Media Section */
-        .media-section {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-        }
-
-        .media-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .media-title {
-            font-size: var(--font-size-md);
-            font-weight: var(--font-weight-semibold);
-            color: var(--text-primary);
-        }
-
-        .media-count {
-            font-size: var(--font-size-base);
-            color: var(--text-secondary);
-        }
-
-        .media-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .media-item {
-            aspect-ratio: 1;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-        }
-
-        .media-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .load-more-btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--message-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-medium);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .load-more-btn:hover {
-            background: var(--border-color);
-        }
-
-        /* Category Labels */
-        .category-section {
-            padding: 24px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .category-title {
-            font-size: var(--font-size-md);
-            font-weight: var(--font-weight-semibold);
-            color: var(--text-primary);
-            margin-bottom: 16px;
-        }
-
-        .category-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .category-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .category-checkbox {
-            width: 18px;
-            height: 18px;
-            border: 2px solid var(--border-color);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .category-checkbox.checked {
-            background: var(--accent-blue);
-            border-color: var(--accent-blue);
-            color: white;
-        }
-
-        .category-label {
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-normal);
-            color: var(--text-primary);
-            cursor: pointer;
-        }
-
-        .add-category-btn {
-            width: 100%;
-            padding: 12px;
-            background: transparent;
-            border: 1px dashed var(--border-color);
-            border-radius: var(--border-radius);
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-medium);
-            color: var(--text-secondary);
-            cursor: pointer;
-            margin-top: 16px;
-            transition: all 0.2s;
-        }
-
-        .add-category-btn:hover {
-            border-color: var(--accent-blue);
-            color: var(--accent-blue);
+        img {
+            user-select: none;
+            -webkit-user-drag: none;
         }
 
         /* Responsive Design */
@@ -1321,27 +360,26 @@
         }
     </style>
 </head>
-<body>
-    <div class="chat-container">
+<body class="h-screen overflow-hidden">
+    <div class="flex h-screen w-full bg-white">
         <!-- Left Navigation Sidebar -->
-        <div class="nav-sidebar">
-            <div class="nav-user-avatar">
-                <img src="/assets/images/avatar_1.webp" alt="User" onerror="console.log('Failed to load:', this.src)">
+        <div class="w-20 bg-white border-r border-gray-200 flex flex-col items-center py-5">
+            <div class="w-12 h-12 rounded-full mb-8">
+                <img src="/assets/images/avatar_1.webp" alt="User" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
             </div>
-            <div class="nav-menu">
-                <button class="nav-item">
+            <div class="flex flex-col items-center gap-6 flex-1">
+                <button class="w-12 h-12 border-0 bg-transparent rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-400 text-xl relative hover:bg-gray-100 hover:text-gray-800">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                         <polyline points="9,22 9,12 15,12 15,22"/>
                     </svg>
                 </button>
-                <button class="nav-item">
+                <button class="w-12 h-12 border-0 bg-transparent rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-400 text-xl relative hover:bg-gray-100 hover:text-gray-800">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
                     </svg>
                 </button>
-                <button class="nav-item active">
+                <button class="w-12 h-12 border-0 bg-blue-500 rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 text-white text-xl relative">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                     </svg>
@@ -1351,19 +389,20 @@
                         <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
                     </svg>
                 </button>
-                <button class="nav-item">
+                <button class="w-12 h-12 border-0 bg-transparent rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-400 text-xl relative hover:bg-gray-100 hover:text-gray-800">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+                        <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
                     </svg>
                 </button>
-                <button class="nav-item">
+                <button class="w-12 h-12 border-0 bg-transparent rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-400 text-xl relative hover:bg-gray-100 hover:text-gray-800">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
                         <circle cx="12" cy="12" r="3"/>
                         <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
                     </svg>
                 </button>
             </div>
-            <button class="nav-item nav-logout">
+            <button class="w-12 h-12 border-0 bg-transparent rounded-xl flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-400 text-xl relative hover:bg-gray-100 hover:text-gray-800 mt-auto">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
                     <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
                     <polyline points="16,17 21,12 16,7"/>
@@ -1373,169 +412,196 @@
         </div>
 
         <!-- Main Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <button class="categories-dropdown">
-                    Categories ▼
+        <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-200 flex items-center gap-3 bg-white">
+                <button class="bg-blue-500 text-white border-0 px-5 py-3 rounded-3xl text-sm font-medium cursor-pointer flex items-center gap-2">
+                    Categories
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6,9 12,15 18,9"/>
+                    </svg>
                 </button>
-                <div class="search-container">
-                    <input type="text" class="search-input" placeholder="Search message">
-                    <div class="search-actions">
-                        <button class="search-clear-btn">×</button>
-                        <button class="search-submit-btn">
+                <div class="relative flex-1 ml-3">
+                    <input type="text" class="w-full px-4 py-3 border-0 rounded-3xl text-sm bg-gray-100 text-gray-600 outline-none" placeholder="Search message">
+                    <div class="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                        <button class="w-5 h-5 border-0 bg-gray-400 rounded-full flex items-center justify-center cursor-pointer text-xs text-white">×</button>
+                        <button class="w-7 h-7 border-0 bg-gray-400 rounded-full flex items-center justify-center cursor-pointer text-white text-sm">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"/>
-                                <path d="m21 21-4.35-4.35"/>
+                                <path d="M21 21l-4.35-4.35"/>
                             </svg>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div class="stories-section">
-                <div class="stories-header">
-                    <h3 class="stories-title">Stories</h3>
+            <!-- Stories Section -->
+            <div class="p-5 border-b border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Stories</h3>
                 </div>
-                <div class="stories-list">
-                    <div class="story-item">
-                        <div class="story-avatar">
-                            <img src="/assets/images/avatar_7.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
-                            <div class="story-live">Live</div>
+                <div class="flex gap-3 overflow-x-auto py-1">
+                    <div class="flex-shrink-0 relative">
+                        <div class="w-14 h-14 rounded-full border-2 border-gray-200 relative">
+                            <img src="/assets/images/avatar_9.webp" alt="Story" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
+                            <div class="story-live">LIVE</div>
                         </div>
                     </div>
-                    <div class="story-item">
-                        <div class="story-avatar">
-                            <img src="/assets/images/avatar_8.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
-                            <div class="story-live">Live</div>
+                    <div class="flex-shrink-0 relative">
+                        <div class="w-14 h-14 rounded-full border-2 border-gray-200 relative">
+                            <img src="/assets/images/avatar_12.webp" alt="Story" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
                         </div>
                     </div>
-                    <div class="story-item">
-                        <div class="story-avatar">
-                            <img src="/assets/images/avatar_9.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
-                            <div class="story-live">Live</div>
+                    <div class="flex-shrink-0 relative">
+                        <div class="w-14 h-14 rounded-full border-2 border-gray-200 relative">
+                            <img src="/assets/images/avatar_14.webp" alt="Story" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
                         </div>
                     </div>
-                    <div class="story-item">
-                        <div class="story-avatar">
-                            <img src="/assets/images/avatar_10.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
-                            <div class="story-live">Live</div>
+                    <div class="flex-shrink-0 relative">
+                        <div class="w-14 h-14 rounded-full border-2 border-gray-200 relative">
+                            <img src="/assets/images/avatar_3.webp" alt="Story" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
                         </div>
                     </div>
-                    <div class="story-item">
-                        <div class="story-avatar">
-                            <img src="/assets/images/avatar_11.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
-                            <div class="story-live">Live</div>
+                    <div class="flex-shrink-0 relative">
+                        <div class="w-14 h-14 rounded-full border-2 border-gray-200 relative">
+                            <img src="/assets/images/avatar_16.webp" alt="Story" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="messages-section">
-                <div class="messages-header">
-                    <h3 class="messages-title">Message</h3>
+            <!-- Messages Section -->
+            <div class="flex-1 overflow-hidden flex flex-col">
+                <div class="p-5 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-800">Messages</h3>
                 </div>
-                <div class="messages-list">
-                    <div class="message-item active">
-                        <div class="message-avatar">
-                            <img src="/assets/images/avatar_9.webp" alt="Moise Kean" onerror="console.log('Failed to load:', this.src)">
-                            <div class="online-status online"></div>
+                <div class="flex-1 overflow-y-auto px-5">
+                    <div class="flex items-center gap-3 py-3 cursor-pointer transition-colors duration-200 message-item active -mx-5 px-5 rounded-lg bg-gray-100">
+                        <div class="w-1 h-10 rounded-full bg-gray-200 mr-3 overflow-hidden flex items-end">
+                            <div class="w-full rounded-full transition-all duration-300" style="background-color: rgb(16, 185, 129); height: 75%;"></div>
                         </div>
-                        <div class="message-content">
-                            <div class="message-sender">Moise Kean</div>
-                            <div class="message-preview">Is this item still available?</div>
+                        <div class="relative">
+                            <img src="/assets/images/avatar_9.webp" alt="สมชาย วิชัย" onerror="console.log('Failed to load:', this.src)" class="w-10 h-10 rounded-full">
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style="background-color: rgb(16, 185, 129);"></div>
+                            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 flex items-center justify-center px-1 font-medium">3</div>
                         </div>
-                        <div class="message-meta">
-                            <div class="message-time">04:44 AM</div>
+                        <div class="flex-1 min-w-0 overflow-hidden">
+                            <div class="font-semibold text-sm text-gray-800 mb-0.5 leading-tight">สมชาย วิชัย</div>
+                            <div class="text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis leading-normal">Is this item still available?</div>
                         </div>
-                    </div>
-
-                    <div class="message-item">
-                        <div class="message-avatar">
-                            <img src="/assets/images/avatar_12.webp" alt="Undertaker" onerror="console.log('Failed to load:', this.src)">
-                            <div class="notification-badge">1</div>
-                            <div class="online-status away"></div>
-                        </div>
-                        <div class="message-content">
-                            <div class="message-sender">Undertaker</div>
-                            <div class="message-preview">How much does this cost?</div>
-                        </div>
-                        <div class="message-meta">
-                            <div class="message-time">04:44 AM</div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xs text-gray-400 mb-1">04:44 AM</div>
                         </div>
                     </div>
 
-                    <div class="message-item">
-                        <div class="message-avatar">
-                            <img src="/assets/images/avatar_13.webp" alt="Dmassiv" onerror="console.log('Failed to load:', this.src)">
-                            <div class="notification-badge">1</div>
-                            <div class="online-status online"></div>
+                    <div class="flex items-center gap-3 py-3 cursor-pointer transition-colors duration-200 hover:bg-gray-50 -mx-5 px-5 rounded-lg">
+                        <div class="w-1 h-10 rounded-full bg-gray-200 mr-3 overflow-hidden flex items-end">
+                            <div class="w-full rounded-full transition-all duration-300" style="background-color: rgb(245, 158, 11); height: 37%;"></div>
                         </div>
-                        <div class="message-content">
-                            <div class="message-sender">Dmassiv</div>
-                            <div class="message-preview">sent you 2 photos</div>
+                        <div class="relative">
+                            <img src="/assets/images/avatar_12.webp" alt="นิรันดร์ สุขใส" onerror="console.log('Failed to load:', this.src)" class="w-10 h-10 rounded-full">
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style="background-color: rgb(245, 158, 11);"></div>
+                            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 flex items-center justify-center px-1 font-medium">1</div>
                         </div>
-                        <div class="message-meta">
-                            <div class="message-time">04:44 AM</div>
+                        <div class="flex-1 min-w-0 overflow-hidden">
+                            <div class="font-semibold text-sm text-gray-800 mb-0.5 leading-tight">นิรันดร์ สุขใส</div>
+                            <div class="text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis leading-normal">How much does this cost?</div>
                         </div>
-                    </div>
-
-                    <div class="message-item">
-                        <div class="message-avatar">
-                            <img src="/assets/images/avatar_14.webp" alt="Ruby Vyn" onerror="console.log('Failed to load:', this.src)">
-                            <div class="online-status offline"></div>
-                        </div>
-                        <div class="message-content">
-                            <div class="message-sender">Ruby Vyn</div>
-                            <div class="message-preview">Is the shop open today?</div>
-                        </div>
-                        <div class="message-meta">
-                            <div class="message-time">04:44 AM</div>
-                            <div class="message-status">✓</div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xs text-gray-400 mb-1">04:44 AM</div>
                         </div>
                     </div>
 
-                    <div class="message-item">
-                        <div class="message-avatar">
-                            <img src="/assets/images/avatar_15.webp" alt="Harry M" onerror="console.log('Failed to load:', this.src)">
-                            <div class="online-status online"></div>
+                    <div class="flex items-center gap-3 py-3 cursor-pointer transition-colors duration-200 hover:bg-gray-50 -mx-5 px-5 rounded-lg">
+                        <div class="w-1 h-10 rounded-full bg-gray-200 mr-3 overflow-hidden flex items-end">
+                            <div class="w-full rounded-full transition-all duration-300" style="background-color: rgb(239, 68, 68); height: 20%;"></div>
                         </div>
-                        <div class="message-content">
-                            <div class="message-sender">Harry M</div>
-                            <div class="message-preview">Today there is a promo for you</div>
+                        <div class="relative">
+                            <img src="/assets/images/avatar_14.webp" alt="มาลี จันทร์แสง" onerror="console.log('Failed to load:', this.src)" class="w-10 h-10 rounded-full">
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style="background-color: rgb(156, 163, 175);"></div>
+                            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 flex items-center justify-center px-1 font-medium">2</div>
                         </div>
-                        <div class="message-meta">
-                            <div class="message-time">04:44 AM</div>
-                            <div class="message-status">✓</div>
+                        <div class="flex-1 min-w-0 overflow-hidden">
+                            <div class="font-semibold text-sm text-gray-800 mb-0.5 leading-tight">มาลี จันทร์แสง</div>
+                            <div class="text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis leading-normal">Hello, is there any discount?</div>
                         </div>
-                    </div>
-
-                    <div class="message-item">
-                        <div class="message-avatar">
-                            <img src="/assets/images/avatar_16.webp" alt="Villa Kuplu" onerror="console.log('Failed to load:', this.src)">
-                            <div class="notification-badge">1</div>
-                            <div class="online-status away"></div>
-                        </div>
-                        <div class="message-content">
-                            <div class="message-sender">Villa Kuplu</div>
-                            <div class="message-preview">when will my item arrive</div>
-                        </div>
-                        <div class="message-meta">
-                            <div class="message-time">04:44 AM</div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xs text-gray-400 mb-1">04:44 AM</div>
+                            <div class="text-green-500 text-sm">✓</div>
                         </div>
                     </div>
 
-                    <div class="message-item">
-                        <div class="message-avatar">
-                            <img src="/assets/images/avatar_17.webp" alt="Tapi Bulat" onerror="console.log('Failed to load:', this.src)">
-                            <div class="online-status online"></div>
+                    <div class="flex items-center gap-3 py-3 cursor-pointer transition-colors duration-200 hover:bg-gray-50 -mx-5 px-5 rounded-lg">
+                        <div class="w-1 h-10 rounded-full bg-gray-200 mr-3 overflow-hidden flex items-end">
+                            <div class="w-full rounded-full transition-all duration-300" style="background-color: rgb(34, 197, 94); height: 62%;"></div>
                         </div>
-                        <div class="message-content">
-                            <div class="message-sender">Tapi Bulat</div>
-                            <div class="message-preview">Thankyouuu</div>
+                        <div class="relative">
+                            <img src="/assets/images/avatar_3.webp" alt="สิรินยา ทองคำ" onerror="console.log('Failed to load:', this.src)" class="w-10 h-10 rounded-full">
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style="background-color: rgb(156, 163, 175);"></div>
+                            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 flex items-center justify-center px-1 font-medium">8</div>
                         </div>
-                        <div class="message-meta">
-                            <div class="message-time">04:44 AM</div>
-                            <div class="message-status">✓</div>
+                        <div class="flex-1 min-w-0 overflow-hidden">
+                            <div class="font-semibold text-sm text-gray-800 mb-0.5 leading-tight">สิรินยา ทองคำ</div>
+                            <div class="text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis leading-normal">Is the shop open today?</div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xs text-gray-400 mb-1">04:44 AM</div>
+                            <div class="text-green-500 text-sm">✓</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 py-3 cursor-pointer transition-colors duration-200 hover:bg-gray-50 -mx-5 px-5 rounded-lg">
+                        <div class="w-1 h-10 rounded-full bg-gray-200 mr-3 overflow-hidden flex items-end">
+                            <div class="w-full rounded-full transition-all duration-300" style="background-color: rgb(239, 68, 68); height: 25%;"></div>
+                        </div>
+                        <div class="relative">
+                            <img src="https://placehold.co/96x96" alt="วิชัย ศรีสุข" class="w-10 h-10 rounded-full">
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style="background-color: rgb(245, 158, 11);"></div>
+                            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 flex items-center justify-center px-1 font-medium">2</div>
+                        </div>
+                        <div class="flex-1 min-w-0 overflow-hidden">
+                            <div class="font-semibold text-sm text-gray-800 mb-0.5 leading-tight">วิชัย ศรีสุข</div>
+                            <div class="text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis leading-normal">Today there is a promo for you</div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xs text-gray-400 mb-1">04:44 AM</div>
+                            <div class="text-green-500 text-sm">✓</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 py-3 cursor-pointer transition-colors duration-200 hover:bg-gray-50 -mx-5 px-5 rounded-lg">
+                        <div class="w-1 h-10 rounded-full bg-gray-200 mr-3 overflow-hidden flex items-end">
+                            <div class="w-full rounded-full transition-all duration-300" style="background-color: rgb(245, 158, 11); height: 37%;"></div>
+                        </div>
+                        <div class="relative">
+                            <img src="/assets/images/avatar_16.webp" alt="อรุณี บุญมา" onerror="console.log('Failed to load:', this.src)" class="w-10 h-10 rounded-full">
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style="background-color: rgb(245, 158, 11);"></div>
+                            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 flex items-center justify-center px-1 font-medium">6</div>
+                        </div>
+                        <div class="flex-1 min-w-0 overflow-hidden">
+                            <div class="font-semibold text-sm text-gray-800 mb-0.5 leading-tight">อรุณี บุญมา</div>
+                            <div class="text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis leading-normal">when will my item arrive</div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xs text-gray-400 mb-1">04:44 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 py-3 cursor-pointer transition-colors duration-200 hover:bg-gray-50 -mx-5 px-5 rounded-lg">
+                        <div class="w-1 h-10 rounded-full bg-gray-200 mr-3 overflow-hidden flex items-end">
+                            <div class="w-full rounded-full transition-all duration-300" style="background-color: rgb(16, 185, 129); height: 88%;"></div>
+                        </div>
+                        <div class="relative">
+                            <img src="https://placehold.co/96x96" alt="ชัยณรงค์ แสงทอง" class="w-10 h-10 rounded-full">
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style="background-color: rgb(16, 185, 129);"></div>
+                            <div class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-4 h-4 flex items-center justify-center px-1 font-medium">12</div>
+                        </div>
+                        <div class="flex-1 min-w-0 overflow-hidden">
+                            <div class="font-semibold text-sm text-gray-800 mb-0.5 leading-tight">ชัยณรงค์ แสงทอง</div>
+                            <div class="text-xs text-gray-600 whitespace-nowrap overflow-hidden text-ellipsis leading-normal">Thankyouuu</div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-xs text-gray-400 mb-1">04:44 AM</div>
+                            <div class="text-green-500 text-sm">✓</div>
                         </div>
                     </div>
                 </div>
@@ -1543,165 +609,227 @@
         </div>
 
         <!-- Main Chat Area -->
-        <div class="main-chat">
-            <div class="chat-header">
-                <h1 class="chat-title">Message Detail</h1>
-                <div class="chat-user-section">
-                    <div class="chat-user-info">
-                        <div class="chat-user-avatar">
-                            <img src="/assets/images/avatar_9.webp" alt="Moise Kean" onerror="console.log('Failed to load:', this.src)">
+        <div class="flex-1 flex flex-col bg-white relative">
+            <!-- Main Chat Header -->
+            <div class="chat-header p-6 border-b border-gray-200 bg-white relative z-30">
+                <h1 class="text-3xl font-bold text-gray-800 mb-6 leading-tight">Chat dashboard</h1>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-full">
+                            <img src="/assets/images/avatar_9.webp" alt="สมชาย วิชัย" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
                         </div>
-                        <div class="chat-user-details">
-                            <h3>Moise Kean</h3>
-                            <p>Last Seen Recently</p>
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-800 mb-0.5 leading-tight">สมชาย วิชัย</h3>
+                            <p class="text-sm text-gray-600 leading-normal">Online</p>
                         </div>
                     </div>
-                    <div class="chat-actions">
-                        <button class="chat-action-btn">
-                            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                    <div class="flex items-center gap-2 bg-gray-100 p-2 rounded-3xl border border-gray-200">
+                        <button class="w-9 h-9 border-0 bg-transparent rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 text-gray-600 text-base hover:bg-gray-200">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
                         </button>
-                        <button class="chat-action-btn">
-                            <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        <button class="w-9 h-9 border-0 bg-transparent rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 text-gray-600 text-base hover:bg-gray-200">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                         </button>
-                        <button class="chat-action-btn">
-                            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                        <button class="w-9 h-9 border-0 bg-transparent rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 text-gray-600 text-base hover:bg-gray-200">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                         </button>
-                        <button class="chat-action-btn">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                        <button class="w-9 h-9 border-0 bg-transparent rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 text-gray-600 text-base hover:bg-gray-200">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div class="chat-messages">
-                <div class="message-date">
-                    <div class="date-dropdown" onclick="toggleDateDropdown(this)">
-                        <span class="date-dropdown-text">27 December 2024</span>
-                        <svg class="date-dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <!-- Mini Toolbar (hidden by default) -->
+            <div class="mini-toolbar px-4 py-3">
+                <div class="flex items-center justify-between">
+                    <!-- User Info (Compact) -->
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full">
+                            <img src="/assets/images/avatar_9.webp" alt="สมชาย วิชัย" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-800 leading-tight">สมชาย วิชัย</h3>
+                        </div>
+                    </div>
+
+                    <!-- Mini Toolbar Actions -->
+                    <div class="flex items-center gap-2">
+                        <!-- Date Dropdown (Mini) -->
+                        <div class="bg-gray-100 border border-gray-200 rounded-full px-3 py-1.5 flex items-center gap-1 cursor-pointer transition-all duration-200 hover:bg-gray-200" onclick="toggleDateDropdown(this)">
+                            <span class="text-xs font-medium text-gray-600">27 Dec</span>
+                            <svg class="w-3 h-3 stroke-gray-600 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6,9 12,15 18,9"/>
+                            </svg>
+                            <div class="date-dropdown-menu absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl z-50 mt-1 hidden">
+                                <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100 first:rounded-t-xl" onclick="selectDate(this, 'Today')">Today</div>
+                                <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100" onclick="selectDate(this, 'Yesterday')">Yesterday</div>
+                                <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100" onclick="selectDate(this, '27 December 2024')">27 December 2024</div>
+                                <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100" onclick="selectDate(this, '26 December 2024')">26 December 2024</div>
+                                <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100 last:rounded-b-xl" onclick="selectDate(this, '25 December 2024')">25 December 2024</div>
+                            </div>
+                        </div>
+
+                        <!-- Search Box (Mini) -->
+                        <div class="relative">
+                            <input type="text" id="miniSearchBox" placeholder="Search..." class="bg-gray-100 border border-gray-200 rounded-full px-3 py-1.5 text-xs text-gray-800 placeholder-gray-500 w-32 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" onkeypress="handleSearch(event)">
+                            <svg class="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                        </div>
+
+                        <!-- Product Suggestions Link -->
+                        <button class="bg-blue-500 text-white rounded-full px-3 py-1.5 text-xs font-medium hover:bg-blue-600 transition-colors duration-200 flex items-center gap-1" onclick="scrollToProducts()">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <rect x="7" y="7" width="10" height="10" rx="1" ry="1"/>
+                            </svg>
+                            Products
+                        </button>
+
+                        <!-- Expand Header Button -->
+                        <button class="w-7 h-7 border-0 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 text-gray-600 hover:bg-gray-200" onclick="expandHeader()">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="18,15 12,9 6,15"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-4 max-h-[calc(100vh-280px)]" id="chatMessages">
+                <div class="flex justify-center my-4">
+                    <div class="bg-gray-100 border border-gray-200 rounded-3xl px-4 py-2 flex items-center gap-2 cursor-pointer transition-all duration-200 relative hover:bg-gray-200" onclick="toggleDateDropdown(this)">
+                        <span class="text-xs font-medium text-gray-400">27 December 2024</span>
+                        <svg class="w-3 h-3 stroke-gray-400 transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="6,9 12,15 18,9"/>
                         </svg>
-                        <div class="date-dropdown-menu">
-                            <div class="date-dropdown-item" onclick="selectDate(this, '27 December 2024')">27 December 2024</div>
-                            <div class="date-dropdown-item" onclick="selectDate(this, '26 December 2024')">26 December 2024</div>
-                            <div class="date-dropdown-item" onclick="selectDate(this, '25 December 2024')">25 December 2024</div>
-                            <div class="date-dropdown-item" onclick="selectDate(this, '24 December 2024')">24 December 2024</div>
-                            <div class="date-dropdown-item" onclick="selectDate(this, '23 December 2024')">23 December 2024</div>
+        <div class="date-dropdown-menu absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl z-50 mt-1 hidden">
+                            <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100 first:rounded-t-xl" onclick="selectDate(this, 'Today')">Today</div>
+                            <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100" onclick="selectDate(this, 'Yesterday')">Yesterday</div>
+                            <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100" onclick="selectDate(this, '27 December 2024')">27 December 2024</div>
+                            <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100" onclick="selectDate(this, '26 December 2024')">26 December 2024</div>
+                            <div class="px-4 py-2 text-xs text-gray-400 cursor-pointer transition-colors duration-200 hover:bg-gray-100 last:rounded-b-xl" onclick="selectDate(this, '25 December 2024')">25 December 2024</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="message-bubble received">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-gray-100 text-gray-800 self-start rounded-bl-sm">
                     Hello! Welcome to COS Thailand! I'm here to help you find the perfect outfit. What kind of look are you going for today? 😊
-                    <div class="message-timestamp">14:30</div>
+                    <div class="text-xs text-gray-400 mt-1 text-right font-normal">14:30</div>
                 </div>
 
-                <div class="message-bubble sent">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-blue-500 text-white self-end rounded-br-sm">
                     Hi! I'm looking for something stylish for a Sunday evening. Maybe something I can wear to chill with friends at an upscale bar near the beach?
-                    <div class="message-timestamp">14:32</div>
+                    <div class="text-xs text-white/80 mt-1 text-right font-normal">14:32</div>
                 </div>
 
-                <div class="message-bubble received">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-gray-100 text-gray-800 self-start rounded-bl-sm">
                     That sounds like a perfect evening! For an upscale beach bar setting, you'll want something that's both elegant and relaxed. Are you thinking more of a dress or a coordinated outfit with separates?
-                    <div class="message-timestamp">14:33</div>
+                    <div class="text-xs text-gray-400 mt-1 text-right font-normal">14:33</div>
                 </div>
 
-                <div class="message-bubble sent">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-blue-500 text-white self-end rounded-br-sm">
                     I'm open to both options! What would you recommend? I want to look put-together but not overdressed.
-                    <div class="message-timestamp">14:35</div>
+                    <div class="text-xs text-white/80 mt-1 text-right font-normal">14:35</div>
                 </div>
 
-                <div class="message-bubble received">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-gray-100 text-gray-800 self-start rounded-bl-sm">
                     Perfect! Let me show you some great options. I have a beautiful piece that would be ideal for your evening out.
-                    <div class="message-timestamp">14:36</div>
+                    <div class="text-xs text-gray-400 mt-1 text-right font-normal">14:36</div>
                 </div>
 
-                <div class="message-bubble sent">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-blue-500 text-white self-end rounded-br-sm">
                     That sounds great! Show me what you have in mind.
-                    <div class="message-timestamp">14:37</div>
+                    <div class="text-xs text-white/80 mt-1 text-right font-normal">14:37</div>
                 </div>
 
-                <div class="message-bubble received">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-gray-100 text-gray-800 self-start rounded-bl-sm">
                     I found the perfect base piece for you! Let me show you this stunning option:
 
-                    <div class="product-recommendation">
-                        <div class="recommendation-text">Here's a beautiful piece that would be perfect as your foundation:</div>
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 mt-3 max-w-md">
+                        <div class="text-sm text-gray-600 mb-2">Here's a beautiful piece that would be perfect as your foundation:</div>
 
-                        <div class="product-grid dress-showcase">
-                            <div class="product-item">
-                                <a href="https://th.cos.com/th_en/1283683001.html" target="_blank" class="product-link">
-                                    <div class="dress-images">
-                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/6dc27c174a0ab5cd0a81c53ba6fafccc4e61675f_xxl-1.jpg" alt="Black Dress - Model" class="dress-image" onerror="console.log('Failed to load product image:', this.src)">
-                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/ce06191c1f2a556baf12a13c181e256978934061_xxl-1.jpg" alt="Black Dress - Side View" class="dress-image" onerror="console.log('Failed to load product image:', this.src)">
-                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/cc47d179296535e89fc1fc87461f9dac7024c1f8_xxl-1.jpg" alt="Black Dress - Detail" class="dress-image detail" onerror="console.log('Failed to load product image:', this.src)">
+                        <div class="grid grid-cols-1 gap-3 max-w-sm">
+                            <div class="border border-gray-200 rounded-lg overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5">
+                                <a href="https://th.cos.com/th_en/1283683001.html" target="_blank" class="no-underline text-inherit block">
+                                    <div class="flex gap-2 mb-2">
+                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/6dc27c174a0ab5cd0a81c53ba6fafccc4e61675f_xxl-1.jpg" alt="Black Dress - Model" class="flex-1 h-40 object-cover object-top rounded-md" onerror="console.log('Failed to load product image:', this.src)">
+                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/ce06191c1f2a556baf12a13c181e256978934061_xxl-1.jpg" alt="Black Dress - Side View" class="flex-1 h-40 object-cover object-top rounded-md" onerror="console.log('Failed to load product image:', this.src)">
+                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/cc47d179296535e89fc1fc87461f9dac7024c1f8_xxl-1.jpg" alt="Black Dress - Detail" class="flex-1 h-40 object-contain bg-gray-50 rounded-md" onerror="console.log('Failed to load product image:', this.src)">
                                     </div>
-                                    <div class="product-info">
-                                        <div class="product-name">Elegant Black Dress</div>
-                                        <div class="product-price">฿3,990</div>
+                                    <div class="p-2">
+                                        <div class="text-xs font-medium text-gray-800 mb-1 leading-tight">Elegant Black Dress</div>
+                                        <div class="text-xs font-semibold text-blue-500">฿3,990</div>
                                     </div>
                                 </a>
                             </div>
                         </div>
                     </div>
-                    <div class="message-timestamp">14:38</div>
+
+                    <div class="text-xs text-gray-400 mt-1 text-right font-normal">14:38</div>
                 </div>
 
-                <div class="message-bubble sent">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-blue-500 text-white self-end rounded-br-sm">
                     Wow, that dress looks amazing! I love the cut and style. But it might be a bit warm for the beach setting. Do you have any layering options?
-                    <div class="message-timestamp">14:40</div>
+                    <div class="text-xs text-white/80 mt-1 text-right font-normal">14:40</div>
                 </div>
 
-                <div class="message-bubble received">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-gray-100 text-gray-800 self-start rounded-bl-sm">
                     Absolutely! With a dress like that, you have so many versatile options. Any white top would match perfectly and give you that relaxed beach vibe while keeping it sophisticated. Here are some perfect matches:
 
-                    <div class="product-recommendation">
-                        <div class="recommendation-text">These white tops would be perfect matches:</div>
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 mt-3 max-w-md">
+                        <div class="text-sm text-gray-600 mb-2">These white tops would be perfect matches:</div>
 
-                        <div class="product-grid">
-                            <div class="product-item">
-                                <a href="https://th.cos.com/th_en/1271627001.html" target="_blank" class="product-link">
-                                    <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/f5deb3a4b2cc363492b2c88d50838661728e7f93_xxl-1.jpg" alt="White Top 1" class="product-image" onerror="console.log('Failed to load product image:', this.src)">
-                                    <div class="product-info">
-                                        <div class="product-name">Classic White Top</div>
-                                        <div class="product-price">฿1,990</div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="border border-gray-200 rounded-lg overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5">
+                                <a href="https://th.cos.com/th_en/1271627001.html" target="_blank" class="no-underline text-inherit block">
+                                    <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/f5deb3a4b2cc363492b2c88d50838661728e7f93_xxl-1.jpg" alt="White Top 1" class="w-full h-40 object-cover object-top" onerror="console.log('Failed to load product image:', this.src)">
+                                    <div class="p-2">
+                                        <div class="text-xs font-medium text-gray-800 mb-1 leading-tight">Classic White Top</div>
+                                        <div class="text-xs font-semibold text-blue-500">฿1,990</div>
                                     </div>
                                 </a>
                             </div>
-                            <div class="product-item">
-                                <a href="https://th.cos.com/th_en/1221948002.html" target="_blank" class="product-link">
-                                    <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/50e0fa003deee60245e83f704e4c8f09712d3e0e_xxl-1.jpg" alt="White Top 2" class="product-image" onerror="console.log('Failed to load product image:', this.src)">
-                                    <div class="product-info">
-                                        <div class="product-name">Elegant White Blouse</div>
-                                        <div class="product-price">฿1,790</div>
+                            <div class="border border-gray-200 rounded-lg overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5">
+                                <a href="https://th.cos.com/th_en/1221948002.html" target="_blank" class="no-underline text-inherit block">
+                                    <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/50e0fa003deee60245e83f704e4c8f09712d3e0e_xxl-1.jpg" alt="White Top 2" class="w-full h-40 object-cover object-top" onerror="console.log('Failed to load product image:', this.src)">
+                                    <div class="p-2">
+                                        <div class="text-xs font-medium text-gray-800 mb-1 leading-tight">Elegant White Blouse</div>
+                                        <div class="text-xs font-semibold text-blue-500">฿1,790</div>
                                     </div>
                                 </a>
                             </div>
-                        </div>
-
-                        <div class="recommendation-text" style="margin-top: 12px;">
-                            This combination would be a perfect match to chill with friends at an upscale bar close to the beach on Sunday evening. The contrast creates an effortlessly chic look that's both comfortable and sophisticated! ✨
                         </div>
                     </div>
-                    <div class="message-timestamp">14:42</div>
+
+                    <div class="text-xs text-gray-400 mt-1 text-right font-normal">14:42</div>
                 </div>
 
-                <div class="message-bubble sent">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-blue-500 text-white self-end rounded-br-sm">
                     This is exactly what I was looking for! I love how you can mix and match these pieces. The white tops would definitely keep it fresh and beachy while still looking elegant. How do I order these?
-                    <div class="message-timestamp">14:45</div>
+                    <div class="text-xs text-white/80 mt-1 text-right font-normal">14:45</div>
                 </div>
 
-                <div class="message-bubble received">
+                <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-gray-100 text-gray-800 self-start rounded-bl-sm">
                     I'm so glad you love the combination! You can easily order these directly from our website at th.cos.com. Just search for the items or use the product links I can provide. Would you like me to help you with sizing or do you have any other questions about styling these pieces?
-                    <div class="message-timestamp">14:46</div>
+                    <div class="text-xs text-gray-400 mt-1 text-right font-normal">14:46</div>
                 </div>
             </div>
 
-            <div class="chat-input-container">
-                <div class="chat-input-wrapper">
-                    <div class="chat-input-avatar">
-                        <img src="/assets/images/avatar_1.webp" alt="User" onerror="console.log('Failed to load:', this.src)">
+            <!-- Chat Input -->
+            <div class="p-6 border-t border-gray-200 bg-gray-50">
+                <div class="flex items-center gap-3 bg-white rounded-full px-4 py-3 border border-gray-200">
+                    <div class="w-8 h-8 rounded-full flex-shrink-0">
+                        <img src="/assets/images/avatar_1.webp" alt="You" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
                     </div>
-                    <div class="input-actions">
-                        <div class="drafts-indicator">
+                    <input type="text"
+                           placeholder="Type your message here..."
+                           class="flex-1 bg-transparent border-0 outline-none text-sm text-gray-800 placeholder-gray-500 px-2 py-1"
+                           id="messageInput">
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 text-gray-500 text-sm bg-yellow-100 rounded-full px-3 py-1.5">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
                                 <polyline points="17,21 17,13 7,13 7,21"/>
@@ -1709,17 +837,23 @@
                             </svg>
                             1 Drafts
                         </div>
-                        <button class="attachment-btn">
+                        <button class="w-8 h-8 border-0 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 text-gray-600 hover:bg-gray-200">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
                             </svg>
                         </button>
-                        <button class="send-btn">
+                        <button class="w-8 h-8 border-0 bg-gray-100 rounded-full flex items-center justify-center cursor-pointer transition-colors duration-200 text-gray-600 hover:bg-gray-200">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 22h14a2 2 0 002-2V4a2 2 0 00-2-2H5a2 2 0 00-2 2v14.5z"/>
+                                <polyline points="5,1 5,6 11,6 11,1"/>
+                            </svg>
+                        </button>
+                        <button class="px-4 py-2 border-0 bg-blue-500 rounded-full flex items-center justify-center gap-2 cursor-pointer transition-colors duration-200 text-white text-sm font-medium hover:bg-blue-600">
+                            Send
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="22" y1="2" x2="11" y2="13"/>
                                 <polygon points="22,2 15,22 11,13 2,9 22,2"/>
                             </svg>
-                            Send
                         </button>
                     </div>
                 </div>
@@ -1727,50 +861,50 @@
         </div>
 
         <!-- Right Sidebar -->
-        <div class="right-sidebar">
-            <div class="profile-header">
-                <div class="profile-avatar">
-                    <img src="/assets/images/avatar_9.webp" alt="Moise Kean" onerror="console.log('Failed to load:', this.src)">
+        <div class="w-80 bg-white border-l border-gray-200 flex flex-col">
+            <div class="p-6 border-b border-gray-200">
+                <div class="w-16 h-16 rounded-full mx-auto mb-4">
+                    <img src="/assets/images/avatar_9.webp" alt="สมชาย วิชัย" onerror="console.log('Failed to load:', this.src)" class="w-full h-full object-cover rounded-full">
                 </div>
-                <div class="profile-name">Moise Kean</div>
-                <div class="profile-status">Last Seen Recently</div>
-                
-                <div class="customer-info">
-                    <div class="customer-info-row">
-                        <span class="customer-label">Customer ID:</span>
-                        <span class="customer-value">COS-TH-24691</span>
+                <div class="text-xl font-bold text-gray-800 text-center mb-1">สมชาย วิชัย</div>
+                <div class="text-sm text-gray-500 text-center">Last seen 2 hours ago</div>
+
+                <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-gray-600 font-medium">Customer ID:</span>
+                        <span class="text-xs text-gray-800 font-semibold">#SC2024001</span>
                     </div>
-                    <div class="customer-info-row">
-                        <span class="customer-label">Total Orders:</span>
-                        <span class="customer-value">47 orders</span>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-gray-600 font-medium">Join Date:</span>
+                        <span class="text-xs text-gray-800 font-semibold">Dec 15, 2023</span>
                     </div>
-                    <div class="customer-info-row">
-                        <span class="customer-label">Location:</span>
-                        <span class="customer-value">Bangkok, Thailand</span>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-gray-600 font-medium">Total Orders:</span>
+                        <span class="text-xs text-gray-800 font-semibold">23</span>
                     </div>
-                    <div class="customer-info-row">
-                        <span class="customer-label">Total Spent:</span>
-                        <span class="customer-value amount">฿89,350</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-gray-600 font-medium">Total Spent:</span>
+                        <span class="text-xs text-blue-500 font-semibold">฿89,350</span>
                     </div>
                 </div>
-                
-                <div class="social-links">
-                    <a href="#" class="social-link line">
+
+                <div class="flex justify-center gap-4 mt-6 p-4 bg-gray-50 rounded-xl">
+                    <a href="#" class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-colors duration-200">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12.017.572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.592.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
                         </svg>
                     </a>
-                    <a href="#" class="social-link facebook">
+                    <a href="#" class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition-colors duration-200">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                         </svg>
                     </a>
-                    <a href="#" class="social-link instagram">
+                    <a href="#" class="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center text-white hover:bg-pink-600 transition-colors duration-200">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                         </svg>
                     </a>
-                    <a href="#" class="social-link shopee">
+                    <a href="#" class="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white hover:bg-orange-600 transition-colors duration-200">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M2.359 11.36c0-.107.073-.18.179-.18h1.106c.107 0 .179.073.179.18v1.465c0 .107-.072.18-.179.18H2.538c-.106 0-.179-.073-.179-.18V11.36zm4.02 0c0-.107.072-.18.178-.18h1.107c.106 0 .178.073.178.18v1.465c0 .107-.072.18-.178.18H6.557c-.106 0-.178-.073-.178-.18V11.36zm4.02 0c0-.107.072-.18.179-.18h1.106c.107 0 .179.073.179.18v1.465c0 .107-.072.18-.179.18h-1.106c-.107 0-.179-.073-.179-.18V11.36zm4.019 0c0-.107.073-.18.179-.18h1.107c.106 0 .178.073.178.18v1.465c0 .107-.072.18-.178.18h-1.107c-.106 0-.179-.073-.179-.18V11.36zm4.02 0c0-.107.072-.18.178-.18h1.107c.106 0 .178.073.178.18v1.465c0 .107-.072.18-.178.18h-1.107c-.106 0-.178-.073-.178-.18V11.36z"/>
                         </svg>
@@ -1778,43 +912,43 @@
                 </div>
             </div>
 
-            <div class="media-section">
-                <div class="media-header">
-                    <h3 class="media-title">Accessory sales performance</h3>
-                    <span class="media-count">
+            <div class="flex-1 p-6 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-semibold text-gray-800">Accessory sales performance</h3>
+                    <span class="text-sm text-gray-600">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
                     </span>
                 </div>
-                <div class="media-grid">
-                    <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/1ec61ccae5775b4799ea2a2d34979083e4e20f0e_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
+                <div class="grid grid-cols-3 gap-2 mb-8">
+                    <div class="aspect-square rounded-lg overflow-hidden">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/1ec61ccae5775b4799ea2a2d34979083e4e20f0e_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)" class="w-full h-full object-cover">
                     </div>
-                    <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/301de5094f565ee93ef2fa4ca4e9bd63ad3d90da_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
+                    <div class="aspect-square rounded-lg overflow-hidden">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/301de5094f565ee93ef2fa4ca4e9bd63ad3d90da_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)" class="w-full h-full object-cover">
                     </div>
-                    <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/88d1a406fef9552a0e137d30f4cf7086d8490855_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
+                    <div class="aspect-square rounded-lg overflow-hidden">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/88d1a406fef9552a0e137d30f4cf7086d8490855_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)" class="w-full h-full object-cover">
                     </div>
-                    <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/bd436bf67da877c3b5b741a1b7b924d36a237709_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
+                    <div class="aspect-square rounded-lg overflow-hidden">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/bd436bf67da877c3b5b741a1b7b924d36a237709_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)" class="w-full h-full object-cover">
                     </div>
-                    <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/9ba96ec182e5d0164e140a9efad1e03a96c06509_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
+                    <div class="aspect-square rounded-lg overflow-hidden">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/9ba96ec182e5d0164e140a9efad1e03a96c06509_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)" class="w-full h-full object-cover">
                     </div>
-                    <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/32b896b8b5f1a12d37a3742f48abf1044ccba87b_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
+                    <div class="aspect-square rounded-lg overflow-hidden">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/32b896b8b5f1a12d37a3742f48abf1044ccba87b_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)" class="w-full h-full object-cover">
                     </div>
                 </div>
-                <button class="load-more-btn">View all suggestion</button>
+                <button class="w-full p-3 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 cursor-pointer transition-colors duration-200 hover:bg-gray-200">View all suggestion</button>
             </div>
 
-            <div class="category-section">
-                <div class="media-header">
-                    <h3 class="category-title">Category Label</h3>
-                    <span class="media-count">
+            <div class="p-6 border-t border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base font-semibold text-gray-800">Category Label</h3>
+                    <span class="text-sm text-gray-600">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="23,4 23,10 17,10"/>
                             <polyline points="1,20 1,14 7,14"/>
@@ -1822,25 +956,25 @@
                         </svg>
                     </span>
                 </div>
-                <div class="category-list">
-                    <div class="category-item">
-                        <div class="category-checkbox checked">✓</div>
-                        <span class="category-label">Important</span>
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 border-2 border-blue-500 rounded bg-blue-500 flex items-center justify-center cursor-pointer text-white">✓</div>
+                        <span class="text-sm font-normal text-gray-800 cursor-pointer">Work & Office</span>
                     </div>
-                    <div class="category-item">
-                        <div class="category-checkbox checked">✓</div>
-                        <span class="category-label">Customer</span>
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 border-2 border-gray-200 rounded flex items-center justify-center cursor-pointer">✓</div>
+                        <span class="text-sm font-normal text-gray-800 cursor-pointer">Party & Festival</span>
                     </div>
-                    <div class="category-item">
-                        <div class="category-checkbox"></div>
-                        <span class="category-label">Friends</span>
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 border-2 border-gray-200 rounded flex items-center justify-center cursor-pointer">✓</div>
+                        <span class="text-sm font-normal text-gray-800 cursor-pointer">Casual & Sport</span>
                     </div>
-                    <div class="category-item">
-                        <div class="category-checkbox"></div>
-                        <span class="category-label">Family</span>
+                    <div class="flex items-center gap-3">
+                        <div class="w-4 h-4 border-2 border-gray-200 rounded flex items-center justify-center cursor-pointer">✓</div>
+                        <span class="text-sm font-normal text-gray-800 cursor-pointer">Travel & Holiday</span>
                     </div>
                 </div>
-                <button class="add-category-btn">Add Category Label</button>
+                <button class="w-full p-3 bg-transparent border border-dashed border-gray-200 rounded-lg text-sm font-medium text-gray-600 cursor-pointer mt-4 transition-all duration-200 hover:border-blue-500 hover:text-blue-500">+ Add Category</button>
             </div>
         </div>
     </div>
@@ -1848,6 +982,86 @@
     <script>
         // Basic functionality for the chat interface
         document.addEventListener('DOMContentLoaded', function() {
+            // Scroll behavior for header hiding/showing
+            let lastScrollTop = 0;
+            const chatMessages = document.getElementById('chatMessages');
+            const chatHeader = document.querySelector('.chat-header');
+            const miniToolbar = document.querySelector('.mini-toolbar');
+
+            if (chatMessages && chatHeader && miniToolbar) {
+                chatMessages.addEventListener('scroll', function() {
+                    const scrollTop = this.scrollTop;
+                    const scrollHeight = this.scrollHeight;
+                    const clientHeight = this.clientHeight;
+                    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
+
+                    // At the very top (0-5% scrolled) - show main header only
+                    if (scrollPercentage <= 0.05) {
+                        chatHeader.classList.remove('hidden');
+                        miniToolbar.classList.remove('show');
+                    }
+                    // At the bottom (95-100% scrolled) - show main header
+                    else if (scrollPercentage >= 0.95) {
+                        chatHeader.classList.remove('hidden');
+                        miniToolbar.classList.remove('show');
+                    }
+                    // In the middle (5-95% scrolled) - show mini toolbar
+                    else {
+                        chatHeader.classList.add('hidden');
+                        miniToolbar.classList.add('show');
+                    }
+
+                    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+                });
+            }
+
+            // Function to expand header (from mini toolbar)
+            window.expandHeader = function() {
+                const chatHeader = document.querySelector('.chat-header');
+                const miniToolbar = document.querySelector('.mini-toolbar');
+                const chatMessages = document.getElementById('chatMessages');
+
+                if (chatHeader && miniToolbar && chatMessages) {
+                    chatHeader.classList.remove('hidden');
+                    miniToolbar.classList.remove('show');
+                    chatMessages.scrollTop = 0; // Scroll to top
+                }
+            };
+
+            // Function to scroll to product suggestions
+            window.scrollToProducts = function() {
+                const chatMessages = document.getElementById('chatMessages');
+                const productSuggestions = document.querySelector('.bg-white.border.border-gray-200.rounded-xl.p-4.mt-3.max-w-md');
+
+                if (chatMessages && productSuggestions) {
+                    productSuggestions.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            };
+
+            // Function to handle search in mini toolbar
+            window.handleSearch = function(event) {
+                if (event.key === 'Enter') {
+                    const searchTerm = event.target.value.toLowerCase();
+                    const chatMessages = document.getElementById('chatMessages');
+                    const messageElements = chatMessages.querySelectorAll('.max-w-\\[70\\%\\]');
+
+                    if (searchTerm) {
+                        // Find and scroll to first matching message
+                        for (let message of messageElements) {
+                            if (message.textContent.toLowerCase().includes(searchTerm)) {
+                                message.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                // Highlight the message briefly
+                                message.style.backgroundColor = '#fef3cd';
+                                setTimeout(() => {
+                                    message.style.backgroundColor = '';
+                                }, 2000);
+                                break;
+                            }
+                        }
+                    }
+                }
+            };
+
             // Handle message item clicks
             const messageItems = document.querySelectorAll('.message-item');
             messageItems.forEach(item => {
@@ -1865,7 +1079,7 @@
                     const chatMessages = document.querySelector('.chat-messages');
                     if (chatMessages) {
                         const messageDiv = document.createElement('div');
-                        messageDiv.className = 'message-bubble sent';
+                        messageDiv.className = 'max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-blue-500 text-white self-end rounded-br-sm';
                         messageDiv.textContent = 'New message sent';
                         chatMessages.appendChild(messageDiv);
                         chatMessages.scrollTop = chatMessages.scrollHeight;
