@@ -693,6 +693,10 @@
             font-weight: var(--font-weight-normal);
         }
 
+        .message-bubble.sent .message-timestamp {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
         .product-recommendation {
             background: white;
             border: 1px solid var(--border-color);
@@ -798,12 +802,7 @@
             will-change: auto;
         }
 
-        img[loading="lazy"] {
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        img[loading="lazy"].loaded {
+        img {
             opacity: 1;
         }
 
@@ -1268,7 +1267,7 @@
         <!-- Left Navigation Sidebar -->
         <div class="nav-sidebar">
             <div class="nav-user-avatar">
-                <img src="/assets/images/avatar_1.webp" alt="User" loading="eager" decoding="async">
+                <img src="/assets/images/avatar_1.webp" alt="User" onerror="console.log('Failed to load:', this.src)">
             </div>
             <div class="nav-menu">
                 <button class="nav-item">
@@ -1341,31 +1340,31 @@
                 <div class="stories-list">
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="/assets/images/avatar_2.webp" alt="Story" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_2.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="/assets/images/avatar_3.webp" alt="Story" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_3.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="/assets/images/avatar_4.webp" alt="Story" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_4.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="/assets/images/avatar_5.webp" alt="Story" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_5.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="/assets/images/avatar_6.webp" alt="Story" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_6.webp" alt="Story" onerror="console.log('Failed to load:', this.src)">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
@@ -1379,7 +1378,7 @@
                 <div class="messages-list">
                     <div class="message-item active">
                         <div class="message-avatar">
-                            <img src="/assets/images/avatar_2.webp" alt="Moise Kean" loading="eager" decoding="async">
+                            <img src="/assets/images/avatar_2.webp" alt="Moise Kean" onerror="console.log('Failed to load:', this.src)">
                         </div>
                         <div class="message-content">
                             <div class="message-sender">Moise Kean</div>
@@ -1392,7 +1391,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="/assets/images/avatar_3.webp" alt="Undertaker" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_3.webp" alt="Undertaker" onerror="console.log('Failed to load:', this.src)">
                             <div class="notification-badge">1</div>
                         </div>
                         <div class="message-content">
@@ -1406,7 +1405,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="/assets/images/avatar_4.webp" alt="Dmassiv" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_4.webp" alt="Dmassiv" onerror="console.log('Failed to load:', this.src)">
                             <div class="notification-badge">1</div>
                         </div>
                         <div class="message-content">
@@ -1420,7 +1419,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="/assets/images/avatar_5.webp" alt="Ruby Vyn" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_5.webp" alt="Ruby Vyn" onerror="console.log('Failed to load:', this.src)">
                         </div>
                         <div class="message-content">
                             <div class="message-sender">Ruby Vyn</div>
@@ -1434,7 +1433,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="/assets/images/avatar_6.webp" alt="Harry M" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_6.webp" alt="Harry M" onerror="console.log('Failed to load:', this.src)">
                         </div>
                         <div class="message-content">
                             <div class="message-sender">Harry M</div>
@@ -1448,7 +1447,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="/assets/images/avatar_2.webp" alt="Villa Kuplu" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_2.webp" alt="Villa Kuplu" onerror="console.log('Failed to load:', this.src)">
                             <div class="notification-badge">1</div>
                         </div>
                         <div class="message-content">
@@ -1462,7 +1461,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="/assets/images/avatar_3.webp" alt="Tapi Bulat" loading="lazy" decoding="async">
+                            <img src="/assets/images/avatar_3.webp" alt="Tapi Bulat" onerror="console.log('Failed to load:', this.src)">
                         </div>
                         <div class="message-content">
                             <div class="message-sender">Tapi Bulat</div>
@@ -1484,7 +1483,7 @@
                 <div class="chat-user-section">
                     <div class="chat-user-info">
                         <div class="chat-user-avatar">
-                            <img src="/assets/images/avatar_2.webp" alt="Moise Kean" loading="eager" decoding="async">
+                            <img src="/assets/images/avatar_2.webp" alt="Moise Kean" onerror="console.log('Failed to load:', this.src)">
                         </div>
                         <div class="chat-user-details">
                             <h3>Moise Kean</h3>
@@ -1565,9 +1564,9 @@
                             <div class="product-item">
                                 <a href="https://th.cos.com/th_en/1283683001.html" target="_blank" class="product-link">
                                     <div class="dress-images">
-                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/6dc27c174a0ab5cd0a81c53ba6fafccc4e61675f_xxl-1.jpg" alt="Black Dress - Model" class="dress-image" loading="lazy" decoding="async">
-                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/ce06191c1f2a556baf12a13c181e256978934061_xxl-1.jpg" alt="Black Dress - Side View" class="dress-image" loading="lazy" decoding="async">
-                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/cc47d179296535e89fc1fc87461f9dac7024c1f8_xxl-1.jpg" alt="Black Dress - Detail" class="dress-image detail" loading="lazy" decoding="async">
+                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/6dc27c174a0ab5cd0a81c53ba6fafccc4e61675f_xxl-1.jpg" alt="Black Dress - Model" class="dress-image" onerror="console.log('Failed to load product image:', this.src)">
+                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/ce06191c1f2a556baf12a13c181e256978934061_xxl-1.jpg" alt="Black Dress - Side View" class="dress-image" onerror="console.log('Failed to load product image:', this.src)">
+                                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/cc47d179296535e89fc1fc87461f9dac7024c1f8_xxl-1.jpg" alt="Black Dress - Detail" class="dress-image detail" onerror="console.log('Failed to load product image:', this.src)">
                                     </div>
                                     <div class="product-info">
                                         <div class="product-name">Elegant Black Dress</div>
@@ -1594,7 +1593,7 @@
                         <div class="product-grid">
                             <div class="product-item">
                                 <a href="https://th.cos.com/th_en/1271627001.html" target="_blank" class="product-link">
-                                    <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/f5deb3a4b2cc363492b2c88d50838661728e7f93_xxl-1.jpg" alt="White Top 1" class="product-image" loading="lazy" decoding="async">
+                                    <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/f5deb3a4b2cc363492b2c88d50838661728e7f93_xxl-1.jpg" alt="White Top 1" class="product-image" onerror="console.log('Failed to load product image:', this.src)">
                                     <div class="product-info">
                                         <div class="product-name">Classic White Top</div>
                                         <div class="product-price">฿1,990</div>
@@ -1603,7 +1602,7 @@
                             </div>
                             <div class="product-item">
                                 <a href="https://th.cos.com/th_en/1221948002.html" target="_blank" class="product-link">
-                                    <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/50e0fa003deee60245e83f704e4c8f09712d3e0e_xxl-1.jpg" alt="White Top 2" class="product-image" loading="lazy" decoding="async">
+                                    <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/50e0fa003deee60245e83f704e4c8f09712d3e0e_xxl-1.jpg" alt="White Top 2" class="product-image" onerror="console.log('Failed to load product image:', this.src)">
                                     <div class="product-info">
                                         <div class="product-name">Elegant White Blouse</div>
                                         <div class="product-price">฿1,790</div>
@@ -1633,7 +1632,7 @@
             <div class="chat-input-container">
                 <div class="chat-input-wrapper">
                     <div class="chat-input-avatar">
-                        <img src="/assets/images/avatar_1.webp" alt="User" loading="eager" decoding="async">
+                        <img src="/assets/images/avatar_1.webp" alt="User" onerror="console.log('Failed to load:', this.src)">
                     </div>
                     <div class="input-actions">
                         <div class="drafts-indicator">
@@ -1665,7 +1664,7 @@
         <div class="right-sidebar">
             <div class="profile-header">
                 <div class="profile-avatar">
-                    <img src="/assets/images/avatar_2.webp" alt="Moise Kean" loading="eager" decoding="async">
+                    <img src="/assets/images/avatar_2.webp" alt="Moise Kean" onerror="console.log('Failed to load:', this.src)">
                 </div>
                 <div class="profile-name">Moise Kean</div>
                 <div class="profile-status">Last Seen Recently</div>
@@ -1705,22 +1704,22 @@
                 </div>
                 <div class="media-grid">
                     <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/1ec61ccae5775b4799ea2a2d34979083e4e20f0e_xxl-1.jpg" alt="Accessory Product" loading="lazy" decoding="async">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/1ec61ccae5775b4799ea2a2d34979083e4e20f0e_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
                     </div>
                     <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/301de5094f565ee93ef2fa4ca4e9bd63ad3d90da_xxl-1.jpg" alt="Accessory Product" loading="lazy" decoding="async">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/301de5094f565ee93ef2fa4ca4e9bd63ad3d90da_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
                     </div>
                     <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/88d1a406fef9552a0e137d30f4cf7086d8490855_xxl-1.jpg" alt="Accessory Product" loading="lazy" decoding="async">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/88d1a406fef9552a0e137d30f4cf7086d8490855_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
                     </div>
                     <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/bd436bf67da877c3b5b741a1b7b924d36a237709_xxl-1.jpg" alt="Accessory Product" loading="lazy" decoding="async">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/bd436bf67da877c3b5b741a1b7b924d36a237709_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
                     </div>
                     <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/9ba96ec182e5d0164e140a9efad1e03a96c06509_xxl-1.jpg" alt="Accessory Product" loading="lazy" decoding="async">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/9ba96ec182e5d0164e140a9efad1e03a96c06509_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
                     </div>
                     <div class="media-item">
-                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/32b896b8b5f1a12d37a3742f48abf1044ccba87b_xxl-1.jpg" alt="Accessory Product" loading="lazy" decoding="async">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/32b896b8b5f1a12d37a3742f48abf1044ccba87b_xxl-1.jpg" alt="Accessory Product" onerror="console.log('Failed to load product image:', this.src)">
                     </div>
                 </div>
                 <button class="load-more-btn">View all suggestion</button>
@@ -1801,39 +1800,28 @@
                 });
             });
 
-            // Image loading optimization
+            // Image error debugging
             document.addEventListener('DOMContentLoaded', function() {
-                // Handle lazy loading fade-in effect
-                const lazyImages = document.querySelectorAll('img[loading="lazy"]');
+                console.log('Testing avatar image paths:');
+                console.log('Avatar 1 path:', '/assets/images/avatar_1.webp');
                 
-                lazyImages.forEach(img => {
-                    img.addEventListener('load', function() {
-                        this.classList.add('loaded');
+                // Test if we can fetch an avatar image
+                fetch('/assets/images/avatar_1.webp')
+                    .then(response => {
+                        console.log('Avatar 1 fetch response:', response.status, response.statusText);
+                        if (!response.ok) {
+                            console.error('Avatar 1 not accessible via /assets path');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Avatar 1 fetch error:', error);
+                        console.log('Trying alternative path...');
+                        
+                        // Try alternative path
+                        fetch('../assets/images/avatar_1.webp')
+                            .then(response => console.log('Alternative path response:', response.status))
+                            .catch(error => console.error('Alternative path also failed:', error));
                     });
-                    
-                    // If image is already loaded (cached)
-                    if (img.complete) {
-                        img.classList.add('loaded');
-                    }
-                });
-
-                // Intersection Observer for better lazy loading support
-                if ('IntersectionObserver' in window) {
-                    const imageObserver = new IntersectionObserver((entries, observer) => {
-                        entries.forEach(entry => {
-                            if (entry.isIntersecting) {
-                                const img = entry.target;
-                                img.src = img.dataset.src || img.src;
-                                img.classList.add('loaded');
-                                observer.unobserve(img);
-                            }
-                        });
-                    });
-
-                    lazyImages.forEach(img => {
-                        imageObserver.observe(img);
-                    });
-                }
             });
         });
 
