@@ -3,625 +3,1093 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lookbook-MPC - AI Fashion Recommendations</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'cream': '#ffffff',
-                        'cream-hover': '#f8f9fa',
-                        'dark-gray': '#000000',
-                        'text-primary': '#000000',
-                        'text-secondary': '#666666',
-                        'border-light': '#e5e5e5',
-                        'accent': '#000000'
-                    },
-                    borderRadius: {
-                        'pill': '47px'
-                    },
-                    fontSize: {
-                        'label': '14px'
-                    },
-                    borderWidth: {
-                        '1.5': '1.5px'
-                    },
-                    animation: {
-                        'launch': 'launch 2s ease-in-out infinite',
-                        'float': 'float 3s ease-in-out infinite',
-                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite'
-                    },
-                    keyframes: {
-                        launch: {
-                            '0%, 100%': { transform: 'translateX(0) rotate(0deg)' },
-                            '50%': { transform: 'translateX(8px) rotate(5deg)' }
-                        },
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-4px)' }
-                        },
-                        pulseGlow: {
-                            '0%, 100%': { filter: 'drop-shadow(0 0 8px rgba(255, 191, 0, 0.6))' },
-                            '50%': { filter: 'drop-shadow(0 0 16px rgba(255, 191, 0, 0.9))' }
-                        }
-                    },
-                    fontFamily: {
-                        onest: ['Onest', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-
+    <title>Modern Chat Interface</title>
     <style>
-        .icon-gradient {
-            background: linear-gradient(135deg, #FFBF00 0%, #FB9937 100%);
-        }
-        .gold-gradient {
-            background: linear-gradient(to right, #FFBF00, #FFBF00);
-        }
-        .text-accent {
-            color: #000000;
-        }
-        .gold-icon-with-shadow-border {
-            box-shadow: 0 1px 0px 0.4px rgba(255, 255, 255, 0.7), 0 6px 9px rgba(0, 0, 0, 0.1);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f8f9fa;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #dee2e6;
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #adb5bd;
+        :root {
+            --primary-bg: #f8f9fb;
+            --sidebar-bg: #ffffff;
+            --chat-bg: #ffffff;
+            --message-bg: #f1f3f5;
+            --user-message-bg: #1890ff;
+            --border-color: #e8eaed;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --accent-blue: #1890ff;
+            --accent-green: #52c41a;
+            --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
         }
 
-        /* Typing animation */
-        @keyframes typing {
-            0%, 60%, 100% {
-                transform: translateY(0);
-                opacity: 0.4;
+        body {
+            font-family: var(--font-family);
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            display: flex;
+            height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* Left Sidebar */
+        .sidebar {
+            width: 340px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .categories-dropdown {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-left: auto;
+        }
+
+        .search-input {
+            width: 180px;
+            padding: 8px 12px 8px 36px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 14px;
+            background: var(--message-bg);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Stories Section */
+        .stories-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stories-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .stories-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stories-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 4px 0;
+        }
+
+        .story-item {
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .story-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .story-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .story-live {
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4d4f;
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Messages Section */
+        .messages-section {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .messages-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .messages-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px;
+        }
+
+        .message-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .message-item:hover {
+            background: var(--message-bg);
+            margin: 0 -20px;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+        }
+
+        .message-item.active {
+            background: #e6f7ff;
+            margin: 0 -20px;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        .message-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .message-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            background: #ff4d4f;
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .message-preview {
+            font-size: 13px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .message-meta {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .message-status {
+            color: var(--accent-green);
+            font-size: 14px;
+        }
+
+        /* Main Chat Area */
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--chat-bg);
+        }
+
+        .chat-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .chat-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chat-user-details h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .chat-user-details p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .chat-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .chat-action-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--message-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .chat-action-btn:hover {
+            background: var(--border-color);
+        }
+
+
+        /* Chat Messages */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message-date {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 16px 0;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .message-bubble.received {
+            background: var(--message-bg);
+            color: var(--text-primary);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-bubble.sent {
+            background: var(--accent-blue);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-bubble.dark {
+            background: #374151;
+            color: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-reaction {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .message-images {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .message-image {
+            width: 200px;
+            height: 150px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .message-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .message-timestamp {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-color);
+            background: var(--sidebar-bg);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 8px 16px;
+        }
+
+        .chat-input-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .chat-input-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            padding: 8px 0;
+            background: transparent;
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .drafts-indicator {
+            background: rgba(255, 193, 7, 0.1);
+            color: #f59e0b;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .send-btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #1674cc;
+        }
+
+        /* Right Sidebar */
+        .right-sidebar {
+            width: 300px;
+            background: var(--sidebar-bg);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .profile-header {
+            padding: 24px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 12px;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .profile-status {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .social-link {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .social-link:hover {
+            transform: scale(1.1);
+        }
+
+        .social-link.facebook { background: #1877f2; color: white; }
+        .social-link.instagram { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; }
+        .social-link.twitter { background: #1da1f2; color: white; }
+        .social-link.github { background: #333; color: white; }
+
+        /* Media Section */
+        .media-section {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .media-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .media-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .media-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .media-item {
+            aspect-ratio: 1;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .media-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .load-more-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--message-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .load-more-btn:hover {
+            background: var(--border-color);
+        }
+
+        /* Category Labels */
+        .category-section {
+            padding: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .category-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .category-checkbox.checked {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        .category-label {
+            font-size: 14px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .add-category-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+
+        .add-category-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .right-sidebar {
+                width: 280px;
             }
-            30% {
-                transform: translateY(-8px);
-                opacity: 1;
+            .sidebar {
+                width: 300px;
             }
         }
 
-        .typing-dot {
-            animation: typing 1.4s infinite;
-        }
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        /* Product card hover effect */
-        .product-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        /* Connection status pulse animation */
-        .status-connected {
-            animation: statusPulse 2s ease-in-out infinite;
-        }
-
-        .status-disconnected {
-            animation: statusError 1s ease-in-out infinite;
-        }
-
-        @keyframes statusPulse {
-            0%, 100% {
-                opacity: 1;
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
             }
-            50% {
-                opacity: 0.8;
+            .sidebar, .right-sidebar {
+                position: fixed;
+                top: 0;
+                height: 100vh;
+                z-index: 100;
+                transform: translateX(-100%);
+                transition: transform 0.3s;
             }
-        }
-
-        @keyframes statusError {
-            0%, 100% {
-                transform: scale(1);
+            .sidebar.active, .right-sidebar.active {
+                transform: translateX(0);
             }
-            50% {
-                transform: scale(1.02);
+            .main-chat {
+                width: 100%;
             }
         }
     </style>
 </head>
-
-<body class="font-onest bg-white text-black min-h-screen">
-    <!-- Navigation -->
-    <nav class="fixed top-0 z-50 w-full bg-white border-b border-black">
-        <div class="container mx-auto px-4">
-            <div class="flex justify-between items-center py-4">
-                <div class="flex items-center">
-                  <img src="../cos-chat2.png" class="h-10"/>
-                </div>
-
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="#demo" class="text-black hover:text-gray-600 transition-colors text-sm uppercase tracking-wider">Demo</a>
-                    <a href="#features" class="text-black hover:text-gray-600 transition-colors text-sm uppercase tracking-wider">Features</a>
-                    <a href="#api" class="text-black hover:text-gray-600 transition-colors text-sm uppercase tracking-wider">API</a>
-                </div>
-
-                <button class="md:hidden text-black">
-                    <i class="fas fa-bars"></i>
+<body>
+    <div class="chat-container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar">MK</div>
+                <button class="categories-dropdown">
+                    Categories ▼
                 </button>
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search message">
+                    <span class="search-icon">🔍</span>
+                </div>
+            </div>
+
+            <div class="stories-section">
+                <div class="stories-header">
+                    <h3 class="stories-title">Stories</h3>
+                </div>
+                <div class="stories-list">
+                    <div class="story-item">
+                        <div class="story-avatar">
+                            <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <div class="story-live">Live</div>
+                        </div>
+                    </div>
+                    <div class="story-item">
+                        <div class="story-avatar">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <div class="story-live">Live</div>
+                        </div>
+                    </div>
+                    <div class="story-item">
+                        <div class="story-avatar">
+                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <div class="story-live">Live</div>
+                        </div>
+                    </div>
+                    <div class="story-item">
+                        <div class="story-avatar">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <div class="story-live">Live</div>
+                        </div>
+                    </div>
+                    <div class="story-item">
+                        <div class="story-avatar">
+                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <div class="story-live">Live</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="messages-section">
+                <div class="messages-header">
+                    <h3 class="messages-title">Message</h3>
+                </div>
+                <div class="messages-list">
+                    <div class="message-item active">
+                        <div class="message-avatar">
+                            <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="Moise Kean">
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">Moise Kean</div>
+                            <div class="message-preview">Is this item still available?</div>
+                        </div>
+                        <div class="message-meta">
+                            <div class="message-time">04:44 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Undertaker">
+                            <div class="notification-badge">1</div>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">Undertaker</div>
+                            <div class="message-preview">How much does this cost?</div>
+                        </div>
+                        <div class="message-meta">
+                            <div class="message-time">04:44 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" alt="Dmassiv">
+                            <div class="notification-badge">1</div>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">Dmassiv</div>
+                            <div class="message-preview">sent you 2 photos</div>
+                        </div>
+                        <div class="message-meta">
+                            <div class="message-time">04:44 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" alt="Ruby Vyn">
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">Ruby Vyn</div>
+                            <div class="message-preview">Is the shop open today?</div>
+                        </div>
+                        <div class="message-meta">
+                            <div class="message-time">04:44 AM</div>
+                            <div class="message-status">✓</div>
+                        </div>
+                    </div>
+
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" alt="Harry M">
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">Harry M</div>
+                            <div class="message-preview">Today there is a promo for you</div>
+                        </div>
+                        <div class="message-meta">
+                            <div class="message-time">04:44 AM</div>
+                            <div class="message-status">✓</div>
+                        </div>
+                    </div>
+
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face" alt="Villa Kuplu">
+                            <div class="notification-badge">1</div>
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">Villa Kuplu</div>
+                            <div class="message-preview">when will my item arrive</div>
+                        </div>
+                        <div class="message-meta">
+                            <div class="message-time">04:44 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=face" alt="Tapi Bulat">
+                        </div>
+                        <div class="message-content">
+                            <div class="message-sender">Tapi Bulat</div>
+                            <div class="message-preview">Thankyouuu</div>
+                        </div>
+                        <div class="message-meta">
+                            <div class="message-time">04:44 AM</div>
+                            <div class="message-status">✓</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="pt-20 min-h-screen bg-white">
-        <!-- Hero Section -->
-        <section class="py-8 text-center">
-            <div class="container mx-auto px-4">
-                <h1 class="text-2xl md:text-3xl font-light text-black mb-4 leading-tight tracking-wide">
-                    AI Fashion Assistant
-                </h1>
-                <p class="text-sm md:text-base text-gray-600 mb-6 max-w-xl mx-auto leading-relaxed">
-                    Personalized outfit recommendations powered by AI vision analysis
-                </p>
-            </div>
-        </section>
-
-        <!-- Demo Interface -->
-        <section id="demo" class="pb-20">
-            <div class="container mx-auto px-4">
-                <div class="max-w-7xl mx-auto bg-white border border-black overflow-hidden">
-
-                    <!-- Search Header -->
-                    <div class="bg-white border-b border-black p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-xl font-light text-black tracking-wide">Search for Outfits</h2>
-                            <span id="connectionStatus" class="text-xs px-2 py-1">
-                                <i id="connectionIcon" class="fas fa-circle text-xs mr-1"></i>
-                                <span id="connectionText">Checking...</span>
-                            </span>
-                        </div>
-
-                        <!-- Search Input -->
-                        <div class="relative">
-                            <input
-                                type="text"
-                                id="messageInput"
-                                placeholder="Describe what you're looking for... e.g., 'I want to do yoga'"
-                                class="w-full px-6 py-4 bg-white border border-black text-base focus:outline-none transition-all"
-                                onkeypress="handleKeyPress(event)"
-                            >
-                            <button
-                                id="sendButton"
-                                onclick="sendMessage()"
-                                class="absolute right-16 top-1/2 transform -translate-y-1/2 bg-black hover:bg-gray-800 text-white w-12 h-12 flex items-center justify-center transition-all"
-                            >
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                            <button
-                                id="resetButton"
-                                onclick="resetChat()"
-                                class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-red-500 hover:bg-red-600 text-white w-12 h-12 flex items-center justify-center transition-all"
-                                title="Clear all messages"
-                            >
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+        <!-- Main Chat Area -->
+        <div class="main-chat">
+            <div class="chat-header">
+                <div class="chat-user-info">
+                    <div class="chat-user-avatar">
+                        <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="Moise Kean">
                     </div>
+                    <div class="chat-user-details">
+                        <h3>Moise Kean</h3>
+                        <p>Last Seen Recently</p>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="chat-action-btn">📞</button>
+                    <button class="chat-action-btn">📹</button>
+                    <button class="chat-action-btn">🔔</button>
+                    <button class="chat-action-btn">⚙️</button>
+                </div>
+            </div>
 
-                    <div class="flex flex-col lg:flex-row min-h-[600px]">
+            <div class="chat-messages">
+                <div class="message-date">27 December 2024</div>
+                
+                <div class="message-bubble sent">
+                    Today there is a promo for you
+                </div>
 
-                        <!-- Sidebar -->
-                        <div class="lg:w-80 bg-gray-50 border-r border-black p-6">
-                            <h3 class="text-base font-medium text-black mb-4 uppercase tracking-wider">
-                                Suggestions
-                            </h3>
+                <div class="message-bubble dark">
+                    Wow, it so nice so how much these items ?
+                    <div class="message-reaction">😍 1</div>
+                </div>
 
-                            <div class="space-y-3">
-                                <div class="suggestion-card bg-white p-3 border border-gray-300 cursor-pointer hover:border-black hover:bg-gray-50 transition-all" onclick="sendSuggestion('I want to do yoga')">
-                                    <div class="font-medium text-black mb-1 text-sm">Yoga Outfit</div>
-                                    <p class="text-xs text-gray-600">Comfortable and flexible activewear</p>
-                                </div>
+                <div class="message-images">
+                    <div class="message-image">
+                        <img src="https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=400&h=300&fit=crop" alt="Product 1">
+                    </div>
+                    <div class="message-image">
+                        <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=400&h=300&fit=crop" alt="Product 2">
+                    </div>
+                </div>
+                <div class="message-timestamp">18:04</div>
+            </div>
 
-                                <div class="suggestion-card bg-white p-3 border border-gray-300 cursor-pointer hover:border-black hover:bg-gray-50 transition-all" onclick="sendSuggestion('Restaurant this weekend, attractive for $50')">
-                                    <div class="font-medium text-black mb-1 text-sm">Dinner Date</div>
-                                    <p class="text-xs text-gray-600">Elegant looks within your budget</p>
-                                </div>
-
-                                <div class="suggestion-card bg-white p-3 border border-gray-300 cursor-pointer hover:border-black hover:bg-gray-50 transition-all" onclick="sendSuggestion('I am fat, look slim')">
-                                    <div class="font-medium text-black mb-1 text-sm">Slimming Look</div>
-                                    <p class="text-xs text-gray-600">Flattering silhouettes and styles</p>
-                                </div>
-
-                                <div class="suggestion-card bg-white p-3 border border-gray-300 cursor-pointer hover:border-black hover:bg-gray-50 transition-all" onclick="sendSuggestion('Business meeting outfit for tomorrow')">
-                                    <div class="font-medium text-black mb-1 text-sm">Business Meeting</div>
-                                    <p class="text-xs text-gray-600">Professional and polished looks</p>
-                                </div>
-
-                                <div class="suggestion-card bg-white p-3 border border-gray-300 cursor-pointer hover:border-black hover:bg-gray-50 transition-all" onclick="sendSuggestion('Casual weekend brunch with friends')">
-                                    <div class="font-medium text-black mb-1 text-sm">Weekend Brunch</div>
-                                    <p class="text-xs text-gray-600">Relaxed yet stylish outfits</p>
-                                </div>
-                            </div>
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <div class="chat-input-avatar">
+                        <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="User">
+                    </div>
+                    <input type="text" class="chat-input" placeholder="Type a message...">
+                    <div class="input-actions">
+                        <div class="drafts-indicator">
+                            💾 1 Drafts
                         </div>
-
-                        <!-- Chat Area -->
-                        <div class="flex-1 flex flex-col">
-
-                            <!-- Messages -->
-                            <div id="messages" class="flex-1 p-6 overflow-y-auto custom-scrollbar bg-white">
-                                <!-- Welcome Message -->
-                                <div class="flex items-start mb-6">
-                                    <div class="w-8 h-8 bg-black flex items-center justify-center mr-3 flex-shrink-0">
-                                        <i class="fas fa-robot text-white text-xs"></i>
-                                    </div>
-                                    <div class="bg-gray-50 p-4 max-w-md border-l-2 border-black">
-                                        <p class="text-gray-800 text-sm">
-                                            Hello! I'm your AI fashion assistant. I can help you find the perfect outfits for any occasion.
-                                            What are you looking for today?
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Typing Indicator -->
-                            <div id="typingIndicator" class="hidden px-6 py-2">
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 bg-black flex items-center justify-center mr-3">
-                                        <i class="fas fa-robot text-white text-xs"></i>
-                                    </div>
-                                    <div class="bg-gray-100 px-4 py-3 border-l-2 border-black">
-                                        <div class="flex space-x-1">
-                                            <div class="w-2 h-2 bg-black rounded-full typing-dot"></div>
-                                            <div class="w-2 h-2 bg-black rounded-full typing-dot"></div>
-                                            <div class="w-2 h-2 bg-black rounded-full typing-dot"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <button class="send-btn">
+                            ➤
+                        </button>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- Results Section -->
-        <div id="resultsSection" class="hidden container mx-auto px-4 pb-20">
-            <div class="bg-white border border-black p-8">
-                <div class="flex items-center justify-between mb-6 border-b border-gray-300 pb-4">
-                    <h3 class="text-xl font-light text-black tracking-wide uppercase">
-                        Search Results
-                    </h3>
-                    <span id="resultsCount" class="text-gray-600 text-sm"></span>
+        <!-- Right Sidebar -->
+        <div class="right-sidebar">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="Moise Kean">
                 </div>
-                <div id="outfitGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Outfit cards will be inserted here -->
+                <div class="profile-name">Moise Kean</div>
+                <div class="profile-status">Last Seen Recently</div>
+                <div class="social-links">
+                    <a href="#" class="social-link facebook">f</a>
+                    <a href="#" class="social-link instagram">📷</a>
+                    <a href="#" class="social-link twitter">🐦</a>
+                    <a href="#" class="social-link github">⚡</a>
                 </div>
+            </div>
+
+            <div class="media-section">
+                <div class="media-header">
+                    <h3 class="media-title">Media ( 4444 )</h3>
+                    <span class="media-count">🔄</span>
+                </div>
+                <div class="media-grid">
+                    <div class="media-item">
+                        <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=200&h=200&fit=crop" alt="Media">
+                    </div>
+                    <div class="media-item">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop" alt="Media">
+                    </div>
+                    <div class="media-item">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop" alt="Media">
+                    </div>
+                    <div class="media-item">
+                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop" alt="Media">
+                    </div>
+                    <div class="media-item">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop" alt="Media">
+                    </div>
+                    <div class="media-item">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop" alt="Media">
+                    </div>
+                </div>
+                <button class="load-more-btn">Load More Image</button>
+            </div>
+
+            <div class="category-section">
+                <div class="media-header">
+                    <h3 class="category-title">Category Label</h3>
+                    <span class="media-count">🔄</span>
+                </div>
+                <div class="category-list">
+                    <div class="category-item">
+                        <div class="category-checkbox checked">✓</div>
+                        <span class="category-label">Important</span>
+                    </div>
+                    <div class="category-item">
+                        <div class="category-checkbox checked">✓</div>
+                        <span class="category-label">Customer</span>
+                    </div>
+                    <div class="category-item">
+                        <div class="category-checkbox"></div>
+                        <span class="category-label">Friends</span>
+                    </div>
+                    <div class="category-item">
+                        <div class="category-checkbox"></div>
+                        <span class="category-label">Family</span>
+                    </div>
+                </div>
+                <button class="add-category-btn">Add Category Label</button>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-black text-white py-12 border-t border-gray-300">
-        <div class="container mx-auto px-4 text-center">
-            <div class="flex items-center justify-center mb-4">
-                <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center mr-3">
-                    <i class="fas fa-robot text-black text-sm"></i>
-                </div>
-                <div class="text-xl font-light">
-                    <span>Lookbook</span><span class="font-medium">MPC</span>
-                </div>
-            </div>
-            <p class="text-gray-400 mb-6 text-sm">AI-Powered Fashion Recommendations</p>
-            <div class="flex justify-center space-x-6">
-                <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fab fa-github text-lg"></i>
-                </a>
-                <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fab fa-twitter text-lg"></i>
-                </a>
-                <a href="#" class="text-gray-400 hover:text-white transition-colors">
-                    <i class="fas fa-envelope text-lg"></i>
-                </a>
-            </div>
-        </div>
-    </footer>
-
     <script>
-        const sessionId = generateSessionId();
-        let isTyping = false;
-        let connectionCheckInterval;
-
-        function generateSessionId() {
-            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        function updateConnectionStatus(isConnected, message = '') {
-            const statusElement = document.getElementById('connectionStatus');
-            const iconElement = document.getElementById('connectionIcon');
-            const textElement = document.getElementById('connectionText');
-
-            if (isConnected) {
-                statusElement.className = 'text-xs text-black status-connected';
-                iconElement.className = 'fas fa-circle text-xs mr-1 text-green-600';
-                textElement.textContent = 'Connected';
-            } else {
-                statusElement.className = 'text-xs text-black status-disconnected';
-                iconElement.className = 'fas fa-circle text-xs mr-1 text-red-600';
-                textElement.textContent = message || 'Disconnected';
-            }
-        }
-
-        function checkApiHealth() {
-            fetch('/health', {
-                method: 'GET',
-                timeout: 5000
-            })
-            .then(response => {
-                if (response.ok) {
-                    updateConnectionStatus(true);
-                } else {
-                    updateConnectionStatus(false, 'Service Error');
-                }
-            })
-            .catch(error => {
-                console.warn('Health check failed:', error);
-                updateConnectionStatus(false, 'Disconnected');
-            });
-        }
-
-        function startConnectionMonitoring() {
-            // Initial check
-            checkApiHealth();
-
-            // Check every 30 seconds
-            connectionCheckInterval = setInterval(checkApiHealth, 30000);
-        }
-
-        function stopConnectionMonitoring() {
-            if (connectionCheckInterval) {
-                clearInterval(connectionCheckInterval);
-            }
-        }
-
-        function addMessage(content, isUser = false) {
-            const messagesContainer = document.getElementById('messages');
-            const messageDiv = document.createElement('div');
-
-            messageDiv.className = `flex items-start mb-6 ${isUser ? 'justify-end' : ''}`;
-
-            if (isUser) {
-                messageDiv.innerHTML = `
-                    <div class="bg-black text-white p-4 max-w-md mr-3 border-r-2 border-black">
-                        <p class="text-sm">${content}</p>
-                    </div>
-                    <div class="w-8 h-8 bg-gray-300 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-user text-black text-xs"></i>
-                    </div>
-                `;
-            } else {
-                messageDiv.innerHTML = `
-                    <div class="w-8 h-8 bg-black flex items-center justify-center mr-3 flex-shrink-0">
-                        <i class="fas fa-robot text-white text-xs"></i>
-                    </div>
-                    <div class="bg-gray-50 p-4 max-w-2xl border-l-2 border-black">
-                        <p class="text-gray-800 text-sm">${content}</p>
-                    </div>
-                `;
-            }
-
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function showTypingIndicator() {
-            if (!isTyping) {
-                isTyping = true;
-                document.getElementById('typingIndicator').classList.remove('hidden');
-                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-            }
-        }
-
-        function hideTypingIndicator() {
-            isTyping = false;
-            document.getElementById('typingIndicator').classList.add('hidden');
-        }
-
-        function addOutfitCard(outfit) {
-            const outfitGrid = document.getElementById('outfitGrid');
-            const resultsSection = document.getElementById('resultsSection');
-
-            resultsSection.classList.remove('hidden');
-
-            const outfitCard = document.createElement('div');
-            outfitCard.className = 'product-card bg-white border border-black overflow-hidden';
-
-            const itemsHtml = outfit.items.slice(0, 4).map(item => `
-                <div class="flex-1 text-center">
-                    <div class="aspect-square bg-gray-100 mb-3 overflow-hidden">
-                        <img
-                            src="${item.image_url || 'https://via.placeholder.com/200x200?text=No+Image'}"
-                            alt="${item.title || 'Fashion Item'}"
-                            class="w-full h-full object-cover"
-                            loading="lazy"
-                        >
-                    </div>
-                    <div class="text-xs text-gray-700 mb-1 truncate">${item.title || 'Fashion Item'}</div>
-                    <div class="text-sm font-medium text-black">$${item.price || '0.00'}</div>
-                </div>
-            `).join('');
-
-            outfitCard.innerHTML = `
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-base font-medium text-black uppercase tracking-wider">Complete Outfit</h4>
-                        <div class="flex items-center text-xs text-gray-600">
-                            <span>${outfit.score ? (outfit.score * 100).toFixed(0) + '%' : '95%'} Match</span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        ${itemsHtml}
-                    </div>
-
-                    <div class="bg-gray-50 p-4 border-l-2 border-black">
-                        <p class="text-xs text-gray-700">${outfit.rationale || 'This outfit combines style and comfort perfectly for your needs.'}</p>
-                    </div>
-
-                    <div class="mt-4 pt-4 border-t border-gray-300">
-                        <div class="flex items-center justify-between">
-                            <div class="text-base font-medium text-black">
-                                Total: $${outfit.items.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2)}
-                            </div>
-                            <button class="bg-black hover:bg-gray-800 text-white px-4 py-2 text-xs font-medium transition-colors uppercase tracking-wider">
-                                Save Outfit
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            outfitGrid.appendChild(outfitCard);
-
-            // Update results count
-            const count = outfitGrid.children.length;
-            document.getElementById('resultsCount').textContent = `${count} outfit${count !== 1 ? 's' : ''} found`;
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-
-            if (!message) return;
-
-            // Add user message
-            addMessage(message, true);
-            input.value = '';
-
-            // Clear previous results
-            document.getElementById('outfitGrid').innerHTML = '';
-            document.getElementById('resultsSection').classList.add('hidden');
-
-            // Show typing indicator
-            showTypingIndicator();
-
-            // Disable send button
-            document.getElementById('sendButton').disabled = true;
-
-            // Send to API
-            fetch('/v1/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    session_id: sessionId,
-                    message: message,
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                hideTypingIndicator();
-
-                // Add assistant response
-                if (data.replies && data.replies.length > 0) {
-                    addMessage(data.replies[0].message);
-                }
-
-                // Add outfit recommendations if any
-                if (data.outfits && data.outfits.length > 0) {
-                    data.outfits.forEach(outfit => {
-                        addOutfitCard(outfit);
-                    });
-                }
-
-                // Enable send button
-                document.getElementById('sendButton').disabled = false;
-            })
-            .catch(error => {
-                hideTypingIndicator();
-                updateConnectionStatus(false, 'API Error');
-                addMessage('Sorry, I encountered an error. The service appears to be disconnected. Please try again.');
-                document.getElementById('sendButton').disabled = false;
-                console.error('Error:', error);
-            });
-        }
-
-        function sendSuggestion(text) {
-            document.getElementById('messageInput').value = text;
-            sendMessage();
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-
-        // Focus input on load and start monitoring
-        // Reset chat function
-        function resetChat() {
-            if (confirm('Are you sure you want to clear all messages?')) {
-                const chatMessages = document.getElementById('chatMessages');
-                if (chatMessages) {
-                    chatMessages.innerHTML = '';
-                }
-        
-                // Clear the input field
-                const messageInput = document.getElementById('messageInput');
-                if (messageInput) {
-                    messageInput.value = '';
-                }
-        
-                // Hide typing indicator if visible
-                hideTypingIndicator();
-        
-                // Add welcome message
-                setTimeout(() => {
-                    addMessage('assistant', 'Hello! I\'m your AI Fashion Assistant. Describe what you\'re looking for and I\'ll help you find the perfect outfit!');
-                }, 300);
-            }
-        }
-
+        // Basic functionality for the chat interface
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('messageInput').focus();
-            startConnectionMonitoring();
-        });
+            // Handle message item clicks
+            const messageItems = document.querySelectorAll('.message-item');
+            messageItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    messageItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
 
-        // Stop monitoring when page unloads
-        window.addEventListener('beforeunload', function() {
-            stopConnectionMonitoring();
-        });
+            // Handle chat input
+            const chatInput = document.querySelector('.chat-input');
+            const sendBtn = document.querySelector('.send-btn');
 
-        // Smooth scrolling for navigation
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+            sendBtn.addEventListener('click', function() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // Add new message to chat
+                    const chatMessages = document.querySelector('.chat-messages');
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message-bubble sent';
+                    messageDiv.textContent = message;
+                    chatMessages.appendChild(messageDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    chatInput.value = '';
                 }
+            });
+
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendBtn.click();
+                }
+            });
+
+            // Handle category checkboxes
+            const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+            categoryCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('click', function() {
+                    this.classList.toggle('checked');
+                    if (this.classList.contains('checked')) {
+                        this.textContent = '✓';
+                    } else {
+                        this.textContent = '';
+                    }
+                });
             });
         });
     </script>
