@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Chat Interface</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Using inline SVG icons instead of CDN -->
     <style>
         * {
             margin: 0;
@@ -27,7 +32,23 @@
             --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.15);
             --border-radius: 8px;
             --border-radius-lg: 12px;
-            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --font-family: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --font-size-xs: 11px;
+            --font-size-sm: 13px;
+            --font-size-base: 14px;
+            --font-size-md: 16px;
+            --font-size-lg: 18px;
+            --font-size-xl: 20px;
+            --font-size-2xl: 24px;
+            --font-size-3xl: 28px;
+            --font-weight-light: 300;
+            --font-weight-normal: 400;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            --font-weight-bold: 700;
+            --line-height-tight: 1.25;
+            --line-height-normal: 1.4;
+            --line-height-relaxed: 1.6;
         }
 
         body {
@@ -36,18 +57,95 @@
             color: var(--text-primary);
             height: 100vh;
             overflow: hidden;
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-normal);
+            font-weight: var(--font-weight-normal);
         }
 
         .chat-container {
             display: flex;
             height: 100vh;
-            max-width: 1400px;
-            margin: 0 auto;
+            width: 100%;
             background: white;
             box-shadow: var(--shadow-medium);
         }
 
-        /* Left Sidebar */
+        /* Left Navigation Sidebar */
+        .nav-sidebar {
+            width: 80px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .nav-user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        .nav-user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            flex: 1;
+        }
+
+        .nav-item {
+            width: 48px;
+            height: 48px;
+            border: none;
+            background: transparent;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-muted);
+            font-size: 20px;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: var(--message-bg);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 24px;
+            background: var(--accent-blue);
+            border-radius: 2px;
+        }
+
+        .nav-logout {
+            margin-top: auto;
+        }
+
+        /* Main Sidebar */
         .sidebar {
             width: 340px;
             background: var(--sidebar-bg);
@@ -57,60 +155,85 @@
         }
 
         .sidebar-header {
-            padding: 20px;
+            padding: 16px 20px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             gap: 12px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 16px;
+            background: var(--sidebar-bg);
         }
 
         .categories-dropdown {
             background: var(--accent-blue);
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 12px 20px;
+            border-radius: 24px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
+            box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
         }
 
         .search-container {
             position: relative;
-            margin-left: auto;
+            flex: 1;
+            margin-left: 12px;
         }
 
         .search-input {
-            width: 180px;
-            padding: 8px 12px 8px 36px;
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
+            width: 100%;
+            padding: 12px 16px 12px 16px;
+            border: none;
+            border-radius: 24px;
             font-size: 14px;
-            background: var(--message-bg);
+            background: #f5f5f5;
+            color: var(--text-secondary);
+            outline: none;
         }
 
-        .search-icon {
+        .search-input::placeholder {
+            color: #999;
+        }
+
+        .search-actions {
             position: absolute;
-            left: 12px;
+            right: 8px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .search-clear-btn {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: #ccc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            color: white;
+        }
+
+        .search-submit-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: var(--text-muted);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
             font-size: 14px;
         }
 
@@ -128,8 +251,8 @@
         }
 
         .stories-title {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
         }
 
@@ -191,8 +314,8 @@
         }
 
         .messages-title {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
         }
 
@@ -264,18 +387,20 @@
         }
 
         .message-sender {
-            font-weight: 600;
-            font-size: 14px;
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-base);
             color: var(--text-primary);
             margin-bottom: 2px;
+            line-height: var(--line-height-tight);
         }
 
         .message-preview {
-            font-size: 13px;
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: var(--line-height-normal);
         }
 
         .message-meta {
@@ -284,7 +409,7 @@
         }
 
         .message-time {
-            font-size: 12px;
+            font-size: var(--font-size-xs);
             color: var(--text-muted);
             margin-bottom: 4px;
         }
@@ -303,8 +428,19 @@
         }
 
         .chat-header {
-            padding: 20px 24px;
+            padding: 24px;
             border-bottom: 1px solid var(--border-color);
+        }
+
+        .chat-title {
+            font-size: var(--font-size-3xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            margin-bottom: 24px;
+            line-height: var(--line-height-tight);
+        }
+
+        .chat-user-section {
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -330,28 +466,34 @@
         }
 
         .chat-user-details h3 {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: var(--font-size-md);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
             margin-bottom: 2px;
+            line-height: var(--line-height-tight);
         }
 
         .chat-user-details p {
-            font-size: 13px;
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
+            line-height: var(--line-height-normal);
         }
 
         .chat-actions {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
+            background: var(--message-bg);
+            padding: 8px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
         }
 
         .chat-action-btn {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border: none;
-            background: var(--message-bg);
+            background: transparent;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -359,10 +501,19 @@
             cursor: pointer;
             transition: background 0.2s;
             color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .chat-action-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
         }
 
         .chat-action-btn:hover {
-            background: var(--border-color);
+            background: rgba(0, 0, 0, 0.05);
         }
 
 
@@ -378,7 +529,8 @@
 
         .message-date {
             text-align: center;
-            font-size: 12px;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
             color: var(--text-muted);
             margin: 16px 0;
         }
@@ -387,8 +539,9 @@
             max-width: 70%;
             padding: 12px 16px;
             border-radius: 18px;
-            font-size: 14px;
-            line-height: 1.4;
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-normal);
+            font-weight: var(--font-weight-normal);
         }
 
         .message-bubble.received {
@@ -440,35 +593,35 @@
         }
 
         .message-timestamp {
-            font-size: 11px;
+            font-size: var(--font-size-xs);
             color: var(--text-muted);
             margin-top: 4px;
             text-align: right;
+            font-weight: var(--font-weight-normal);
         }
 
         /* Chat Input */
         .chat-input-container {
-            padding: 20px 24px;
+            padding: 20px 32px;
+            background: #f8f9fb;
             border-top: 1px solid var(--border-color);
-            background: var(--sidebar-bg);
         }
 
         .chat-input-wrapper {
             display: flex;
             align-items: center;
-            gap: 12px;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 8px 16px;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         .chat-input-avatar {
-            width: 32px;
-            height: 32px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
+            border: 2px solid #e1e5e9;
         }
 
         .chat-input-avatar img {
@@ -477,53 +630,70 @@
             object-fit: cover;
         }
 
-        .chat-input {
-            flex: 1;
-            border: none;
-            outline: none;
-            font-size: 14px;
-            padding: 8px 0;
-            background: transparent;
-        }
-
-        .chat-input::placeholder {
-            color: var(--text-muted);
-        }
-
         .input-actions {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
+            margin-left: auto;
         }
 
         .drafts-indicator {
-            background: rgba(255, 193, 7, 0.1);
-            color: #f59e0b;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 500;
+            background: #f0f7b4;
+            color: #7c7c00;
+            padding: 10px 18px;
+            border-radius: 24px;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            border: 1px solid #d4d4aa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .attachment-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: #e8eaed;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .attachment-btn:hover {
+            background: #dadce0;
+            transform: scale(1.02);
         }
 
         .send-btn {
             background: var(--accent-blue);
             color: white;
             border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            padding: 12px 20px;
+            border-radius: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            box-shadow: 0 3px 8px rgba(24, 144, 255, 0.3);
+            min-width: 80px;
         }
 
         .send-btn:hover {
             background: #1674cc;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.4);
         }
 
         /* Right Sidebar */
@@ -556,38 +726,44 @@
         }
 
         .profile-name {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: var(--font-size-md);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
             margin-bottom: 4px;
+            line-height: var(--line-height-tight);
         }
 
         .profile-status {
-            font-size: 13px;
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
             margin-bottom: 16px;
+            line-height: var(--line-height-normal);
         }
 
         .social-links {
             display: flex;
             justify-content: center;
-            gap: 12px;
+            gap: 8px;
+            background: #f8f9fb;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
         }
 
         .social-link {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 18px;
             transition: transform 0.2s;
         }
 
         .social-link:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
 
         .social-link.facebook { background: #1877f2; color: white; }
@@ -610,13 +786,13 @@
         }
 
         .media-title {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: var(--font-size-md);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
         }
 
         .media-count {
-            font-size: 14px;
+            font-size: var(--font-size-base);
             color: var(--text-secondary);
         }
 
@@ -645,7 +821,8 @@
             background: var(--message-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
-            font-size: 14px;
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-medium);
             color: var(--text-secondary);
             cursor: pointer;
             transition: background 0.2s;
@@ -662,8 +839,8 @@
         }
 
         .category-title {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: var(--font-size-md);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
             margin-bottom: 16px;
         }
@@ -698,7 +875,8 @@
         }
 
         .category-label {
-            font-size: 14px;
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-normal);
             color: var(--text-primary);
             cursor: pointer;
         }
@@ -709,7 +887,8 @@
             background: transparent;
             border: 1px dashed var(--border-color);
             border-radius: var(--border-radius);
-            font-size: 14px;
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-medium);
             color: var(--text-secondary);
             cursor: pointer;
             margin-top: 16px;
@@ -722,6 +901,109 @@
         }
 
         /* Responsive Design */
+
+        /* 4K and Ultra-wide screens (2560px+) */
+        @media (min-width: 2560px) {
+            :root {
+                --font-size-xs: 13px;
+                --font-size-sm: 15px;
+                --font-size-base: 16px;
+                --font-size-md: 18px;
+                --font-size-lg: 20px;
+                --font-size-xl: 22px;
+                --font-size-2xl: 26px;
+                --font-size-3xl: 32px;
+            }
+
+            .nav-sidebar {
+                width: 100px;
+            }
+
+            .sidebar {
+                width: 420px;
+            }
+
+            .right-sidebar {
+                width: 380px;
+            }
+
+            .chat-input-wrapper {
+                max-width: 1600px;
+                padding: 0 40px;
+            }
+
+            .chat-input-container {
+                padding: 28px 48px;
+            }
+
+            .chat-input-avatar {
+                width: 52px;
+                height: 52px;
+            }
+
+            .send-btn {
+                padding: 14px 24px;
+                font-size: var(--font-size-base);
+            }
+
+            .attachment-btn {
+                width: 52px;
+                height: 52px;
+            }
+        }
+
+        /* MacBook 13" and similar (1280px-1440px) */
+        @media (min-width: 1280px) and (max-width: 1439px) {
+            :root {
+                --font-size-xs: 11px;
+                --font-size-sm: 12px;
+                --font-size-base: 13px;
+                --font-size-md: 15px;
+                --font-size-lg: 17px;
+                --font-size-xl: 19px;
+                --font-size-2xl: 22px;
+                --font-size-3xl: 26px;
+                --line-height-tight: 1.2;
+                --line-height-normal: 1.35;
+            }
+            
+            .sidebar {
+                width: 320px;
+            }
+            
+            .right-sidebar {
+                width: 280px;
+            }
+            
+            .chat-input-wrapper {
+                max-width: 900px;
+            }
+            
+            .chat-input-container {
+                padding: 16px 24px;
+            }
+            
+            .chat-input-avatar {
+                width: 38px;
+                height: 38px;
+            }
+            
+            .send-btn {
+                padding: 10px 16px;
+                font-size: var(--font-size-xs);
+            }
+            
+            .attachment-btn {
+                width: 38px;
+                height: 38px;
+            }
+            
+            .drafts-indicator {
+                padding: 8px 14px;
+                font-size: 11px;
+            }
+        }
+
         @media (max-width: 1024px) {
             .right-sidebar {
                 width: 280px;
@@ -749,21 +1031,99 @@
             .main-chat {
                 width: 100%;
             }
+            
+            .chat-input-container {
+                padding: 12px 16px;
+            }
+            
+            .chat-input-wrapper {
+                gap: 12px;
+            }
+            
+            .send-btn {
+                padding: 8px 12px;
+                min-width: 60px;
+            }
+        }
+
+        /* Retina display optimizations */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            body {
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                text-rendering: optimizeLegibility;
+            }
         }
     </style>
 </head>
 <body>
     <div class="chat-container">
-        <!-- Left Sidebar -->
+        <!-- Left Navigation Sidebar -->
+        <div class="nav-sidebar">
+            <div class="nav-user-avatar">
+                <img src="../assets/images/avatar_1.webp" alt="User">
+            </div>
+            <div class="nav-menu">
+                <button class="nav-item">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                        <polyline points="9,22 9,12 15,12 15,22"/>
+                    </svg>
+                </button>
+                <button class="nav-item">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+                    </svg>
+                </button>
+                <button class="nav-item active">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                    </svg>
+                </button>
+                <button class="nav-item">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+                    </svg>
+                </button>
+                <button class="nav-item">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+                    </svg>
+                </button>
+                <button class="nav-item">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+            <button class="nav-item nav-logout">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                    <polyline points="16,17 21,12 16,7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Main Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <div class="user-avatar">MK</div>
                 <button class="categories-dropdown">
                     Categories ▼
                 </button>
                 <div class="search-container">
                     <input type="text" class="search-input" placeholder="Search message">
-                    <span class="search-icon">🔍</span>
+                    <div class="search-actions">
+                        <button class="search-clear-btn">×</button>
+                        <button class="search-submit-btn">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -774,31 +1134,31 @@
                 <div class="stories-list">
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <img src="../assets/images/avatar_2.webp" alt="Story">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <img src="../assets/images/avatar_3.webp" alt="Story">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <img src="../assets/images/avatar_4.webp" alt="Story">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <img src="../assets/images/avatar_5.webp" alt="Story">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
                     <div class="story-item">
                         <div class="story-avatar">
-                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" alt="Story">
+                            <img src="../assets/images/avatar_6.webp" alt="Story">
                             <div class="story-live">Live</div>
                         </div>
                     </div>
@@ -812,7 +1172,7 @@
                 <div class="messages-list">
                     <div class="message-item active">
                         <div class="message-avatar">
-                            <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="Moise Kean">
+                            <img src="../assets/images/avatar_2.webp" alt="Moise Kean">
                         </div>
                         <div class="message-content">
                             <div class="message-sender">Moise Kean</div>
@@ -825,7 +1185,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Undertaker">
+                            <img src="../assets/images/avatar_3.webp" alt="Undertaker">
                             <div class="notification-badge">1</div>
                         </div>
                         <div class="message-content">
@@ -839,7 +1199,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" alt="Dmassiv">
+                            <img src="../assets/images/avatar_4.webp" alt="Dmassiv">
                             <div class="notification-badge">1</div>
                         </div>
                         <div class="message-content">
@@ -853,7 +1213,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" alt="Ruby Vyn">
+                            <img src="../assets/images/avatar_5.webp" alt="Ruby Vyn">
                         </div>
                         <div class="message-content">
                             <div class="message-sender">Ruby Vyn</div>
@@ -867,7 +1227,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" alt="Harry M">
+                            <img src="../assets/images/avatar_6.webp" alt="Harry M">
                         </div>
                         <div class="message-content">
                             <div class="message-sender">Harry M</div>
@@ -881,7 +1241,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face" alt="Villa Kuplu">
+                            <img src="../assets/images/avatar_2.webp" alt="Villa Kuplu">
                             <div class="notification-badge">1</div>
                         </div>
                         <div class="message-content">
@@ -895,7 +1255,7 @@
 
                     <div class="message-item">
                         <div class="message-avatar">
-                            <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=face" alt="Tapi Bulat">
+                            <img src="../assets/images/avatar_3.webp" alt="Tapi Bulat">
                         </div>
                         <div class="message-content">
                             <div class="message-sender">Tapi Bulat</div>
@@ -913,33 +1273,49 @@
         <!-- Main Chat Area -->
         <div class="main-chat">
             <div class="chat-header">
-                <div class="chat-user-info">
-                    <div class="chat-user-avatar">
-                        <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="Moise Kean">
+                <h1 class="chat-title">Message Detail</h1>
+                <div class="chat-user-section">
+                    <div class="chat-user-info">
+                        <div class="chat-user-avatar">
+                            <img src="../assets/images/avatar_2.webp" alt="Moise Kean">
+                        </div>
+                        <div class="chat-user-details">
+                            <h3>Moise Kean</h3>
+                            <p>Last Seen Recently</p>
+                        </div>
                     </div>
-                    <div class="chat-user-details">
-                        <h3>Moise Kean</h3>
-                        <p>Last Seen Recently</p>
+                    <div class="chat-actions">
+                        <button class="chat-action-btn">
+                            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                        </button>
+                        <button class="chat-action-btn">
+                            <svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        </button>
+                        <button class="chat-action-btn">
+                            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                        </button>
+                        <button class="chat-action-btn">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                        </button>
                     </div>
-                </div>
-                <div class="chat-actions">
-                    <button class="chat-action-btn">📞</button>
-                    <button class="chat-action-btn">📹</button>
-                    <button class="chat-action-btn">🔔</button>
-                    <button class="chat-action-btn">⚙️</button>
                 </div>
             </div>
 
             <div class="chat-messages">
                 <div class="message-date">27 December 2024</div>
-                
+
                 <div class="message-bubble sent">
                     Today there is a promo for you
                 </div>
 
                 <div class="message-bubble dark">
                     Wow, it so nice so how much these items ?
-                    <div class="message-reaction">😍 1</div>
+                    <div class="message-reaction">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                        </svg>
+                        1
+                    </div>
                 </div>
 
                 <div class="message-images">
@@ -956,15 +1332,28 @@
             <div class="chat-input-container">
                 <div class="chat-input-wrapper">
                     <div class="chat-input-avatar">
-                        <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="User">
+                        <img src="../assets/images/avatar_1.webp" alt="User">
                     </div>
-                    <input type="text" class="chat-input" placeholder="Type a message...">
                     <div class="input-actions">
                         <div class="drafts-indicator">
-                            💾 1 Drafts
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                                <polyline points="17,21 17,13 7,13 7,21"/>
+                                <polyline points="7,3 7,8 15,8"/>
+                            </svg>
+                            1 Drafts
                         </div>
+                        <button class="attachment-btn">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                            </svg>
+                        </button>
                         <button class="send-btn">
-                            ➤
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22,2 15,22 11,13 2,9 22,2"/>
+                            </svg>
+                            Send
                         </button>
                     </div>
                 </div>
@@ -975,50 +1364,77 @@
         <div class="right-sidebar">
             <div class="profile-header">
                 <div class="profile-avatar">
-                    <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=100&h=100&fit=crop&crop=face" alt="Moise Kean">
+                    <img src="../assets/images/avatar_2.webp" alt="Moise Kean">
                 </div>
                 <div class="profile-name">Moise Kean</div>
                 <div class="profile-status">Last Seen Recently</div>
                 <div class="social-links">
-                    <a href="#" class="social-link facebook">f</a>
-                    <a href="#" class="social-link instagram">📷</a>
-                    <a href="#" class="social-link twitter">🐦</a>
-                    <a href="#" class="social-link github">⚡</a>
+                    <a href="#" class="social-link facebook">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="social-link instagram">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="social-link twitter">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="social-link github">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                    </a>
                 </div>
             </div>
 
             <div class="media-section">
                 <div class="media-header">
-                    <h3 class="media-title">Media ( 4444 )</h3>
-                    <span class="media-count">🔄</span>
+                    <h3 class="media-title">Accessory sales performance</h3>
+                    <span class="media-count">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                    </span>
                 </div>
                 <div class="media-grid">
                     <div class="media-item">
-                        <img src="https://images.unsplash.com/photo-1494790108755-2616b9ff4bf8?w=200&h=200&fit=crop" alt="Media">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/1ec61ccae5775b4799ea2a2d34979083e4e20f0e_xxl-1.jpg" alt="Accessory Product">
                     </div>
                     <div class="media-item">
-                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop" alt="Media">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/301de5094f565ee93ef2fa4ca4e9bd63ad3d90da_xxl-1.jpg" alt="Accessory Product">
                     </div>
                     <div class="media-item">
-                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop" alt="Media">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/88d1a406fef9552a0e137d30f4cf7086d8490855_xxl-1.jpg" alt="Accessory Product">
                     </div>
                     <div class="media-item">
-                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop" alt="Media">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/bd436bf67da877c3b5b741a1b7b924d36a237709_xxl-1.jpg" alt="Accessory Product">
                     </div>
                     <div class="media-item">
-                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop" alt="Media">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/9ba96ec182e5d0164e140a9efad1e03a96c06509_xxl-1.jpg" alt="Accessory Product">
                     </div>
                     <div class="media-item">
-                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop" alt="Media">
+                        <img src="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/small/32b896b8b5f1a12d37a3742f48abf1044ccba87b_xxl-1.jpg" alt="Accessory Product">
                     </div>
                 </div>
-                <button class="load-more-btn">Load More Image</button>
+                <button class="load-more-btn">View all suggestion</button>
             </div>
 
             <div class="category-section">
                 <div class="media-header">
                     <h3 class="category-title">Category Label</h3>
-                    <span class="media-count">🔄</span>
+                    <span class="media-count">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23,4 23,10 17,10"/>
+                            <polyline points="1,20 1,14 7,14"/>
+                            <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/>
+                        </svg>
+                    </span>
                 </div>
                 <div class="category-list">
                     <div class="category-item">
@@ -1055,29 +1471,21 @@
                 });
             });
 
-            // Handle chat input
-            const chatInput = document.querySelector('.chat-input');
+            // Handle send button click
             const sendBtn = document.querySelector('.send-btn');
-
-            sendBtn.addEventListener('click', function() {
-                const message = chatInput.value.trim();
-                if (message) {
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function() {
                     // Add new message to chat
                     const chatMessages = document.querySelector('.chat-messages');
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = 'message-bubble sent';
-                    messageDiv.textContent = message;
-                    chatMessages.appendChild(messageDiv);
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                    chatInput.value = '';
-                }
-            });
-
-            chatInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendBtn.click();
-                }
-            });
+                    if (chatMessages) {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'message-bubble sent';
+                        messageDiv.textContent = 'New message sent';
+                        chatMessages.appendChild(messageDiv);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                });
+            }
 
             // Handle category checkboxes
             const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
