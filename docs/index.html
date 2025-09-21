@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lookbook-MPC Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">📚 Lookbook-MPC Documentation</h1>
+            <p class="text-gray-600">Fashion Recommendation System - Documentation Hub</p>
+            <div class="mt-4">
+                <a href="/" class="text-blue-500 hover:text-blue-600">← Back to Main Service</a>
+            </div>
+        </div>
+
+        <!-- Quick Navigation -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Chat Interfaces -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    💬 Chat Interfaces
+                </h2>
+                <div class="space-y-3">
+                    <a href="demo.html" class="block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-center">
+                        Main Demo Interface
+                    </a>
+                    <a href="test_chat_frontend.html" class="block px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-center">
+                        Test Chat Frontend
+                    </a>
+                </div>
+                <p class="text-xs text-gray-500 mt-3">
+                    Interactive chat interfaces for testing AI recommendations
+                </p>
+            </div>
+
+            <!-- API Testing -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    🔧 API Testing
+                </h2>
+                <div class="space-y-3">
+                    <a href="../docs" class="block px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors text-center">
+                        Swagger UI (OpenAPI)
+                    </a>
+                    <a href="../health" class="block px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-colors text-center">
+                        Health Check
+                    </a>
+                </div>
+                <p class="text-xs text-gray-500 mt-3">
+                    API documentation and system status endpoints
+                </p>
+            </div>
+        </div>
+
+        <!-- File Listing -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">📂 Documentation Files</h2>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-blue-500">📄</span>
+                        <a href="demo.html" class="text-blue-600 hover:text-blue-800 font-medium">demo.html</a>
+                    </div>
+                    <span class="text-xs text-gray-500">Main chat interface with full UI</span>
+                </div>
+                
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-green-500">🧪</span>
+                        <a href="test_chat_frontend.html" class="text-green-600 hover:text-green-800 font-medium">test_chat_frontend.html</a>
+                    </div>
+                    <span class="text-xs text-gray-500">Simple test interface for API testing</span>
+                </div>
+                
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-gray-500">📚</span>
+                        <span class="text-gray-600">index.html</span>
+                    </div>
+                    <span class="text-xs text-gray-500">This documentation index page</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Test Section -->
+        <div class="mt-8 bg-blue-50 rounded-lg p-6 border border-blue-200">
+            <h3 class="text-lg font-semibold text-blue-900 mb-4">🚀 Quick Test</h3>
+            <p class="text-blue-800 mb-4">Test the recommendation system with these working queries:</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                <button onclick="testAPI('I want to go dancing tonight')" 
+                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                    "I want to go dancing tonight"
+                </button>
+                <button onclick="testAPI('I need party outfits')" 
+                        class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors">
+                    "I need party outfits"
+                </button>
+            </div>
+            
+            <div id="testResult" class="mt-4 p-3 bg-white rounded border hidden">
+                <div id="testContent"></div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="mt-8 bg-gray-100 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">ℹ️ System Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <h4 class="font-medium text-gray-700 mb-2">Chat API Endpoints</h4>
+                    <ul class="space-y-1 text-gray-600">
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">POST /v1/chat</code> - Main chat endpoint</li>
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">GET /v1/chat/suggestions</code> - Get suggestions</li>
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">GET /v1/chat/sessions</code> - List sessions</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-700 mb-2">Features</h4>
+                    <ul class="space-y-1 text-gray-600">
+                        <li>✅ AI-powered intent parsing</li>
+                        <li>✅ Real product recommendations</li>
+                        <li>✅ Natural language responses</li>
+                        <li>✅ COS Thailand product integration</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Quick API test function
+        async function testAPI(query) {
+            const resultDiv = document.getElementById('testResult');
+            const contentDiv = document.getElementById('testContent');
+            
+            resultDiv.classList.remove('hidden');
+            contentDiv.innerHTML = '<div class="text-gray-500">Testing API...</div>';
+            
+            try {
+                const response = await fetch('/v1/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: 'docs_test_' + Date.now(),
+                        message: query
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                const outfitCount = data.outfits ? data.outfits.length : 0;
+                const message = data.replies && data.replies.length > 0 ? data.replies[0].message : 'No response';
+                
+                contentDiv.innerHTML = `
+                    <div class="space-y-2">
+                        <div><strong>Query:</strong> "${query}"</div>
+                        <div><strong>Response:</strong> ${message}</div>
+                        <div><strong>Outfits Found:</strong> ${outfitCount}</div>
+                        ${outfitCount > 0 ? `
+                            <div class="mt-2 p-2 bg-green-50 rounded">
+                                <strong>✅ Success!</strong> Found ${outfitCount} outfit recommendation${outfitCount > 1 ? 's' : ''}
+                            </div>
+                        ` : `
+                            <div class="mt-2 p-2 bg-yellow-50 rounded">
+                                <strong>ℹ️ Info:</strong> No outfits found for this query
+                            </div>
+                        `}
+                    </div>
+                `;
+                
+            } catch (error) {
+                contentDiv.innerHTML = `
+                    <div class="text-red-600">
+                        <strong>❌ Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

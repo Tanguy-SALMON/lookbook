@@ -30,8 +30,8 @@ logger = structlog.get_logger()
 # Initialize dependencies (will be replaced with proper DI in later milestones)
 intent_parser = LLMIntentParser(
     host=settings.ollama_host,
-    model="qwen3:4b-instruct",  # Use the correct model name
-    timeout=15,  # Shorter timeout to avoid long waits
+    model=settings.ollama_text_model_fast,  # Use fast model for better performance
+    timeout=10,  # Shorter timeout for faster model
 )
 lookbook_repo = MySQLLookbookRepository(settings.lookbook_db_url)
 rules_engine = RulesEngine()

@@ -168,6 +168,20 @@ async def demo_page():
     return FileResponse("docs/demo.html")
 
 
+# Serve test chat frontend
+@app.get("/test")
+async def test_chat_page():
+    """Serve the test chat frontend page."""
+    return FileResponse("docs/test_chat_frontend.html")
+
+
+# Serve docs index page
+@app.get("/docs-index")
+async def docs_index_page():
+    """Serve the documentation index page."""
+    return FileResponse("docs/index.html")
+
+
 # Serve static files if they exist
 static_dir = "static"
 if os.path.exists(static_dir):
@@ -285,22 +299,188 @@ async def readiness_check():
 # Root endpoint
 @app.get("/")
 async def root():
-    """Root endpoint with service information."""
-    return {
-        "service": "lookbook-mpc",
-        "version": "0.1.0",
-        "description": "Fashion lookbook recommendation microservice",
-        "docs": "/docs",
-        "health": "/health",
-        "ready": "/ready",
-        "demo": "/demo",
-        "features": {
-            "mcp": settings.feature_mcp,
-            "redis_queue": settings.feature_redis_queue,
-            "metrics": settings.feature_metrics,
-        },
-        "environment": settings.log_level,
-    }
+    """Root endpoint with service information and navigation links."""
+    from fastapi.responses import HTMLResponse
+
+    html_content = (
+        """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Lookbook-MPC - Fashion Recommendation Service</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-50 min-h-screen">
+        <div class="container mx-auto px-4 py-8 max-w-4xl">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">Lookbook-MPC</h1>
+                <p class="text-lg text-gray-600 mb-2">Fashion Lookbook Recommendation Microservice</p>
+                <p class="text-sm text-gray-500">Version 0.1.0 • Environment: """
+        + settings.log_level
+        + """</p>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Chat Interfaces -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                        💬 Chat Interfaces
+                    </h2>
+                    <div class="space-y-3">
+                        <a href="/demo" class="block px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-center">
+                            Demo Chat Interface
+                        </a>
+                        <a href="/test" class="block px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-center">
+                            Test Chat Frontend
+                        </a>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3">
+                        Interactive chat interfaces with AI fashion recommendations
+                    </p>
+                </div>
+
+                <!-- API Documentation -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                        📚 API Documentation
+                    </h2>
+                    <div class="space-y-3">
+                        <a href="/docs-index" class="block px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-center">
+                            Documentation Hub
+                        </a>
+                        <a href="/docs" class="block px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-center">
+                            Swagger UI (OpenAPI)
+                        </a>
+                        <a href="/redoc" class="block px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-center">
+                            ReDoc Documentation
+                        </a>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3">
+                        Complete API documentation and interactive testing
+                    </p>
+                </div>
+
+                <!-- System Status -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                        🔍 System Status
+                    </h2>
+                    <div class="space-y-3">
+                        <a href="/health" class="block px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-center">
+                            Health Check
+                        </a>
+                        <a href="/ready" class="block px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-center">
+                            Readiness Probe
+                        </a>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3">
+                        System health and dependency status
+                    </p>
+                </div>
+            </div>
+
+            <!-- API Endpoints -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">🔌 API Endpoints</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <h3 class="font-medium text-gray-700 mb-2">Chat API</h3>
+                        <ul class="space-y-1 text-gray-600">
+                            <li><code class="bg-gray-100 px-2 py-1 rounded">POST /v1/chat</code> - Chat with AI</li>
+                            <li><code class="bg-gray-100 px-2 py-1 rounded">GET /v1/chat/suggestions</code> - Get chat suggestions</li>
+                            <li><code class="bg-gray-100 px-2 py-1 rounded">GET /v1/chat/sessions</code> - List chat sessions</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-gray-700 mb-2">Recommendations</h3>
+                        <ul class="space-y-1 text-gray-600">
+                            <li><code class="bg-gray-100 px-2 py-1 rounded">POST /v1/recommend</code> - Get recommendations</li>
+                            <li><code class="bg-gray-100 px-2 py-1 rounded">GET /v1/images/{key}</code> - Get product images</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Status -->
+            <div class="bg-gray-100 rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Features Status</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="flex items-center justify-between">
+                        <span>MCP Integration</span>
+                        <span class="px-2 py-1 rounded text-xs """
+        + (
+            "bg-green-100 text-green-800"
+            if settings.feature_mcp
+            else "bg-gray-100 text-gray-600"
+        )
+        + """">
+                            """
+        + ("Enabled" if settings.feature_mcp else "Disabled")
+        + """
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span>Redis Queue</span>
+                        <span class="px-2 py-1 rounded text-xs """
+        + (
+            "bg-green-100 text-green-800"
+            if settings.feature_redis_queue
+            else "bg-gray-100 text-gray-600"
+        )
+        + """">
+                            """
+        + ("Enabled" if settings.feature_redis_queue else "Disabled")
+        + """
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span>Metrics</span>
+                        <span class="px-2 py-1 rounded text-xs """
+        + (
+            "bg-green-100 text-green-800"
+            if settings.feature_metrics
+            else "bg-gray-100 text-gray-600"
+        )
+        + """">
+                            """
+        + ("Enabled" if settings.feature_metrics else "Disabled")
+        + """
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-8 text-sm text-gray-500">
+                <p>Lookbook-MPC Fashion Recommendation Service</p>
+                <p>AI-powered outfit recommendations for COS Thailand</p>
+            </div>
+        </div>
+
+        <script>
+            // Add real-time status checking
+            async function checkStatus() {
+                try {
+                    const response = await fetch('/health');
+                    const data = await response.json();
+                    console.log('Service status:', data.status);
+                } catch (error) {
+                    console.log('Service status check failed:', error);
+                }
+            }
+
+            // Check status on load
+            checkStatus();
+        </script>
+    </body>
+    </html>
+    """
+    )
+
+    return HTMLResponse(content=html_content)
 
 
 # Error handlers

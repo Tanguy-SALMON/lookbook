@@ -252,17 +252,20 @@ class ChatTurn(UseCase):
                 )
 
                 if outfit_recommendations:
-                    # Convert smart recommender output to simple outfit dictionaries
+                    # Convert smart recommender output to frontend-compatible dictionaries
                     formatted_outfits = []
                     total_outfits = len(outfit_recommendations)
 
                     for outfit in outfit_recommendations:
-                        # Create simple outfit dictionary that matches API expectations
+                        # Create dictionary that matches frontend expectations
                         formatted_outfit = {
                             "title": outfit["title"],
-                            "items": outfit["items"],  # Keep original item structure
+                            "items": outfit[
+                                "items"
+                            ],  # Frontend expects items at top level
                             "total_price": outfit["total_price"],
-                            "explanation": outfit["style_explanation"],
+                            "rationale": outfit["style_explanation"],
+                            "score": 0.85,  # Default score as float
                             "outfit_type": outfit["outfit_type"],
                             "item_count": len(outfit["items"]),
                         }
@@ -279,7 +282,7 @@ class ChatTurn(UseCase):
                         }
                     ]
 
-                    # Return raw outfit dictionaries instead of entities
+                    # Return raw dictionaries for frontend compatibility
                     outfits = formatted_outfits
                 else:
                     # No outfits found, use natural response

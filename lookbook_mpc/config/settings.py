@@ -34,6 +34,10 @@ class Settings(BaseSettings):
         default="qwen3:4b-instruct",
         description="Text model for intent parsing and rationales",
     )
+    ollama_text_model_fast: str = Field(
+        default="llama3.2:1b-instruct-q4_K_M",
+        description="Fast text model for testing and development",
+    )
     ollama_vision_model: str = Field(
         default="qwen2.5vl:7b", description="Vision model for image analysis"
     )

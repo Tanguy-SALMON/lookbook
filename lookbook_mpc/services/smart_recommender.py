@@ -33,7 +33,7 @@ class SmartRecommender:
         self.repository = repository
         self.logger = logger.bind(service="smart_recommender")
         self.llm_host = settings.ollama_host
-        self.llm_model = settings.ollama_text_model
+        self.llm_model = settings.ollama_text_model_fast
 
     async def recommend_outfits(
         self, user_message: str, limit: int = 5
@@ -533,6 +533,7 @@ Return ONLY the JSON object for: "{message}"
             "title": product["title"],
             "price": float(product["price"]),
             "image_url": f"{settings.s3_base_url_with_trailing_slash}{product['image_key']}",
+            "product_url": f"https://th.cos.com/th_en/{product['sku']}.html",
             "color": product.get("color") or "N/A",
             "category": product.get("category") or "N/A",
             "relevance_score": product.get("relevance_score", 0),
