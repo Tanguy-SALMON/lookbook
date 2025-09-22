@@ -298,9 +298,27 @@ async def readiness_check():
 
 # Root endpoint
 @app.get("/")
-async def root():
+async def root(request: Request):
     """Root endpoint with service information and navigation links."""
     from fastapi.responses import HTMLResponse
+
+    # Check if client wants JSON (for tests)
+    accept_header = request.headers.get("accept", "")
+    if "application/json" in accept_header:
+        return {
+            "service": "lookbook-mpc",
+            "version": "0.1.0",
+            "description": "Fashion Lookbook Recommendation Microservice",
+            "docs": "/docs",
+            "health": "/health",
+            "endpoints": {
+                "demo": "/demo",
+                "test": "/test",
+                "api": "/v1/",
+                "chat": "/v1/chat",
+                "recommendations": "/v1/recommendations",
+            },
+        }
 
     html_content = (
         """

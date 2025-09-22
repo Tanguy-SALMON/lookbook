@@ -18,7 +18,7 @@ client = TestClient(app)
 
 def test_root_endpoint():
     """Test the root endpoint."""
-    response = client.get("/")
+    response = client.get("/", headers={"accept": "application/json"})
     assert response.status_code == 200
     data = response.json()
     assert data["service"] == "lookbook-mpc"
