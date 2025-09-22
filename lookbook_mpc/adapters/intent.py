@@ -2,16 +2,23 @@
 Intent Parsing Adapter
 
 This adapter handles parsing user natural language requests into
-structured intent constraints using Ollama text models.
+structured intent constraints using flexible LLM providers (Ollama or OpenRouter).
 """
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 import logging
 import structlog
-import aiohttp
 import json
 import re
+from .llm_providers import (
+    LLMProvider,
+    LLMProviderFactory,
+    LLMRequest,
+    LLMResponse,
+    parse_json_response,
+    generate_intent_response,
+)
 
 logger = structlog.get_logger()
 
@@ -26,17 +33,15 @@ class IntentParser(ABC):
 
 
 class LLMIntentParser(IntentParser):
-    """LLM-based intent parser using Ollama qwen3."""
+    """LLM-based intent parser using flexible LLM providers."""
 
-    def __init__(self, host: str, model: str, timeout: int = 30):
-        self.host = host.rstrip("/")
-        self.model = model
-        self.timeout = timeout
-        self.logger = logger.bind(parser="llm", model=model)
+    def __init__(self, provider: LLMProvider):
+        self.provider = provider
+        self.logger = logger.bind(parser="llm", provider=provider.get_provider_name())
 
     async def parse_intent(self, text: str) -> Dict[str, Any]:
         """
-        Parse natural language text into structured intent using qwen3.
+        Parse natural language text into structured intent using flexible LLM provider.
 
         Args:
             text: Natural language request from user
@@ -47,12 +52,10 @@ class LLMIntentParser(IntentParser):
         try:
             self.logger.info("Parsing user intent", text=text)
 
-            prompt = """You are a fashion assistant parsing customer requests. Convert the user's message into structured JSON. Be natural and understanding.
-
-User message: "{text}"
+            system_prompt = """You are a fashion assistant parsing customer requests. Convert the user's message into structured JSON. Be natural and understanding.
 
 Output format (JSON only):
-{{
+{
   "intent": "recommend_outfits",
   "activity": null|"yoga"|"gym"|"running"|"walking"|"hiking"|"swimming"|"cycling"|"dancing"|"fitness"|"driving"|"traveling",
   "occasion": null|"casual"|"business"|"formal"|"party"|"wedding"|"sport"|"beach"|"sleep"|"travel"|"date"|"shopping",
@@ -63,44 +66,29 @@ Output format (JSON only):
   "timeframe": null|"this_weekend"|"next_week"|"immediate"|"next_month"|"seasonal",
   "size": null|"XS"|"S"|"M"|"L"|"XL"|"XXL"|"XXXL"|"PLUS",
   "natural_response": "A helpful response to the user"
-}}
+}
 
 Examples:
-"I go to dance" -> {{"intent":"recommend_outfits","activity":"dancing","occasion":"party","objectives":["style","trendy"],"formality":"elevated","natural_response":"Perfect! I'll help you find stylish outfits for dancing. Let me show you some great options that will make you look amazing on the dance floor!"}}
-"I like drive" -> {{"intent":"recommend_outfits","activity":"driving","occasion":"travel","objectives":["comfort","style"],"formality":"casual","natural_response":"Great! I'll find you comfortable and stylish outfits perfect for driving and traveling. Let me show you some options!"}}
-"Hello" -> {{"intent":"recommend_outfits","occasion":"casual","objectives":["style"],"formality":"casual","natural_response":"Hello! I'm your AI fashion assistant. I can help you find the perfect outfit for any occasion. What are you looking for today?"}}
+"I go to dance" -> {"intent":"recommend_outfits","activity":"dancing","occasion":"party","objectives":["style","trendy"],"formality":"elevated","natural_response":"Perfect! I'll help you find stylish outfits for dancing. Let me show you some great options that will make you look amazing on the dance floor!"}
+"I like drive" -> {"intent":"recommend_outfits","activity":"driving","occasion":"travel","objectives":["comfort","style"],"formality":"casual","natural_response":"Great! I'll find you comfortable and stylish outfits perfect for driving and traveling. Let me show you some options!"}
+"Hello" -> {"intent":"recommend_outfits","occasion":"casual","objectives":["style"],"formality":"casual","natural_response":"Hello! I'm your AI fashion assistant. I can help you find the perfect outfit for any occasion. What are you looking for today?"}
 
 Return ONLY the JSON object."""
 
-            # Call Ollama API
-            async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self.timeout)
-            ) as session:
-                payload = {
-                    "model": self.model,
-                    "prompt": prompt.format(text=text),
-                    "temperature": 0.3,  # Slightly more creative for natural responses
-                    "max_tokens": 512,  # More tokens for natural responses
-                    "stream": False,
-                }
+            prompt = f'User message: "{text}"'
 
-                async with session.post(
-                    f"{self.host}/api/generate", json=payload
-                ) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        response_text = result.get("response", "")
+            # Use the flexible provider system
+            response = await generate_intent_response(
+                prompt=prompt,
+                provider=self.provider,
+                system_prompt=system_prompt,
+            )
 
-                        if not response_text or response_text.strip() == "":
-                            raise Exception("Empty response from Ollama")
+            if not response.success:
+                raise Exception(f"LLM error: {response.error_message}")
 
-                        # Parse JSON response
-                        return self._parse_json_response(response_text)
-                    else:
-                        error_text = await response.text()
-                        raise Exception(
-                            f"Ollama API error: {response.status} - {error_text}"
-                        )
+            # Parse JSON response
+            return self._parse_json_response(response.content)
 
         except Exception as e:
             self.logger.error("Error parsing intent", text=text, error=str(e))
@@ -129,33 +117,28 @@ Return ONLY the JSON object."""
             Dictionary with parsed intent
         """
         try:
-            # Extract JSON from response (may have surrounding text)
-            json_match = re.search(r"\{.*\}", response, re.DOTALL)
-            if json_match:
-                json_str = json_match.group(0)
-                result = json.loads(json_str)
+            # Use the common JSON parsing utility
+            result = parse_json_response(response)
 
-                # Ensure all required fields exist with defaults
-                required_fields = {
-                    "intent": "recommend_outfits",
-                    "activity": None,
-                    "occasion": None,
-                    "budget_max": None,
-                    "objectives": [],
-                    "palette": None,
-                    "formality": "casual",
-                    "timeframe": None,
-                    "size": None,
-                    "natural_response": "I'm here to help you find the perfect outfit! What are you looking for?",
-                }
+            # Ensure all required fields exist with defaults
+            required_fields = {
+                "intent": "recommend_outfits",
+                "activity": None,
+                "occasion": None,
+                "budget_max": None,
+                "objectives": [],
+                "palette": None,
+                "formality": "casual",
+                "timeframe": None,
+                "size": None,
+                "natural_response": "I'm here to help you find the perfect outfit! What are you looking for?",
+            }
 
-                for field, default_value in required_fields.items():
-                    if field not in result:
-                        result[field] = default_value
+            for field, default_value in required_fields.items():
+                if field not in result:
+                    result[field] = default_value
 
-                return result
-            else:
-                raise ValueError("No JSON found in response")
+            return result
 
         except Exception as e:
             self.logger.error(f"Error parsing JSON response: {str(e)}")
@@ -172,8 +155,43 @@ Return ONLY the JSON object."""
                 "natural_response": "I'm here to help you find the perfect outfit! What are you looking for?",
             }
 
+    @classmethod
+    def create_from_settings(cls, settings) -> "LLMIntentParser":
+        """Create intent parser from application settings."""
+        if settings.get_llm_provider_type() == "openrouter":
+            api_key = settings.get_openrouter_api_key()
+            if not api_key:
+                logger.warning(
+                    "OpenRouter API key not found, falling back to Ollama for intent parsing"
+                )
+                provider = LLMProviderFactory.create_provider(
+                    provider_type="ollama",
+                    model=settings.ollama_text_model,
+                    host=settings.ollama_host,
+                    timeout=settings.llm_timeout,
+                )
+            else:
+                provider = LLMProviderFactory.create_provider(
+                    provider_type="openrouter",
+                    model=settings.get_llm_model_name(),
+                    api_key=api_key,
+                    timeout=settings.llm_timeout,
+                )
+        else:
+            provider = LLMProviderFactory.create_provider(
+                provider_type="ollama",
+                model=settings.get_llm_model_name(),
+                host=settings.ollama_host,
+                timeout=settings.llm_timeout,
+            )
 
-# Removed HybridIntentParser - now using pure LLM only
+        return cls(provider=provider)
+
+
+# Convenience factory function for backward compatibility
+def create_intent_parser(settings) -> IntentParser:
+    """Create intent parser based on configuration."""
+    return LLMIntentParser.create_from_settings(settings)
 
 
 class MockIntentParser(IntentParser):

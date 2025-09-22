@@ -453,7 +453,13 @@ class TestChatResponse:
             session_id="session_123",
             replies=[{"type": "text", "message": "Hello!"}],
             outfits=[
-                Outfit(title="Test Outfit", items=[], score=0.8, rationale="test")
+                {
+                    "title": "Test Outfit",
+                    "items": [],
+                    "total_price": 100.0,
+                    "style_explanation": "test explanation",
+                    "outfit_type": "coordinated_set",
+                }
             ],
             request_id="chat_123",
         )

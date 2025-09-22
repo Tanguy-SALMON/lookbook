@@ -4,14 +4,20 @@
 ## 🚀 ESSENTIAL COMMANDS
 
 ```bash
+# Database connection test (run this first)
+poetry run python scripts/test_db_connections.py
+
 # Main product sync (most important command)
 poetry run python scripts/sync_100_products.py
 
 # Verify imported data
 poetry run python scripts/verify_product_import.py
 
-# Test database connections
-poetry run python scripts/test_db_connections.py
+# Test API endpoints
+poetry run python scripts/test_api.py
+
+# Comprehensive chat testing
+poetry run python scripts/test_chat_comprehensive.py
 
 # Run all tests
 poetry run pytest tests/ -v
@@ -47,7 +53,11 @@ S3_BASE_URL=https://your-cdn-domain.com/
 
 ## 🗂️ KEY FILE LOCATIONS
 
+- **Essential scripts:** `scripts/` (23 core scripts, see `scripts/README.md`)
 - **Main sync script:** `scripts/sync_100_products.py`
+- **Database testing:** `scripts/test_db_connections.py`
+- **API testing:** `scripts/test_api.py`
+- **Benchmark scripts:** `scripts/benchmark_models*.py`
 - **Database adapters:** `lookbook_mpc/adapters/db_*.py`
 - **Domain models:** `lookbook_mpc/domain/entities.py`
 - **Configuration:** `lookbook_mpc/config/settings.py`
@@ -82,6 +92,14 @@ poetry add cryptography
 - Fixed session ID format  
 - Fixed outfit creation
 - Fixed database connections
+
+## 📁 SCRIPTS STATUS
+
+✅ **Scripts consolidated: 50+ → 23 essential files**
+- All benchmark scripts preserved
+- Duplicate chat testing scripts consolidated
+- Database scripts streamlined
+- Archive: `scripts/archive/` (30+ files preserved)
 
 ## 📋 PRODUCT SCHEMA
 

@@ -28,6 +28,9 @@ greenlet = "^3.0.3"
 pymysql = "^1.1.2"
 cryptography = "^46.0.1"
 psutil = "^7.1.0"
+gputil = "^1.4.0"
+numpy = "^2.3.3"
+anthropic = "^0.68.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.6"

@@ -28,11 +28,14 @@ logger = structlog.get_logger()
 
 
 # Initialize dependencies (will be replaced with proper DI in later milestones)
-intent_parser = LLMIntentParser(
+from lookbook_mpc.adapters.llm_providers import OllamaProvider
+
+ollama_provider = OllamaProvider(
     host=settings.ollama_host,
     model=settings.ollama_text_model_fast,  # Use fast model for better performance
     timeout=10,  # Shorter timeout for faster model
 )
+intent_parser = LLMIntentParser(provider=ollama_provider)
 lookbook_repo = MySQLLookbookRepository(settings.lookbook_db_url)
 rules_engine = RulesEngine()
 recommender = OutfitRecommender(rules_engine)

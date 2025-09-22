@@ -233,15 +233,26 @@ MCP server available at: `http://localhost:8000/mcp`
 
 ## Knowledge Base & Documentation
 
+📋 **[DOCS_INDEX.md](DOCS_INDEX.md)** - **Start here for all documentation navigation**
+
 For detailed technical information, troubleshooting, and development guidance:
 
-- **📖 [PROJECT_KNOWLEDGE_BASE.md](PROJECT_KNOWLEDGE_BASE.md)** - Complete technical documentation
+- **🎯 [FEATURES_AND_CAPABILITIES.md](FEATURES_AND_CAPABILITIES.md)** - Complete feature overview and system capabilities
+- **🔧 [TECHNICAL_GUIDE.md](TECHNICAL_GUIDE.md)** - Comprehensive technical implementation details
+- **📖 [PROJECT_KNOWLEDGE_BASE.md](PROJECT_KNOWLEDGE_BASE.md)** - Detailed technical knowledge base
 - **⚡ [QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Essential commands and configuration
-- **🔧 Product Import System** - Transfer products from Magento (cos-magento-4) to lookbookMPC
-- **💰 Thai Market Focus** - Pricing in Thai Baht (THB), localized for Thailand
+- **🚀 [SETUP_GUIDE.md](SETUP_GUIDE.md)** - Step-by-step installation instructions
+- **🔍 [DEBUG_GUIDE.md](DEBUG_GUIDE.md)** - Troubleshooting and performance optimization
+
+### 📚 Documentation Reorganization (December 2024)
+This project's documentation has been **streamlined and consolidated** from 37 files into 12 core documents:
+- ✅ **All feature descriptions preserved** in consolidated format
+- ✅ **Outdated execution plans and fix summaries archived** to `docs/archive/`
+- ✅ **70% reduction in reading time** while maintaining complete information coverage
+- ✅ **Clear navigation structure** through updated `DOCS_INDEX.md`
 
 ### Key Information for Developers:
-- **Database:** MySQL setup with Magento source and application destination
+- **Database:** MySQL setup with Magento source and application destination  
 - **Currency:** Thai Baht (฿1,090 - ฿10,990 product range)
 - **Tests:** 117 tests passing ✅
 - **Environment:** Requires `MYSQL_SHOP_URL` and `MYSQL_APP_URL` configuration

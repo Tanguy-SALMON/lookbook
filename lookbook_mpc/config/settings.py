@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     )
 
     # LLM Configuration
+    llm_provider: str = Field(
+        default="ollama", description="LLM provider: 'ollama' or 'openrouter'"
+    )
+    llm_model: str = Field(
+        default="qwen3:4b-instruct",
+        description="Primary model name for text generation",
+    )
+    llm_timeout: int = Field(default=30, description="LLM request timeout in seconds")
+
+    # Ollama Configuration (when llm_provider="ollama")
     ollama_host: str = Field(
         default="http://localhost:11434", description="Ollama service URL"
     )
@@ -40,6 +50,18 @@ class Settings(BaseSettings):
     )
     ollama_vision_model: str = Field(
         default="qwen2.5vl:7b", description="Vision model for image analysis"
+    )
+
+    # OpenRouter Configuration (when llm_provider="openrouter")
+    openrouter_api_key: Optional[str] = Field(
+        default=None, description="OpenRouter API key for remote model access"
+    )
+    openrouter_base_url: str = Field(
+        default="https://openrouter.ai/api/v1", description="OpenRouter API base URL"
+    )
+    openrouter_model: str = Field(
+        default="qwen/qwen-2.5-7b-instruct:free",
+        description="OpenRouter model name (free models: qwen/qwen-2.5-7b-instruct:free)",
     )
 
     # Database Configuration
@@ -162,6 +184,32 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         """Check if running in development mode."""
         return not self.is_production()
+
+    def get_llm_provider_type(self) -> str:
+        """Get the configured LLM provider type."""
+        return self.llm_provider.lower()
+
+    def get_llm_model_name(self) -> str:
+        """Get the model name based on provider type."""
+        if self.get_llm_provider_type() == "openrouter":
+            return self.openrouter_model
+        else:
+            return self.llm_model or self.ollama_text_model
+
+    def get_openrouter_api_key(self) -> Optional[str]:
+        """Get OpenRouter API key from config or environment."""
+        return (
+            self.openrouter_api_key
+            or os.getenv("OPENROUTER_API_KEY")
+            or os.getenv("OPENROUTER_KEY")
+        )
+
+    def is_llm_provider_available(self) -> bool:
+        """Check if the configured LLM provider is available."""
+        if self.get_llm_provider_type() == "openrouter":
+            return bool(self.get_openrouter_api_key())
+        else:  # ollama
+            return True  # Assume Ollama is available if configured
 
 
 # Global settings instance
