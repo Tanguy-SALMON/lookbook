@@ -344,6 +344,56 @@ Response: Natural LLM text + 2 outfit suggestions with real products
 }
 ```
 
+### **🔄 FLEXIBLE LLM PROVIDER SYSTEM (NEW)**
+
+The system now supports **both local (Ollama) and cloud (OpenRouter) LLM providers** with seamless switching:
+
+#### **Provider Options:**
+- **Ollama (Local):** Fast, free, private - runs qwen3, llama3.2 locally
+- **OpenRouter (Cloud):** Access to free models like qwen-2.5-7b:free, no local setup needed
+- **Automatic Fallback:** OpenRouter → Ollama if API key missing
+
+#### **Configuration Examples:**
+
+**Development (Local Ollama):**
+```bash
+export LLM_PROVIDER="ollama"
+export LLM_MODEL="qwen3:4b-instruct"
+export OLLAMA_HOST="http://localhost:11434"
+```
+
+**Production (OpenRouter Free):**
+```bash
+export LLM_PROVIDER="openrouter" 
+export OPENROUTER_API_KEY="sk-or-v1-..."
+export LLM_MODEL="qwen/qwen-2.5-7b-instruct:free"
+```
+
+#### **Benefits:**
+- ✅ **Easy switching** between local and cloud models
+- ✅ **Cost optimization** with free OpenRouter models
+- ✅ **No code changes** - purely environment-driven
+- ✅ **Consistent API** across all providers
+- ✅ **Automatic fallback** for reliability
+
+#### **Testing Commands:**
+```bash
+# Test the flexible provider system
+poetry run python scripts/test_llm_providers.py
+
+# Demo switching between providers  
+poetry run python scripts/demo_provider_switch.py
+
+# Benchmark OpenRouter free models
+poetry run python scripts/benchmark_models_openrouter.py --models "qwen/qwen-2.5-7b-instruct:free"
+```
+
+#### **Files Added:**
+- `lookbook_mpc/adapters/llm_providers.py` - Provider abstraction layer
+- `FLEXIBLE_LLM_SETUP.md` - Detailed configuration guide
+- `scripts/test_llm_providers.py` - Provider testing utility
+- `scripts/demo_provider_switch.py` - Switching demonstration
+
 ---
 
 ## 🌟 **NAVIGATION SYSTEM**
@@ -369,11 +419,25 @@ Response: Natural LLM text + 2 outfit suggestions with real products
 ## 🛠️ **TECHNICAL CONFIGURATION**
 
 ### **Environment Variables:**
+
+**Core Settings:**
 ```bash
+# LLM Provider Selection (NEW)
+LLM_PROVIDER="ollama"                    # or "openrouter"
+LLM_MODEL="qwen3:4b-instruct"           # Primary model name
+LLM_TIMEOUT=30                          # Request timeout
+
+# OpenRouter Settings (NEW)
+OPENROUTER_API_KEY="sk-or-v1-..."      # Get from openrouter.ai/keys
+OPENROUTER_MODEL="qwen/qwen-2.5-7b-instruct:free"  # Free model
+
+# Ollama Settings (Existing)
 OLLAMA_HOST="http://localhost:11434"
 OLLAMA_VISION_MODEL="qwen2.5vl:7b"
 OLLAMA_TEXT_MODEL="qwen3:4b"
-OLLAMA_TEXT_MODEL_FAST="llama3.2:1b-instruct-q4_K_M"  # For testing
+OLLAMA_TEXT_MODEL_FAST="llama3.2:1b-instruct-q4_K_M"
+
+# Database & Storage
 S3_BASE_URL="https://d29c1z66frfv6c.cloudfront.net/pub/media/catalog/product/large/"
 MYSQL_APP_URL="mysql+pymysql://magento:Magento@COS(*)@127.0.0.1:3306/lookbookMPC"
 ```
