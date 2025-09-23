@@ -31,7 +31,7 @@ class S3ImageLocator(ImageLocator):
     """S3-based image locator."""
 
     def __init__(self, base_url: str):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.logger = logger.bind(locator="s3", base_url=base_url)
 
     def get_image_url(self, image_key: str) -> str:
@@ -46,7 +46,7 @@ class S3ImageLocator(ImageLocator):
         """
         try:
             # Clean image key (remove any path components)
-            clean_key = image_key.split('/')[-1]
+            clean_key = image_key.split("/")[-1]
 
             # Construct full URL
             url = f"{self.base_url}/{clean_key}"
@@ -56,7 +56,9 @@ class S3ImageLocator(ImageLocator):
             return url
 
         except Exception as e:
-            self.logger.error("Error generating image URL", image_key=image_key, error=str(e))
+            self.logger.error(
+                "Error generating image URL", image_key=image_key, error=str(e)
+            )
             raise
 
     def get_proxy_url(self, image_key: str) -> str:
@@ -76,30 +78,40 @@ class S3ImageLocator(ImageLocator):
 
             proxy_url = f"/v1/images/{image_key}"
 
-            self.logger.debug("Generated proxy URL", image_key=image_key, proxy_url=proxy_url)
+            self.logger.debug(
+                "Generated proxy URL", image_key=image_key, proxy_url=proxy_url
+            )
 
             return proxy_url
 
         except Exception as e:
-            self.logger.error("Error generating proxy URL", image_key=image_key, error=str(e))
+            self.logger.error(
+                "Error generating proxy URL", image_key=image_key, error=str(e)
+            )
             raise
 
 
 class MockImageLocator(ImageLocator):
     """Mock image locator for testing purposes."""
 
-    def __init__(self, base_url: str = "https://mock-cdn.example.com"):
-        self.base_url = base_url
+    def __init__(self, base_url: str = "https://picsum.photos"):
+        self.base_url = base_url.rstrip("/")
         self.logger = logger.bind(locator="mock")
 
     def get_image_url(self, image_key: str) -> str:
-        """Generate mock image URL."""
+        """Generate mock image URL using a working test image service."""
         try:
             # Clean image key
-            clean_key = image_key.split('/')[-1]
+            clean_key = image_key.split("/")[-1]
 
-            # Generate mock URL
-            url = f"{self.base_url}/{clean_key}"
+            # Generate working test image URL (200x200 for testing)
+            # Picsum.photos provides real test images that work reliably
+            if "test-image" in clean_key:
+                url = f"{self.base_url}/200/200"
+            else:
+                # Use a deterministic seed based on filename for consistency
+                seed = hash(clean_key) % 1000
+                url = f"{self.base_url}/200/200?random={seed}"
 
             self.logger.debug("Mock image URL generated", image_key=clean_key, url=url)
 
@@ -107,15 +119,17 @@ class MockImageLocator(ImageLocator):
 
         except Exception as e:
             self.logger.error("Error in mock image URL generation", error=str(e))
-            return f"{self.base_url}/default.jpg"
+            return f"{self.base_url}/200/200"
 
     def get_proxy_url(self, image_key: str) -> str:
         """Generate mock proxy URL."""
         try:
-            clean_key = image_key.split('/')[-1]
+            clean_key = image_key.split("/")[-1]
             proxy_url = f"/v1/images/{clean_key}"
 
-            self.logger.debug("Mock proxy URL generated", image_key=clean_key, proxy_url=proxy_url)
+            self.logger.debug(
+                "Mock proxy URL generated", image_key=clean_key, proxy_url=proxy_url
+            )
 
             return proxy_url
 
@@ -149,8 +163,8 @@ class ImageProcessor:
             img = Image.open(io.BytesIO(image_data))
 
             # Convert to RGB if needed
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
+            if img.mode != "RGB":
+                img = img.convert("RGB")
 
             # Resize if needed
             if max(img.size) > self.max_size:
@@ -163,9 +177,11 @@ class ImageProcessor:
             img.save(buffer, format="JPEG", quality=85)
             processed_data = buffer.getvalue()
 
-            self.logger.debug("Image processed for LLM",
-                            original_size=img.size,
-                            processed_size=len(processed_data))
+            self.logger.debug(
+                "Image processed for LLM",
+                original_size=img.size,
+                processed_size=len(processed_data),
+            )
 
             return processed_data
 

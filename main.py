@@ -30,6 +30,9 @@ from lookbook_mpc.api.routers import (
     reco_router,
     chat_router,
     images_router,
+    agents_router,
+    personas_router,
+    settings_router,
 )
 from lookbook_mpc.api.mcp_server import create_mcp_app
 
@@ -154,6 +157,9 @@ app.include_router(ingest_router)
 app.include_router(reco_router)
 app.include_router(chat_router)
 app.include_router(images_router)
+app.include_router(agents_router)
+app.include_router(personas_router)
+app.include_router(settings_router)
 
 # Mount MCP endpoints (if enabled)
 if settings.feature_mcp:
@@ -311,6 +317,7 @@ async def root(request: Request):
             "description": "Fashion Lookbook Recommendation Microservice",
             "docs": "/docs",
             "health": "/health",
+            "ready": True,
             "endpoints": {
                 "demo": "/demo",
                 "test": "/test",

@@ -63,7 +63,9 @@ class TestDatabaseIntegration:
             "rules",
         ]
         for table in required_tables:
-            assert table in tables or table.replace('items', 'products') in tables, f"Required table '{table}' not found in database (checked both 'items' and 'products')"
+            assert table in tables or table.replace("items", "products") in tables, (
+                f"Required table '{table}' not found in database (checked both 'items' and 'products')"
+            )
 
         conn.close()
 
@@ -92,11 +94,28 @@ class TestDatabaseIntegration:
         for column in required_columns:
             # Check if we're looking at items or products table
             # For backward compatibility, check if products table has the equivalent columns
-            expected_columns = ['id', 'sku', 'title', 'price', 'size_range', 'image_key', 'attributes', 'in_stock', 'created_at', 'updated_at']
-            products_columns = {col.replace('item', 'product') if col in expected_columns else col: col_type for col, col_type in columns.items()}
-            assert column in columns or column.replace('item', 'product') in products_columns, (
-                f"Required column '{column}' not found in items table"
-            )
+            expected_columns = [
+                "id",
+                "sku",
+                "title",
+                "price",
+                "size_range",
+                "image_key",
+                "attributes",
+                "in_stock",
+                "created_at",
+                "updated_at",
+            ]
+            products_columns = {
+                col.replace("item", "product")
+                if col in expected_columns
+                else col: col_type
+                for col, col_type in columns.items()
+            }
+            assert (
+                column in columns
+                or column.replace("item", "product") in products_columns
+            ), f"Required column '{column}' not found in items table"
 
         conn.close()
 
@@ -109,11 +128,15 @@ class TestDatabaseIntegration:
         # Check products table specifically
         cursor.execute("SELECT COUNT(*) FROM products;")
         result = cursor.fetchone()
-        assert result is not None and result[0] is not None, "Should return a valid count from products table"
+        assert result is not None and result[0] is not None, (
+            "Should return a valid count from products table"
+        )
         item_count = result[0]
 
         # Should have at least some items (the test data we saw earlier)
-        assert item_count >= 0, f"Should have valid count from products table, got {item_count}"
+        assert item_count >= 0, (
+            f"Should have valid count from products table, got {item_count}"
+        )
 
         if item_count > 0:
             # Test data integrity
@@ -142,7 +165,7 @@ class TestAPIArchitecture:
 
     def test_api_root_endpoint(self, client):
         """Test the root API endpoint returns service info."""
-        response = client.get("/")
+        response = client.get("/", headers={"accept": "application/json"})
         assert response.status_code == 200
 
         data = response.json()
@@ -201,41 +224,65 @@ class TestIngestAPIEndpoints:
         """Test GET /v1/ingest/items endpoint."""
         response = client.get("/v1/ingest/items")
         # The endpoint might be using the new table name structure
-        assert response.status_code in [200, 404], f"Expected 200 or 404, got {response.status_code}"
+        assert response.status_code in [200, 404], (
+            f"Expected 200 or 404, got {response.status_code}"
+        )
         if response.status_code == 404:
             # This might be expected if the endpoint structure has changed
-            print(f"Note: /v1/ingest/items returned 404 - endpoint structure may have changed")
+            print(
+                f"Note: /v1/ingest/items returned 404 - endpoint structure may have changed"
+            )
 
         data = response.json()
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "items" in data, f"Expected 'items' in response, got {list(data.keys())}"
+            assert "items" in data, (
+                f"Expected 'items' in response, got {list(data.keys())}"
+            )
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "pagination" in data, f"Expected 'pagination' in response, got {list(data.keys())}"
+            assert "pagination" in data, (
+                f"Expected 'pagination' in response, got {list(data.keys())}"
+            )
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "items" in data, f"Expected 'items' in response, got {list(data.keys())}"
+            assert "items" in data, (
+                f"Expected 'items' in response, got {list(data.keys())}"
+            )
             assert isinstance(data["items"], list)
 
     def test_list_items_with_pagination(self, client):
         """Test items endpoint with pagination parameters."""
         response = client.get("/v1/ingest/items?limit=5&offset=0")
-        assert response.status_code in [200, 404], f"Expected 200 or 404, got {response.status_code}"
+        assert response.status_code in [200, 404], (
+            f"Expected 200 or 404, got {response.status_code}"
+        )
 
         data = response.json()
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "items" in data, f"Expected 'items' in response, got {list(data.keys())}"
-            assert "pagination" in data, f"Expected 'pagination' in response, got {list(data.keys())}"
+            assert "items" in data, (
+                f"Expected 'items' in response, got {list(data.keys())}"
+            )
+            assert "pagination" in data, (
+                f"Expected 'pagination' in response, got {list(data.keys())}"
+            )
             pagination = data["pagination"]
             assert "total" in pagination
             assert "limit" in pagination
@@ -245,20 +292,30 @@ class TestIngestAPIEndpoints:
     def test_list_items_with_category_filter(self, client):
         """Test items endpoint with category filter."""
         response = client.get("/v1/ingest/items?category=top")
-        assert response.status_code in [200, 404], f"Expected 200 or 404, got {response.status_code}"
+        assert response.status_code in [200, 404], (
+            f"Expected 200 or 404, got {response.status_code}"
+        )
 
         data = response.json()
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "items" in data, f"Expected 'items' in response, got {list(data.keys())}"
+            assert "items" in data, (
+                f"Expected 'items' in response, got {list(data.keys())}"
+            )
         # Items should be filtered by category if any exist
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "items" in data, f"Expected 'items' in response, got {list(data.keys())}"
+            assert "items" in data, (
+                f"Expected 'items' in response, got {list(data.keys())}"
+            )
             for item in data["items"]:
                 if "attributes" in item and item["attributes"]:
                     # Category might be in different formats
@@ -300,7 +357,9 @@ class TestFrontendBackendIntegration:
     def test_json_response_format(self, client):
         """Test that API responses are properly formatted for frontend consumption."""
         response = client.get("/v1/ingest/items?limit=1")
-        assert response.status_code in [200, 404], f"Expected 200 or 404, got {response.status_code}"
+        assert response.status_code in [200, 404], (
+            f"Expected 200 or 404, got {response.status_code}"
+        )
 
         # Should return valid JSON
         data = response.json()
@@ -309,14 +368,22 @@ class TestFrontendBackendIntegration:
         # Should have consistent structure
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "items" in data, f"Expected 'items' in response, got {list(data.keys())}"
+            assert "items" in data, (
+                f"Expected 'items' in response, got {list(data.keys())}"
+            )
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "items" in data, f"Expected 'items' in response, got {list(data.keys())}"
+            assert "items" in data, (
+                f"Expected 'items' in response, got {list(data.keys())}"
+            )
             if data["items"]:
                 item = data["items"][0]
                 # Check standard item fields that frontend expects
@@ -352,7 +419,9 @@ class TestDataConsistency:
         """Test that API responses match database data."""
         # Get data from API
         response = client.get("/v1/ingest/items?limit=10")
-        assert response.status_code in [200, 404], f"Expected 200 or 404, got {response.status_code}"
+        assert response.status_code in [200, 404], (
+            f"Expected 200 or 404, got {response.status_code}"
+        )
         api_data = response.json()
 
         # Get data from database
@@ -360,7 +429,9 @@ class TestDataConsistency:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM products;")
         result = cursor.fetchone()
-        assert result is not None and result[0] is not None, "Should return a valid count from products table"
+        assert result is not None and result[0] is not None, (
+            "Should return a valid count from products table"
+        )
         db_count = result[0]
         conn.close()
 
@@ -368,19 +439,27 @@ class TestDataConsistency:
         if db_count > 0:
             # Handle case where endpoint may not exist yet
             if response.status_code == 404:
-                assert "detail" in api_data and "Not Found" in api_data["detail"], "Should return proper 404 error"
+                assert "detail" in api_data and "Not Found" in api_data["detail"], (
+                    "Should return proper 404 error"
+                )
             else:
-                assert "items" in api_data, f"Expected 'items' in response, got {list(api_data.keys())}"
+                assert "items" in api_data, (
+                    f"Expected 'items' in response, got {list(api_data.keys())}"
+                )
                 assert len(api_data["items"]) > 0, (
-                "API should return items when database has items"
-            )
+                    "API should return items when database has items"
+                )
 
             # Check data format consistency
             # Handle case where endpoint may not exist yet
             if response.status_code == 404:
-                assert "detail" in api_data and "Not Found" in api_data["detail"], "Should return proper 404 error"
+                assert "detail" in api_data and "Not Found" in api_data["detail"], (
+                    "Should return proper 404 error"
+                )
             else:
-                assert "items" in api_data, f"Expected 'items' in response, got {list(api_data.keys())}"
+                assert "items" in api_data, (
+                    f"Expected 'items' in response, got {list(api_data.keys())}"
+                )
                 if api_data["items"]:
                     item = api_data["items"][0]
                 assert "id" in item
@@ -402,12 +481,16 @@ class TestDataConsistency:
         try:
             cursor.execute("SELECT COUNT(*) FROM products;")
             result = cursor.fetchone()
-            assert result is not None and result[0] is not None, "Should return a valid count from products table"
+            assert result is not None and result[0] is not None, (
+                "Should return a valid count from products table"
+            )
             actual_count = result[0]
         except sqlite3.OperationalError:
             cursor.execute("SELECT COUNT(*) FROM items;")
             result = cursor.fetchone()
-            assert result is not None and result[0] is not None, "Should return a valid count from items table"
+            assert result is not None and result[0] is not None, (
+                "Should return a valid count from items table"
+            )
             actual_count = result[0]
         conn.close()
 
@@ -430,7 +513,9 @@ class TestAPIPerformance:
         response = client.get("/v1/ingest/items?limit=10")
         end_time = time.time()
 
-        assert response.status_code in [200, 404], f"Expected 200 or 404, got {response.status_code}"
+        assert response.status_code in [200, 404], (
+            f"Expected 200 or 404, got {response.status_code}"
+        )
         response_time = end_time - start_time
 
         # Response should be under 5 seconds for test environment
@@ -523,20 +608,28 @@ class TestAPIErrorHandling:
         # Test negative limit
         response = client.get("/v1/ingest/items?limit=-1")
         # Should handle gracefully (may return 422 or default behavior)
-        assert response.status_code in [200, 404, 422], f"Expected 200, 404, or 422, got {response.status_code}"
+        assert response.status_code in [200, 404, 422], (
+            f"Expected 200, 404, or 422, got {response.status_code}"
+        )
 
         # Test very large limit
         response = client.get("/v1/ingest/items?limit=10000")
         # Handle case where endpoint may not exist yet
-        assert response.status_code in [200, 404], f"Expected 200 or 404, got {response.status_code}"
+        assert response.status_code in [200, 404], (
+            f"Expected 200 or 404, got {response.status_code}"
+        )
 
         # Response should be reasonable even with large limit
         data = response.json()
         # Handle case where endpoint may not exist yet
         if response.status_code == 404:
-            assert "detail" in data and "Not Found" in data["detail"], "Should return proper 404 error"
+            assert "detail" in data and "Not Found" in data["detail"], (
+                "Should return proper 404 error"
+            )
         else:
-            assert "items" in data, f"Expected 'items' in response, got {list(data.keys())}"
+            assert "items" in data, (
+                f"Expected 'items' in response, got {list(data.keys())}"
+            )
             assert len(data["items"]) <= 1000  # Should have reasonable cap
 
     def test_nonexistent_resources(self, client):
@@ -573,9 +666,13 @@ class TestAPIVersioning:
             # Should not return 404 (endpoint exists)
             # Some endpoints may have changed structure, be more lenient
             if response.status_code == 404:
-                print(f"Note: Endpoint {endpoint} returned 404 - structure may have changed")
+                print(
+                    f"Note: Endpoint {endpoint} returned 404 - structure may have changed"
+                )
             else:
-                assert response.status_code != 404, f"Endpoint {endpoint} should exist or return meaningful error"
+                assert response.status_code != 404, (
+                    f"Endpoint {endpoint} should exist or return meaningful error"
+                )
 
     def test_api_version_in_schema(self, client):
         """Test that API version is properly documented."""
