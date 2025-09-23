@@ -34,6 +34,7 @@ from lookbook_mpc.api.routers import (
     personas_router,
     settings_router,
     products_router,
+    product_import_router,
 )
 from lookbook_mpc.api.mcp_server import create_mcp_app
 
@@ -165,6 +166,7 @@ app.include_router(agents_router)
 app.include_router(personas_router)
 app.include_router(settings_router)
 app.include_router(products_router)
+app.include_router(product_import_router)
 
 # Mount MCP endpoints (if enabled)
 if settings.feature_mcp:

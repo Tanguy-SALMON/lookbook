@@ -172,6 +172,123 @@ class MySQLShopCatalogAdapter(ShopCatalogAdapter):
             self.logger.error("Error fetching items from shop catalog", error=str(e))
             raise
 
+    async def get_enabled_products_with_stock(
+        self, start_after_id: int = 0, limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetch enabled products with stock, ordered by entity_id for pagination.
+
+        Args:
+            start_after_id: Fetch products with entity_id > this value
+            limit: Maximum number of products to fetch
+
+        Returns:
+            List of product dictionaries with source_id for pagination
+        """
+        try:
+            self.logger.info("Fetching enabled products with stock",
+                           start_after_id=start_after_id, limit=limit)
+
+            query = """
+                SELECT DISTINCT
+                    p.entity_id as source_id,
+                    p.sku,
+                    COALESCE(
+                        price.value,
+                        (SELECT MIN(child_price.value)
+                         FROM catalog_product_super_link super_link
+                         JOIN catalog_product_entity child ON super_link.product_id = child.entity_id
+                         JOIN catalog_product_entity_decimal child_price ON child.entity_id = child_price.entity_id
+                         WHERE super_link.parent_id = p.entity_id
+                         AND child_price.attribute_id = 77
+                         AND child_price.store_id = 0
+                         AND child_price.value > 0)
+                    ) as price,
+                    name.value as product_name,
+                    url.value as url_key,
+                    COALESCE(csi.qty, 0) as stock_qty,
+                    season.value as season,
+                    color_option.value as color,
+                    material.value as material,
+                    pattern.value as pattern,
+                    occasion.value as occasion,
+                    category.value as category,
+                    p.created_at as product_created_at,
+                    eav.value as image_key
+                FROM catalog_product_entity p
+                JOIN catalog_product_entity_text eav ON p.entity_id = eav.entity_id AND eav.store_id = 0 AND eav.attribute_id = 358
+                LEFT JOIN catalog_product_entity_decimal price ON p.entity_id = price.entity_id AND price.attribute_id = 77 AND price.store_id = 0
+                LEFT JOIN catalog_product_entity_varchar name ON p.entity_id = name.entity_id AND name.attribute_id = 73 AND name.store_id = 0
+                LEFT JOIN catalog_product_entity_varchar url ON p.entity_id = url.entity_id AND url.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'url_key' AND entity_type_id = 4) AND url.store_id = 0
+                LEFT JOIN catalog_product_entity_int status ON p.entity_id = status.entity_id AND status.attribute_id = 97 AND status.store_id = 0
+                LEFT JOIN cataloginventory_stock_item csi ON p.entity_id = csi.product_id
+                LEFT JOIN catalog_product_entity_varchar season ON p.entity_id = season.entity_id AND season.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'season' AND entity_type_id = 4) AND season.store_id = 0
+                LEFT JOIN eav_attribute_option_value color_option ON EXISTS (
+                    SELECT 1 FROM catalog_product_entity_int color_attr
+                    WHERE color_attr.entity_id = p.entity_id
+                    AND color_attr.attribute_id = 93
+                    AND color_attr.value = color_option.option_id
+                    AND color_option.store_id = 0
+                )
+                LEFT JOIN catalog_product_entity_text material ON p.entity_id = material.entity_id AND material.attribute_id = 148 AND material.store_id = 0
+                LEFT JOIN catalog_product_entity_varchar pattern ON p.entity_id = pattern.entity_id AND pattern.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'pattern' AND entity_type_id = 4) AND pattern.store_id = 0
+                LEFT JOIN catalog_product_entity_varchar occasion ON p.entity_id = occasion.entity_id AND occasion.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'occasion' AND entity_type_id = 4) AND occasion.store_id = 0
+                LEFT JOIN catalog_product_entity_varchar category ON p.entity_id = category.entity_id AND category.attribute_id = (SELECT attribute_id FROM eav_attribute WHERE attribute_code = 'category' AND entity_type_id = 4) AND category.store_id = 0
+                WHERE status.value = 1  -- enabled
+                AND COALESCE(csi.qty, 0) > 0  -- in stock
+                AND p.entity_id > %s  -- pagination
+                ORDER BY p.entity_id ASC
+                LIMIT %s
+            """
+
+            items = []
+            async with await self._get_connection() as conn:
+                async with conn.cursor(aiomysql.DictCursor) as cursor:
+                    await cursor.execute(query, (start_after_id, limit))
+                    results = await cursor.fetchall()
+
+                    for row in results:
+                        # Convert datetime to ISO format string for JSON serialization
+                        product_created_at = (
+                            row["product_created_at"].isoformat() if row["product_created_at"] else None
+                        )
+
+                        # Price is already in Thai Baht (THB)
+                        price = (
+                            float(row["price"])
+                            if row["price"] and row["price"] > 0
+                            else 29.99
+                        )
+
+                        items.append(
+                            {
+                                "source_id": row["source_id"],
+                                "sku": row["sku"],
+                                "title": row["product_name"] or f"Product {row['sku']}",
+                                "price": price,
+                                "size_range": ["S", "M", "L", "XL"],  # Default for configurable
+                                "image_key": row["image_key"] or f"{row['sku']}.jpg",
+                                "attributes": {},  # Empty for now
+                                "in_stock": True,  # Since we filter for stock_qty > 0
+                                "season": row["season"],
+                                "url_key": row["url_key"],
+                                "product_created_at": product_created_at,
+                                "stock_qty": int(row["stock_qty"]) if row["stock_qty"] else 0,
+                                "category": row["category"] or "fashion",
+                                "color": row["color"],
+                                "material": row["material"],
+                                "pattern": row["pattern"],
+                                "occasion": row["occasion"],
+                            }
+                        )
+
+            self.logger.info("Fetched enabled products with stock", count=len(items))
+            return items
+
+        except Exception as e:
+            self.logger.error("Error fetching enabled products with stock", error=str(e))
+            raise
+
     async def get_item_by_sku(self, sku: str) -> Optional[Dict[str, Any]]:
         """
         Get specific item by SKU.

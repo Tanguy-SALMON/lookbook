@@ -12,6 +12,7 @@ from .agents import router as agents_router
 from .personas import router as personas_router
 from .settings import router as settings_router
 from .products import router as products_router
+from .product_import import router as product_import_router
 
 __all__ = [
     "ingest_router",
@@ -22,4 +23,5 @@ __all__ = [
     "personas_router",
     "settings_router",
     "products_router",
+    "product_import_router",
 ]
