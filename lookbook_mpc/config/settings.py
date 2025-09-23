@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # LLM Configuration
     llm_provider: str = Field(
-        default="ollama", description="LLM provider: 'ollama' or 'openrouter'"
+        default="openrouter", description="LLM provider: 'ollama' or 'openrouter'"
     )
     llm_model: str = Field(
         default="qwen3:4b-instruct",
@@ -60,8 +60,8 @@ class Settings(BaseSettings):
         default="https://openrouter.ai/api/v1", description="OpenRouter API base URL"
     )
     openrouter_model: str = Field(
-        default="qwen/qwen-2.5-7b-instruct:free",
-        description="OpenRouter model name (free models: qwen/qwen-2.5-7b-instruct:free)",
+        default="openai/gpt-oss-20b:free",
+        description="OpenRouter model name (free models: openai/gpt-oss-20b:free)",
     )
 
     # Database Configuration
@@ -77,6 +77,9 @@ class Settings(BaseSettings):
 
     # S3/CDN Configuration
     s3_base_url: str = Field(..., description="Base URL for S3 image storage")
+    product_link_base_url: str = Field(
+        default="https://th.cos.com/th_en/", description="Base URL for product links"
+    )
 
     # Logging Configuration
     log_level: str = Field(default="INFO", description="Logging level")

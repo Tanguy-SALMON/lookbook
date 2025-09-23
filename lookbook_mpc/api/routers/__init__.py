@@ -11,6 +11,7 @@ from .images import router as images_router
 from .agents import router as agents_router
 from .personas import router as personas_router
 from .settings import router as settings_router
+from .products import router as products_router
 
 __all__ = [
     "ingest_router",
@@ -20,4 +21,5 @@ __all__ = [
     "agents_router",
     "personas_router",
     "settings_router",
+    "products_router",
 ]

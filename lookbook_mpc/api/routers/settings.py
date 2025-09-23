@@ -29,6 +29,7 @@ async def get_environment_variables() -> Dict[str, Any]:
             "OLLAMA_TEXT_MODEL": settings.ollama_text_model,
             # Storage & CDN
             "S3_BASE_URL": settings.s3_base_url,
+            "PRODUCT_LINK_BASE_URL": settings.product_link_base_url,
             # Database Configuration
             "LOOKBOOK_DB_URL": settings.lookbook_db_url,
             "MYSQL_SHOP_URL": settings.mysql_shop_url,
