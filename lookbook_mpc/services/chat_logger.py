@@ -164,8 +164,8 @@ class ChatLogger:
                 upsert_sql = """
                 INSERT INTO chat_sessions (
                     session_id, total_messages, total_recommendations,
-                    avg_response_time_ms, last_activity, created_at
-                ) VALUES (%s, 1, %s, %s, %s, %s)
+                    avg_response_time_ms, last_activity, created_at, name
+                ) VALUES (%s, 1, %s, %s, %s, %s, NULL)
                 ON DUPLICATE KEY UPDATE
                 total_messages = total_messages + 1,
                 total_recommendations = total_recommendations + %s,

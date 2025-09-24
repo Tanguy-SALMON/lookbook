@@ -5,7 +5,7 @@ This module handles endpoints for chat-based fashion recommendations
 and conversational interactions.
 """
 
-from fastapi import APIRouter, HTTPException, status, Query
+from fastapi import APIRouter, HTTPException, status, Query, Request
 from typing import Dict, Any, Optional, List
 import logging
 import structlog
@@ -49,7 +49,7 @@ sessions: Dict[str, Dict[str, Any]] = {}
 
 
 @router.post("", response_model=ChatResponse)
-async def chat_turn(request: ChatRequest) -> ChatResponse:
+async def chat_turn(request: ChatRequest, request_obj: Request = None) -> ChatResponse:
     """
     Process a chat turn for fashion recommendations.
 
@@ -103,6 +103,12 @@ async def chat_turn(request: ChatRequest) -> ChatResponse:
 
         response_time_ms = int((time.time() - start_time) * 1000)
 
+        # Calculate recommendation time (approximate)
+        recommendation_time_ms = None
+        if response.outfits and len(response.outfits) > 0:
+            # Estimate recommendation time as response time minus intent parsing time
+            recommendation_time_ms = max(0, response_time_ms - intent_time)
+
         # Generate session ID if not provided
         if not response.session_id:
             response.session_id = str(uuid.uuid4())
@@ -115,15 +121,59 @@ async def chat_turn(request: ChatRequest) -> ChatResponse:
             )
             response.replies[0]["message"] = toned_message
 
-        # Create log entry
+        # Parse intent for logging (reuse the intent parsing that happened in the use case)
+        parsed_intent = None
+        intent_confidence = None
+        language_detected = None
+        try:
+            # Get intent parsing results - we need to re-parse since the use case doesn't return it
+            intent_result = await intent_parser.parse_intent(request.message)
+            parsed_intent = intent_result  # It's already a dict
+            # For now, set a default confidence since the parser doesn't provide it
+            intent_confidence = 0.8  # Default confidence for LLM-based parsing
+            # Extract language if available from intent result
+            language_detected = intent_result.get("language") or intent_result.get("detected_language")
+        except Exception as e:
+            logger.warning(f"Failed to parse intent for logging: {e}")
+
+        # Extract request metadata
+        user_ip = None
+        user_agent = None
+        if request_obj:
+            # Get client IP (handle forwarded headers)
+            user_ip = (
+                request_obj.headers.get("x-forwarded-for") or
+                request_obj.headers.get("x-real-ip") or
+                getattr(request_obj.client, 'host', None) if request_obj.client else None
+            )
+            if user_ip and "," in user_ip:
+                user_ip = user_ip.split(",")[0].strip()  # Take first IP if multiple
+
+            user_agent = request_obj.headers.get("user-agent")
+
+        # Determine more accurate response type
+        ai_response_type = "general"
+        if response.replies and len(response.replies) > 0:
+            reply_type = response.replies[0].get("type", "assistant")
+            if reply_type == "recommendations" or (response.outfits and len(response.outfits) > 0):
+                ai_response_type = "recommendations"
+            elif reply_type == "error":
+                ai_response_type = "error"
+            elif reply_type == "clarification":
+                ai_response_type = "clarification"
+            else:
+                ai_response_type = "assistant"
+
+        # Create log entry with improved accuracy
         log_entry = ChatLogEntry(
             session_id=response.session_id,
             request_id=response.request_id,
             user_message=request.message,
             ai_response=response.replies[0]["message"] if response.replies else None,
-            ai_response_type=response.replies[0].get("type", "general")
-            if response.replies
-            else "general",
+            ai_response_type=ai_response_type,
+            parsed_intent=parsed_intent,
+            intent_confidence=intent_confidence,
+            intent_parser_type="llm",  # More accurate than "hybrid"
             strategy_config={
                 "name": strategy.name,
                 "tone": strategy.tone,
@@ -138,9 +188,13 @@ async def chat_turn(request: ChatRequest) -> ChatResponse:
             outfits_data=response.outfits if response.outfits else None,
             response_time_ms=response_time_ms,
             intent_parsing_time_ms=intent_time,
+            recommendation_time_ms=recommendation_time_ms,
+            user_ip=user_ip,
+            user_agent=user_agent,
+            language_detected=language_detected,
             conversation_turn_number=session_context["next_turn_number"],
+            previous_message_id=None,  # Could be implemented with message threading
             is_follow_up=session_context["total_messages"] > 0,
-            intent_parser_type="hybrid",
         )
 
         # Initialize session if new (maintain backward compatibility)
@@ -195,7 +249,10 @@ async def chat_turn(request: ChatRequest) -> ChatResponse:
         if log_entry:
             log_entry.error_occurred = True
             log_entry.error_message = str(e)
+            log_entry.error_stack_trace = None  # Could add traceback.format_exc() if needed
             log_entry.response_time_ms = int((time.time() - start_time) * 1000)
+            log_entry.user_ip = user_ip if 'user_ip' in locals() else None
+            log_entry.user_agent = user_agent if 'user_agent' in locals() else None
             chat_logger.log_chat_interaction(log_entry)
 
         logger.error("Validation error in chat", error=str(e))
@@ -205,16 +262,30 @@ async def chat_turn(request: ChatRequest) -> ChatResponse:
     except Exception as e:
         # Log error interaction
         if request.session_id or hasattr(request, "session_id"):
+            import traceback
             error_log_entry = ChatLogEntry(
                 session_id=request.session_id or str(uuid.uuid4()),
                 request_id=str(uuid.uuid4()),
                 user_message=request.message,
                 ai_response="I apologize, but I encountered an error processing your request.",
                 ai_response_type="error",
+                parsed_intent=parsed_intent if 'parsed_intent' in locals() else None,
+                intent_confidence=intent_confidence if 'intent_confidence' in locals() else None,
+                intent_parser_type="llm",
+                strategy_config={
+                    "name": strategy.name if 'strategy' in locals() else "unknown",
+                    "tone": strategy.tone if 'strategy' in locals() else "neutral",
+                },
                 error_occurred=True,
                 error_message=str(e),
+                error_stack_trace=traceback.format_exc(),
                 response_time_ms=int((time.time() - start_time) * 1000),
-                intent_parser_type="hybrid",
+                intent_parsing_time_ms=intent_time if 'intent_time' in locals() else None,
+                user_ip=user_ip if 'user_ip' in locals() else None,
+                user_agent=user_agent if 'user_agent' in locals() else None,
+                language_detected=language_detected if 'language_detected' in locals() else None,
+                conversation_turn_number=session_context.get("next_turn_number", 1) if 'session_context' in locals() else 1,
+                is_follow_up=session_context.get("total_messages", 0) > 0 if 'session_context' in locals() else False,
             )
             chat_logger.log_chat_interaction(error_log_entry)
 
@@ -257,6 +328,7 @@ async def list_sessions(
                 """
                 SELECT
                     cs.session_id,
+                    cs.name,
                     cs.created_at,
                     cs.last_activity,
                     cs.total_messages,
@@ -287,6 +359,7 @@ async def list_sessions(
         for row in results:
             (
                 session_id,
+                session_name,
                 created_at,
                 last_activity,
                 total_messages,
@@ -310,7 +383,7 @@ async def list_sessions(
             sessions_list.append(
                 {
                     "session_id": session_id,
-                    "name": f"Customer {session_id[:8]}...",  # Generate display name
+                    "name": session_name or f"Customer {session_id[:8]}...",  # Use stored name or generate display name
                     "avatar": f"/assets/images/avatar_{hash(session_id) % 9 + 1}.webp",  # Consistent avatar
                     "created_at": created_at.isoformat() if created_at else None,
                     "last_activity": last_activity.isoformat()
@@ -390,6 +463,55 @@ async def get_session(session_id: str) -> Dict[str, Any]:
 
 @router.delete("/sessions/{session_id}")
 async def delete_session(session_id: str) -> Dict[str, Any]:
+    """
+    Delete a chat session and all its logs.
+
+    Args:
+        session_id: ID of the session to delete
+
+    Returns:
+        Deletion confirmation
+
+    Raises:
+        HTTPException: If session is not found or deletion fails
+    """
+    try:
+        logger.info("Deleting session", session_id=session_id)
+
+        connection = chat_logger._get_db_connection()
+        with connection.cursor() as cursor:
+            # Delete chat logs first
+            cursor.execute("DELETE FROM chat_logs WHERE session_id = %s", (session_id,))
+
+            # Delete session
+            cursor.execute("DELETE FROM chat_sessions WHERE session_id = %s", (session_id,))
+
+            deleted_logs = cursor.rowcount
+
+        connection.commit()
+        connection.close()
+
+        if deleted_logs == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session {session_id} not found",
+            )
+
+        return {
+            "message": "Session deleted successfully",
+            "session_id": session_id,
+            "logs_deleted": deleted_logs,
+            "deleted_at": datetime.now().isoformat(),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error deleting session", session_id=session_id, error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete session: {str(e)}",
+        )
     """
     Delete a chat session.
 
@@ -547,6 +669,88 @@ async def clear_session_context(session_id: str) -> Dict[str, Any]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to clear session context: {str(e)}",
+        )
+
+
+@router.post("/sessions/{session_id}/generate-title")
+async def generate_session_title(session_id: str) -> Dict[str, Any]:
+    """
+    Generate an AI-powered title for a chat session.
+
+    Args:
+        session_id: ID of the session to generate title for
+
+    Returns:
+        Generated title for the session
+    """
+    try:
+        logger.info("Generating AI title for session", session_id=session_id)
+
+        # Get conversation history
+        history = chat_logger.get_conversation_history(session_id, limit=10)
+
+        if not history:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No conversation history found for session {session_id}",
+            )
+
+        # Prepare conversation text for AI
+        conversation_text = ""
+        for msg in history:
+            if msg.get("user_message"):
+                conversation_text += f"User: {msg['user_message']}\n"
+            if msg.get("ai_response"):
+                conversation_text += f"AI: {msg['ai_response']}\n"
+
+        # Create prompt for title generation
+        prompt = f"""Based on this conversation, generate a concise, descriptive title (max 50 characters) that captures the main topic or intent:
+
+{conversation_text}
+
+Title:"""
+
+        # Use Ollama to generate title
+        response = ollama_provider.generate_text(
+            prompt=prompt,
+            max_tokens=50,
+            temperature=0.7
+        )
+
+        title = response.strip().strip('"').strip("'")[:50]  # Clean and limit length
+
+        # Update session name in database
+        connection = chat_logger._get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE chat_sessions
+                SET name = %s
+                WHERE session_id = %s
+                """,
+                (title, session_id),
+            )
+
+        connection.commit()
+        connection.close()
+
+        logger.info("Generated title for session", session_id=session_id, title=title)
+
+        return {
+            "session_id": session_id,
+            "title": title,
+            "generated_at": datetime.now().isoformat(),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Error generating session title", session_id=session_id, error=str(e)
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate title: {str(e)}",
         )
 
 

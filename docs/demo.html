@@ -120,8 +120,8 @@
       <!-- Chat Area -->
       <div class="flex-1 flex flex-col">
         <!-- Chat Messages Container -->
-        <div 
-          id="messages" 
+        <div
+          id="messages"
           class="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-6"
         >
           <!-- Welcome Message -->
@@ -203,7 +203,7 @@
       <div class="w-80 border-l border-cos-border bg-cos-gray p-8">
         <div class="mb-8">
           <h3 class="text-sm font-medium mb-6 tracking-wider">QUICK SUGGESTIONS</h3>
-          
+
           <div class="space-y-4">
             <button
               class="w-full text-left p-4 bg-white border border-transparent hover:border-cos-text transition-all text-sm"
@@ -321,7 +321,7 @@
             view3: 'https://dummyimage.com/300x400/f5f5f5/999999&text=Detail'
           };
         }
-        
+
         return {
           main: baseImageUrl,
           view2: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, '_xxl-2.$1'),
@@ -388,40 +388,40 @@
         messageDiv.className = "flex items-start space-x-4";
 
         let productCardsHtml = "";
-        
+
         if (outfits && outfits.length > 0) {
           outfits.forEach((outfit) => {
             productCardsHtml += `
-              <div class="border border-cos-border bg-white mt-6 max-w-lg">
-                <div class="p-4 border-b border-cos-border">
-                  <div class="text-sm font-medium tracking-wider">${outfit.title || 'RECOMMENDED PIECES'}</div>
-                </div>
-                <div class="p-4 space-y-4">
+              <div class="bg-white border border-gray-200 rounded-xl p-4 mt-3 max-w-md">
+                <div class="text-sm text-gray-600 mb-2">${outfit.title || 'RECOMMENDED PIECES'}:</div>
+                <div class="grid grid-cols-1 gap-3 max-w-sm">
                   ${outfit.items.map(item => {
                     const images = getImageVariations(item.image_url);
                     return `
-                    <div class="product-card border border-cos-border bg-white">
-                      <a href="https://th.cos.com/th_en/${item.sku}.html" target="_blank" class="block">
-                        <div class="flex gap-4 p-3">
-                          <img src="${images.main}" 
-                               alt="${item.title}" 
-                               class="w-16 h-20 object-cover flex-shrink-0" 
-                               onerror="this.src='https://dummyimage.com/64x80/f5f5f5/999999&text=No+Image'">
-                          <div class="flex-1 min-w-0">
-                            <div class="text-sm font-light text-cos-text mb-1 leading-tight">${item.title}</div>
-                            <div class="text-sm text-cos-text">฿${item.price}</div>
-                            <div class="text-xs text-gray-500 mt-1 uppercase tracking-wide">${item.color || 'AVAILABLE'}</div>
-                          </div>
+                    <div class="border border-gray-200 rounded-lg overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5">
+                      <a href="https://th.cos.com/th_en/${item.sku}.html" target="_blank" class="no-underline text-inherit block">
+                        <div class="flex gap-2 mb-2">
+                          <img src="${images.main}"
+                               alt="${item.title}"
+                               class="flex-1 h-40 object-cover object-top rounded-md"
+                               onerror="this.src='https://dummyimage.com/300x400/f5f5f5/999999&text=No+Image'">
+                          <img src="${images.view2}"
+                               alt="${item.title} - Side View"
+                               class="flex-1 h-40 object-cover object-top rounded-md"
+                               onerror="this.src='https://dummyimage.com/300x400/f5f5f5/999999&text=View+2'">
+                          <img src="${images.view3}"
+                               alt="${item.title} - Detail"
+                               class="flex-1 h-40 object-contain bg-gray-50 rounded-md"
+                               onerror="this.src='https://dummyimage.com/300x400/f5f5f5/999999&text=Detail'">
+                        </div>
+                        <div class="p-2">
+                          <div class="text-xs font-medium text-gray-800 mb-1 leading-tight">${item.title}</div>
+                          <div class="text-xs font-semibold text-blue-500">฿${item.price}</div>
                         </div>
                       </a>
                     </div>
                   `;}).join('')}
                 </div>
-                ${outfit.total_price ? `
-                  <div class="p-4 border-t border-cos-border">
-                    <div class="text-sm font-medium">TOTAL: ฿${outfit.total_price}</div>
-                  </div>
-                ` : ''}
               </div>
             `;
           });
@@ -456,7 +456,7 @@
           isTyping = true;
           typingStartTime = Date.now();
           document.getElementById("typingIndicator").classList.remove("hidden");
-          
+
           // Start timer
           typingTimerInterval = setInterval(updateTypingTimer, 100);
           scrollToBottom();
@@ -474,13 +474,13 @@
       function hideTypingIndicator() {
         isTyping = false;
         document.getElementById("typingIndicator").classList.add("hidden");
-        
+
         // Clear timer
         if (typingTimerInterval) {
           clearInterval(typingTimerInterval);
           typingTimerInterval = null;
         }
-        
+
         const timer = document.getElementById("typingTimer");
         if (timer) {
           timer.textContent = "";
@@ -566,7 +566,7 @@
           if (chatMessages) {
             // Clear all messages
             chatMessages.innerHTML = '';
-            
+
             // Add welcome message back
             setTimeout(() => {
               const welcomeDiv = document.createElement("div");
@@ -610,7 +610,7 @@
       document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("messageInput").focus();
         startConnectionMonitoring();
-        
+
         // Set welcome message time
         const welcomeTime = document.getElementById("welcomeTime");
         if (welcomeTime) {

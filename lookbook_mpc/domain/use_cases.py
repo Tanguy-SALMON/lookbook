@@ -245,13 +245,22 @@ class ChatTurn(UseCase):
                 "natural_response", "I'm here to help you find the perfect outfit!"
             )
 
+            # Determine if this is a recommendation request or just conversation
+            is_recommendation_request = (
+                intent.get("intent") == "recommend_outfits" and
+                any(keyword in request.message.lower() for keyword in [
+                    "want", "need", "looking for", "find", "show me", "recommend",
+                    "outfit", "clothes", "wear", "style", "fashion", "dress"
+                ])
+            )
+
             # Try to generate real outfit recommendations using smart recommender
             try:
                 outfit_recommendations = await self.smart_recommender.recommend_outfits(
                     request.message, limit=3
                 )
 
-                if outfit_recommendations:
+                if outfit_recommendations and is_recommendation_request:
                     # Convert smart recommender output to frontend-compatible dictionaries
                     formatted_outfits = []
                     total_outfits = len(outfit_recommendations)
@@ -285,7 +294,7 @@ class ChatTurn(UseCase):
                     # Return raw dictionaries for frontend compatibility
                     outfits = formatted_outfits
                 else:
-                    # No outfits found, use natural response
+                    # No outfits found or not a recommendation request, use natural response
                     replies = [
                         {
                             "type": "assistant",
