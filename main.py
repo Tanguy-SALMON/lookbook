@@ -35,6 +35,10 @@ from lookbook_mpc.api.routers import (
     settings_router,
     products_router,
     product_import_router,
+    vision_analysis_router,
+    lookbooks_router,
+    akeneo_export_router,
+    akeneo_settings_router,
 )
 from lookbook_mpc.api.mcp_server import create_mcp_app
 
@@ -119,7 +123,10 @@ async def lifespan(app: FastAPI):
     # Log configuration
     logger.info(
         "Configuration loaded",
-        llm_service_api=os.getenv("LLM_SERVICE_API", f"{settings.llm_provider.upper()} ({settings.get_llm_model_name()})"),
+        llm_service_api=os.getenv(
+            "LLM_SERVICE_API",
+            f"{settings.llm_provider.upper()} ({settings.get_llm_model_name()})",
+        ),
         llm_provider=settings.llm_provider.upper(),
         llm_model=settings.get_llm_model_name(),
         ollama_host=settings.ollama_host,
@@ -167,6 +174,10 @@ app.include_router(personas_router)
 app.include_router(settings_router)
 app.include_router(products_router)
 app.include_router(product_import_router)
+app.include_router(vision_analysis_router)
+app.include_router(lookbooks_router)
+app.include_router(akeneo_export_router)
+app.include_router(akeneo_settings_router)
 
 # Mount MCP endpoints (if enabled)
 if settings.feature_mcp:

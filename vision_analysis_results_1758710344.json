@@ -1,0 +1,92 @@
+{
+  "status": "completed",
+  "total_products": 10,
+  "processed": 10,
+  "successful": 0,
+  "failed": 10,
+  "total_time": 3.012091875076294,
+  "avg_time_per_product": 0.3012091875076294,
+  "success_rate": 0.0,
+  "results": [
+    {
+      "sku": "1277475003019",
+      "title": "CIRCLE-CUT MIDI SKIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/6d7c228b8f7f4cc5ac168a8cb2a9e0e7f21ba04e_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1277475003016",
+      "title": "CIRCLE-CUT MIDI SKIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/6d7c228b8f7f4cc5ac168a8cb2a9e0e7f21ba04e_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1295990003019",
+      "title": "CORDUROY SHIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/e341ebd2c70c8c15551fa4d70f34db10d0ac3a28_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1295990003054",
+      "title": "CORDUROY SHIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/e341ebd2c70c8c15551fa4d70f34db10d0ac3a28_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1295990003020",
+      "title": "CORDUROY SHIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/e341ebd2c70c8c15551fa4d70f34db10d0ac3a28_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1295990003018",
+      "title": "CORDUROY SHIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/e341ebd2c70c8c15551fa4d70f34db10d0ac3a28_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1277475003018",
+      "title": "CIRCLE-CUT MIDI SKIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/6d7c228b8f7f4cc5ac168a8cb2a9e0e7f21ba04e_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1277475003017",
+      "title": "CIRCLE-CUT MIDI SKIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/6d7c228b8f7f4cc5ac168a8cb2a9e0e7f21ba04e_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1295990003051",
+      "title": "CORDUROY SHIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/e341ebd2c70c8c15551fa4d70f34db10d0ac3a28_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    },
+    {
+      "sku": "1295990003021",
+      "title": "CORDUROY SHIRT",
+      "status": "failed",
+      "error": "[Errno 2] No such file or directory: '/Users/tanguysalmon/PythonPlayGround/lookbookMPC/e341ebd2c70c8c15551fa4d70f34db10d0ac3a28_xxl-1.jpg'",
+      "analysis_time": 0,
+      "updated_database": false
+    }
+  ]
+}

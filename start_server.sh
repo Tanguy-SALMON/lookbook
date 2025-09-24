@@ -9,7 +9,11 @@ echo "=" | head -c 50; echo
 # Load environment variables from .env file if it exists
 if [ -f ".env" ]; then
     echo "📄 Loading environment variables from .env file..."
-    export $(grep -v '^#' .env | xargs)
+    while read -r line; do
+        if [[ $line =~ ^[^#]*= ]]; then
+            export "$line"
+        fi
+    done < .env
 else
     echo "⚠️  No .env file found, using system environment variables"
 fi

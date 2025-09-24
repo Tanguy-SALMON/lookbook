@@ -233,45 +233,107 @@ async def list_sessions(
     offset: int = Query(0, ge=0, description="Number of sessions to skip"),
 ) -> Dict[str, Any]:
     """
-    List chat sessions.
+    List chat sessions from database.
 
     Args:
         limit: Maximum number of sessions to return
         offset: Number of sessions to skip
 
     Returns:
-        List of chat sessions
+        List of chat sessions with latest message info
     """
     try:
         logger.info("Listing chat sessions", limit=limit, offset=offset)
 
-        # Convert sessions dict to list for pagination
+        # Get sessions from database
+        connection = chat_logger._get_db_connection()
+        with connection.cursor() as cursor:
+            # Get total count for pagination
+            cursor.execute("SELECT COUNT(*) FROM chat_sessions WHERE is_active = 1")
+            total_count = cursor.fetchone()[0]
+
+            # Get sessions with latest message info
+            cursor.execute(
+                """
+                SELECT
+                    cs.session_id,
+                    cs.created_at,
+                    cs.last_activity,
+                    cs.total_messages,
+                    cs.total_recommendations,
+                    cl.user_message as last_user_message,
+                    cl.ai_response as last_ai_message,
+                    cl.created_at as last_message_time
+                FROM chat_sessions cs
+                LEFT JOIN chat_logs cl ON cs.session_id = cl.session_id
+                    AND cl.created_at = (
+                        SELECT MAX(created_at)
+                        FROM chat_logs cl2
+                        WHERE cl2.session_id = cs.session_id
+                    )
+                WHERE cs.is_active = 1
+                ORDER BY cs.last_activity DESC
+                LIMIT %s OFFSET %s
+            """,
+                (limit, offset),
+            )
+
+            results = cursor.fetchall()
+
+        connection.close()
+
+        # Format sessions data
         sessions_list = []
-        for session_id, session_data in sessions.items():
+        for row in results:
+            (
+                session_id,
+                created_at,
+                last_activity,
+                total_messages,
+                total_recommendations,
+                last_user_msg,
+                last_ai_msg,
+                last_msg_time,
+            ) = row
+
+            # Determine last message to display
+            last_message = (
+                last_ai_msg
+                if last_ai_msg
+                else last_user_msg
+                if last_user_msg
+                else "No messages yet"
+            )
+            if last_message and len(last_message) > 60:
+                last_message = last_message[:60] + "..."
+
             sessions_list.append(
                 {
                     "session_id": session_id,
-                    "created_at": session_data["created_at"],
-                    "message_count": len(session_data["messages"]),
-                    "has_recommendations": bool(
-                        session_data["context"].get("last_recommendations")
-                    ),
+                    "name": f"Customer {session_id[:8]}...",  # Generate display name
+                    "avatar": f"/assets/images/avatar_{hash(session_id) % 9 + 1}.webp",  # Consistent avatar
+                    "created_at": created_at.isoformat() if created_at else None,
+                    "last_activity": last_activity.isoformat()
+                    if last_activity
+                    else None,
+                    "total_messages": total_messages or 0,
+                    "total_recommendations": total_recommendations or 0,
+                    "last_message": last_message,
+                    "timestamp": last_msg_time.strftime("%H:%M")
+                    if last_msg_time
+                    else "",
+                    "status": "online",  # Default status
+                    "has_recommendations": (total_recommendations or 0) > 0,
                 }
             )
 
-        # Sort by creation time (newest first)
-        sessions_list.sort(key=lambda x: x["created_at"], reverse=True)
-
-        # Apply pagination
-        paginated_sessions = sessions_list[offset : offset + limit]
-
         return {
-            "sessions": paginated_sessions,
+            "sessions": sessions_list,
             "pagination": {
-                "total": len(sessions_list),
+                "total": total_count,
                 "limit": limit,
                 "offset": offset,
-                "has_more": offset + limit < len(sessions_list),
+                "has_more": offset + limit < total_count,
             },
         }
 

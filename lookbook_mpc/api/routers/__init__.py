@@ -13,6 +13,10 @@ from .personas import router as personas_router
 from .settings import router as settings_router
 from .products import router as products_router
 from .product_import import router as product_import_router
+from .vision_analysis import router as vision_analysis_router
+from .lookbooks import router as lookbooks_router
+from .akeneo_export import router as akeneo_export_router
+from .akeneo_settings import router as akeneo_settings_router
 
 __all__ = [
     "ingest_router",
@@ -24,4 +28,8 @@ __all__ = [
     "settings_router",
     "products_router",
     "product_import_router",
+    "vision_analysis_router",
+    "lookbooks_router",
+    "akeneo_export_router",
+    "akeneo_settings_router",
 ]

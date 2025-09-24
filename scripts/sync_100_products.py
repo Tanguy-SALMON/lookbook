@@ -5,12 +5,16 @@ This script will:
 1. Sync products from the shop catalog
 2. Store them in the lookbook database
 3. Prepare them for vision analysis
+
+Usage:
+    poetry run python scripts/sync_100_products.py
 """
 
 import asyncio
 import sys
 import os
 import logging
+import time
 from typing import List, Dict, Any
 
 # Add the project root to the path
@@ -18,7 +22,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lookbook_mpc.adapters.db_shop import MySQLShopCatalogAdapter
 from lookbook_mpc.adapters.db_lookbook import MySQLLookbookRepository
-from lookbook_mpc.domain.entities import Item
 from lookbook_mpc.config import settings
 
 # Configure logging
@@ -30,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
     """
-    Sync products from shop catalog to database with optimized upsert logic.
+    Sync products from shop catalog to database using the optimized method.
 
     Args:
         limit: Maximum number of products to sync
@@ -38,21 +41,22 @@ async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
     Returns:
         Dictionary with sync results
     """
-    import time
-
     start_time = time.time()
 
     try:
-        logger.info(f"Starting optimized product sync with limit: {limit}")
+        logger.info(f"Starting product sync with limit: {limit}")
 
-        # Debug connection strings
-        logger.info(f"MySQL Shop URL: {settings.mysql_shop_url}")
-        logger.info(f"Lookbook DB URL: {settings.lookbook_db_url}")
-
-        # Check if mysql_shop_url is configured
+        # Check environment variables
         if not settings.mysql_shop_url:
             raise ValueError(
-                "MYSQL_SHOP_URL environment variable is not set. Please configure the connection string for the Magento database (cos-magento-4)."
+                "MYSQL_SHOP_URL environment variable is not set. "
+                "Please configure the connection string for the Magento database."
+            )
+
+        if not settings.lookbook_db_url:
+            raise ValueError(
+                "LOOKBOOK_DB_URL environment variable is not set. "
+                "Please configure the connection string for the Lookbook database."
             )
 
         # Initialize adapters
@@ -61,102 +65,84 @@ async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
         )
         lookbook_repo = MySQLLookbookRepository(database_url=settings.lookbook_db_url)
 
-        # Step 1: Fetch products from shop catalog
+        # Step 1: Fetch enabled products with stock from shop catalog
         fetch_start = time.time()
-        logger.info("Fetching products from shop catalog...")
-        shop_items = await shop_adapter.fetch_items(limit=limit)
+        logger.info("Fetching enabled products with stock from shop catalog...")
+        shop_items = await shop_adapter.get_enabled_products_with_stock(
+            start_after_id=0, limit=limit
+        )
         fetch_time = time.time() - fetch_start
 
         if not shop_items:
-            logger.warning("No products found in shop catalog")
-            return {"status": "no_products", "message": "No products found in catalog"}
+            logger.warning("No enabled products with stock found in catalog")
+            return {
+                "status": "no_products",
+                "message": "No enabled products with stock found in catalog",
+            }
 
         logger.info(
-            f"Found {len(shop_items)} products in catalog (fetch time: {fetch_time:.2f}s)"
+            f"Found {len(shop_items)} enabled products with stock (fetch time: {fetch_time:.2f}s)"
         )
 
-        # Step 2: Optimized conversion to domain entities
+        # Step 2: Transform products to the required format
         convert_start = time.time()
-        logger.info("Converting products to domain entities...")
+        logger.info("Transforming products for database storage...")
         products_to_save = []
 
-        # Pre-allocate list for better performance
-        products_to_save = [None] * len(shop_items)
-
-        # Process items in batch for better performance
         for i, item in enumerate(shop_items):
             try:
-                # Optimized attribute extraction - avoid repeated getattr calls
-                if hasattr(item, "sku"):
-                    # Item object - direct access for better performance
-                    item_dict = {
-                        "sku": item.sku,
-                        "title": item.title,
-                        "price": item.price,
-                        "size_range": getattr(item, "size_range", []),
-                        "image_key": getattr(item, "image_key", f"{item.sku}.jpg"),
-                        "attributes": getattr(item, "attributes", {}),
-                        "in_stock": getattr(item, "in_stock", True),
-                        "season": getattr(item, "season", None),
-                        "url_key": getattr(item, "url_key", None),
-                        "product_created_at": getattr(item, "product_created_at", None),
-                        "stock_qty": getattr(item, "stock_qty", 0),
-                        "category": getattr(item, "category", None),
-                        "color": getattr(item, "color", None),
-                        "material": getattr(item, "material", None),
-                        "pattern": getattr(item, "pattern", None),
-                        "occasion": getattr(item, "occasion", None),
-                    }
-                else:
-                    # Dict response - optimized attribute extraction
-                    sku = item.get("sku")
-                    item_dict = {
-                        "sku": sku,
-                        "title": item.get("title", f"Product {i}"),
-                        "price": item.get("price", 29.99),
-                        "size_range": item.get("size_range", []),
-                        "image_key": item.get(
-                            "image_key", f"{sku}.jpg" if sku else f"product_{i}.jpg"
-                        ),
-                        "attributes": item.get("attributes", {}),
-                        "in_stock": item.get("in_stock", True),
-                        # Optimized attribute extraction
-                        "season": item.get("season"),
-                        "url_key": item.get("url_key"),
-                        "product_created_at": item.get("product_created_at"),
-                        "stock_qty": item.get("stock_qty", 0),
-                        "category": item.get("category"),
-                        "color": item.get("color"),
-                        "material": item.get("material"),
-                        "pattern": item.get("pattern"),
-                        "occasion": item.get("occasion"),
-                    }
+                # Transform product data (items from get_enabled_products_with_stock are dicts)
+                sku = item.get("sku")
+                item_dict = {
+                    "sku": sku,
+                    "title": item.get("title", f"Product {sku or i}"),
+                    "price": float(item.get("price", 29.99)),
+                    "size_range": item.get("size_range", ["S", "M", "L", "XL"]),
+                    "image_key": item.get(
+                        "image_key", f"{sku}.jpg" if sku else f"product_{i}.jpg"
+                    ),
+                    "attributes": item.get("attributes", {}),
+                    "in_stock": item.get("in_stock", True),
+                    "season": item.get("season"),
+                    "url_key": item.get("url_key"),
+                    "product_created_at": item.get("product_created_at"),
+                    "stock_qty": int(item.get("stock_qty", 0)),
+                    "category": item.get("category", "fashion"),
+                    "color": item.get("color"),
+                    "material": item.get("material"),
+                    "pattern": item.get("pattern"),
+                    "occasion": item.get("occasion"),
+                }
 
-                products_to_save[i] = item_dict
+                products_to_save.append(item_dict)
 
             except Exception as e:
-                logger.error(f"Error converting product {i} to domain entity: {e}")
-                products_to_save[i] = None
+                logger.error(f"Error transforming product {item.get('sku', i)}: {e}")
+                continue
 
-        # Filter out None values
-        products_to_save = [p for p in products_to_save if p is not None]
         convert_time = time.time() - convert_start
 
         logger.info(
-            f"Converted {len(products_to_save)} products to domain entities (conversion time: {convert_time:.2f}s)"
+            f"Transformed {len(products_to_save)} products (conversion time: {convert_time:.2f}s)"
         )
 
-        # Step 3: Optimized batch save with intelligent upsert logic
+        # Step 3: Save products to database using batch upsert
         save_start = time.time()
-        logger.info("Saving products to database with optimized upsert logic...")
+        logger.info("Saving products to database...")
 
-        # Use the optimized batch upsert method
+        if not products_to_save:
+            return {
+                "status": "no_valid_products",
+                "message": "No valid products to save after transformation",
+            }
+
+        # Use the batch upsert method
         results = await lookbook_repo.batch_upsert_products(products_to_save)
         save_time = time.time() - save_start
 
         total_time = time.time() - start_time
         logger.info(
-            f"Sync completed in {total_time:.2f}s (fetch: {fetch_time:.2f}s, convert: {convert_time:.2f}s, save: {save_time:.2f}s)"
+            f"Sync completed in {total_time:.2f}s (fetch: {fetch_time:.2f}s, transform: {convert_time:.2f}s, save: {save_time:.2f}s)"
         )
 
         return {
@@ -164,13 +150,13 @@ async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
             "products_synced": results.get("upserted", 0),
             "products_updated": results.get("updated", 0),
             "total_found": len(shop_items),
-            "skus_processed": results.get("skus", []),
+            "total_transformed": len(products_to_save),
             "performance": {
                 "total_time": total_time,
                 "fetch_time": fetch_time,
-                "conversion_time": convert_time,
+                "transform_time": convert_time,
                 "save_time": save_time,
-                "items_per_second": len(products_to_save) / total_time
+                "products_per_second": len(products_to_save) / total_time
                 if total_time > 0
                 else 0,
             },
@@ -189,26 +175,50 @@ async def sync_products_to_database(limit: int = 100) -> Dict[str, Any]:
 async def main():
     """Main function to sync products."""
     print("=== Product Sync Script ===")
-    print("This script will sync 100 products from the catalog to the database.")
+    print(
+        "This script will sync 100 enabled, in-stock products from Magento to Lookbook database."
+    )
     print()
 
-    # Sync 100 products
-    result = await sync_products_to_database(limit=100)
+    try:
+        # Sync 100 products
+        result = await sync_products_to_database(limit=100)
 
-    print("\n=== Sync Results ===")
-    print(f"Status: {result['status']}")
-    print(f"Products Synced: {result.get('products_synced', 0)}")
-    print(f"Total Found: {result.get('total_found', 0)}")
-    print(f"Message: {result.get('message', 'No message')}")
+        print("\n=== Sync Results ===")
+        print(f"Status: {result['status']}")
+        print(f"Products Found: {result.get('total_found', 0)}")
+        print(f"Products Transformed: {result.get('total_transformed', 0)}")
+        print(f"New Products: {result.get('products_synced', 0)}")
+        print(f"Updated Products: {result.get('products_updated', 0)}")
+        print(f"Message: {result.get('message', 'No message')}")
 
-    if result["status"] == "success" and "product_ids" in result:
-        print(f"First 10 Product IDs: {', '.join(result['product_ids'])}")
+        if "performance" in result:
+            perf = result["performance"]
+            print(f"\n=== Performance ===")
+            print(f"Total Time: {perf.get('total_time', 0):.2f}s")
+            print(
+                f"Processing Rate: {perf.get('products_per_second', 0):.1f} products/sec"
+            )
 
-    print("\n=== Next Steps ===")
-    print("1. Run the batch analysis script to analyze products")
-    print("2. Check the database for updated products")
-    print("3. Test recommendations with the expanded catalog")
+        if result["status"] == "success":
+            print("\n=== Next Steps ===")
+            print("1. Run vision analysis on new products")
+            print("2. Check the admin dashboard for imported products")
+            print("3. Test AI recommendations with the expanded catalog")
+            print(
+                "4. For larger imports, use: poetry run python scripts/sync_5000_products.py"
+            )
+        else:
+            print(f"\n❌ Sync failed: {result.get('message', 'Unknown error')}")
+            return 1
+
+    except Exception as e:
+        print(f"\n❌ Error during sync: {e}")
+        logger.exception("Sync failed with exception")
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    sys.exit(asyncio.run(main()))
