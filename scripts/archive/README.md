@@ -130,9 +130,31 @@ After consolidation, the essential scripts are:
 - For benchmarking: Use the preserved benchmark scripts
 - For product operations: Use `sync_100_products.py` and `verify_product_import.py`
 
+### Root Directory Cleanup (December 2024)
+- `test_db_access.php` - PHP database access testing
+- `create_test_sqlite.py` - SQLite test database creation
+- `debug_api_logging.py` - API logging debug script
+- `debug_chat_logger.py` - Chat logging debug script
+- `verify_chat_logging.py` - Chat logging verification
+- `requirements-benchmark.txt` - Benchmark requirements file
+
+## 🗑️ Removed Files (No Longer Needed)
+
+### Log Files (Deleted)
+- `vision_analysis.log` - Vision analysis log file (1.6MB)
+- `product_sync.log` - Product synchronization logs
+- `product_sync_checkpoint.txt` - Sync checkpoint data
+- `vision_analysis_results_*.json` - Temporary vision analysis results (4 files)
+
+These files were removed because:
+- **Log files** accumulate over time and can be regenerated
+- **Temporary results** were from development/testing phases
+- **Checkpoint files** were no longer relevant to current system state
+
 ---
 
 **Archive Created**: December 2024  
-**Reason**: Scripts consolidation and cleanup  
+**Reason**: Scripts consolidation and cleanup + root directory organization  
 **Status**: Historical reference only - not actively maintained  
-**Total Archived Files**: 30+ scripts consolidated into essential set
+**Total Archived Files**: 35+ scripts and utilities consolidated into essential set  
+**Files Deleted**: 7 log and temporary files removed to reduce clutter

@@ -39,14 +39,38 @@ class SmartRecommender:
         self, user_message: str, limit: int = 5
     ) -> List[Dict[str, Any]]:
         """
-        Generate outfit recommendations based on user message.
+        Generate outfit recommendations based on user message using LLM-powered analysis.
+
+        This is the main entry point for the recommendation engine. It orchestrates:
+        1. LLM keyword generation from natural language
+        2. Database product search using generated keywords
+        3. Outfit combination assembly with scoring
+        4. Response formatting for frontend consumption
+
+        Example Input:
+            user_message: "I go to dance"
+            limit: 3
+
+        Example Output:
+            [
+                {
+                    "title": "Party Ready Look",
+                    "items": [
+                        {"sku": "123", "title": "Black Top", "price": 45.0, "category": "top"},
+                        {"sku": "456", "title": "Party Skirt", "price": 39.0, "category": "bottom"}
+                    ],
+                    "total_price": 84.0,
+                    "style_explanation": "Perfect for dancing - stylish and comfortable",
+                    "outfit_type": "coordinated_set"
+                }
+            ]
 
         Args:
-            user_message: Original user request
-            limit: Maximum number of outfits to return
+            user_message: Original user request (e.g., "I go to dance", "need business outfit")
+            limit: Maximum number of outfits to return (default: 5)
 
         Returns:
-            List of outfit recommendations with products and explanations
+            List of outfit recommendation dictionaries with items, prices, and explanations
         """
         try:
             self.logger.info("Starting smart recommendation", message=user_message)
@@ -77,11 +101,27 @@ class SmartRecommender:
         """
         Use LLM to generate expanded keywords from user message.
 
+        This method is crucial - it transforms natural language into searchable fashion terms.
+        The LLM understands context and generates comprehensive keyword sets that our
+        simple keyword matching can use effectively.
+
+        Example Input: "I go to dance"
+        Example Output: {
+            "keywords": ["party", "dance", "movement", "stylish", "trendy", "night out"],
+            "colors": ["black", "navy", "white"],
+            "occasions": ["party", "festival", "concert"],
+            "styles": ["trendy", "chic", "modern", "bold"],
+            "categories": ["dress", "top", "bottom"],
+            "materials": ["stretchy", "comfortable", "breathable"],
+            "mood": "confident and ready to dance",
+            "explanation": "Dancing requires stylish, comfortable clothes that allow movement"
+        }
+
         Args:
-            message: User's original message
+            message: User's original message (e.g., "I go to dance", "need work clothes")
 
         Returns:
-            Dictionary with expanded keywords and context
+            Dictionary with expanded keywords across multiple fashion dimensions
         """
         prompt = f"""You are a fashion stylist. Expand this customer request into detailed fashion keywords for product search.
 
@@ -257,9 +297,23 @@ Return ONLY the JSON object for: "{message}"
         self, keywords: Dict[str, Any], limit: int = 15
     ) -> List[Dict[str, Any]]:
         """
-        Search products using generated keywords.
+        Search products using generated keywords with relevance scoring.
 
-        Uses direct keyword matching against product attributes.
+        Uses direct keyword matching against product attributes (title, color, style, material, occasion).
+        Products are scored based on how many keywords match and in which attributes.
+
+        Example Input: keywords = {"keywords": ["party", "stylish"], "colors": ["black"], "styles": ["chic"]}
+        Example Output: [
+            {"sku": "123", "title": "Black Party Dress", "score": 0.89, "color": "black", "price": 79.0},
+            {"sku": "456", "title": "Stylish Top", "score": 0.72, "color": "navy", "price": 45.0}
+        ]
+
+        Args:
+            keywords: Dictionary with keyword arrays from LLM generation
+            limit: Maximum number of products to return (default: 15)
+
+        Returns:
+            List of products with relevance scores, sorted by score descending
         """
         try:
             conn = await self.repository._get_connection()
@@ -365,7 +419,29 @@ Return ONLY the JSON object for: "{message}"
     def _calculate_keyword_score(
         self, product: Dict[str, Any], keywords: Dict[str, Any]
     ) -> float:
-        """Calculate relevance score based on keyword matches."""
+        """
+        Calculate relevance score based on keyword matches with weighted scoring.
+
+        This is the core scoring algorithm that ranks products by relevance to user intent.
+        Different attributes have different weights based on fashion importance:
+        - Color matches: 25 points (most important for visual appeal)
+        - Occasion/Category: 20 points (functional fit)
+        - Style/Material: 10-15 points (quality indicators)
+        - Title keywords: 5 points (general relevance)
+
+        Example Input:
+            product = {"title": "Black Party Dress", "color": "black", "occasion": "party", "style": "elegant"}
+            keywords = {"colors": ["black"], "occasions": ["party"], "styles": ["elegant"]}
+
+        Example Output: 65.0 (25 + 20 + 15 + 5 bonus points)
+
+        Args:
+            product: Product dictionary with attributes (color, style, material, etc.)
+            keywords: Generated keywords dictionary from LLM
+
+        Returns:
+            Float score 0-100 representing product relevance to user intent
+        """
         score = 0.0
 
         # Get product attributes with null safety
@@ -416,7 +492,41 @@ Return ONLY the JSON object for: "{message}"
     async def _create_outfit_combinations(
         self, products: List[Dict[str, Any]], keywords: Dict[str, Any], limit: int
     ) -> List[Dict[str, Any]]:
-        """Create outfit combinations from found products."""
+        """
+        Create outfit combinations from products using fashion rules.
+
+        Groups products by category and creates complete outfits:
+        - Single dress = complete outfit
+        - Top + bottom = coordinated set
+        - Ensures color compatibility
+        - Generates appropriate titles and explanations
+
+        Example Input: products = [dress1, top1, bottom1], keywords = {...}, limit = 2
+        Example Output: [
+            {
+                "title": "Elegant Evening Look",
+                "items": [dress1],
+                "total_price": 89.0,
+                "style_explanation": "Perfect standalone piece for your occasion",
+                "outfit_type": "single_piece"
+            },
+            {
+                "title": "Coordinated Casual Set",
+                "items": [top1, bottom1],
+                "total_price": 124.0,
+                "style_explanation": "Stylish coordination with complementary pieces",
+                "outfit_type": "coordinated_set"
+            }
+        ]
+
+        Args:
+            products: List of scored products from search
+            keywords: Generated keywords for context
+            limit: Maximum number of outfit combinations to create
+
+        Returns:
+            List of complete outfit dictionaries ready for frontend display
+        """
         try:
             # Group products by category (with simple correction)
             categorized = self._group_products_by_category(products)
@@ -527,7 +637,18 @@ Return ONLY the JSON object for: "{message}"
         return groups
 
     def _format_product_item(self, product: Dict[str, Any]) -> Dict[str, Any]:
-        """Format product for outfit item."""
+        """
+        Format product for outfit response - converts database format to frontend format.
+
+        Example Input: {"id": 123, "sku": "ABC123", "title": "Black Top", "price": 45.0, "image_key": "img.jpg"}
+        Example Output: {"sku": "ABC123", "title": "Black Top", "price": 45.0, "image_url": "https://cdn.../img.jpg", "category": "top"}
+
+        Args:
+            product: Raw product dictionary from database query
+
+        Returns:
+            Frontend-formatted product dictionary with image_url and proper structure
+        """
         return {
             "sku": product["sku"],
             "title": product["title"],

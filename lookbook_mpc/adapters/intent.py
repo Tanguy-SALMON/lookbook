@@ -43,11 +43,34 @@ class LLMIntentParser(IntentParser):
         """
         Parse natural language text into structured intent using flexible LLM provider.
 
+        This is the entry point for converting user messages into structured fashion intents.
+        The LLM analyzes the natural language and extracts key information like activity,
+        occasion, style preferences, and generates an appropriate natural response.
+
+        Example Input: "I go to dance"
+        Example Output: {
+            "intent": "recommend_outfits",
+            "activity": "dancing",
+            "occasion": "party",
+            "objectives": ["style", "trendy"],
+            "formality": "elevated",
+            "natural_response": "Perfect! I'll help you find stylish outfits for dancing..."
+        }
+
+        Example Input: "Hello"
+        Example Output: {
+            "intent": "recommend_outfits",
+            "occasion": "casual",
+            "objectives": ["style"],
+            "formality": "casual",
+            "natural_response": "Hello! I'm your AI fashion assistant. What are you looking for today?"
+        }
+
         Args:
-            text: Natural language request from user
+            text: Natural language request from user (e.g., "I go to dance", "need work clothes")
 
         Returns:
-            Dictionary with structured intent constraints
+            Dictionary with structured intent constraints and natural response for user
         """
         try:
             self.logger.info("Parsing user intent", text=text)
@@ -108,13 +131,19 @@ Return ONLY the JSON object."""
 
     def _parse_json_response(self, response: str) -> Dict[str, Any]:
         """
-        Parse the JSON response from the LLM.
+        Parse the JSON response from the LLM with error handling and field validation.
+
+        The LLM sometimes returns JSON wrapped in other text or with formatting issues.
+        This method extracts the JSON and ensures all required fields are present.
+
+        Example Input: 'Here is the analysis: {"intent":"recommend_outfits","activity":"dancing",...}'
+        Example Output: {"intent":"recommend_outfits","activity":"dancing","occasion":null,...}
 
         Args:
-            response: Raw text response from LLM
+            response: Raw text response from LLM (may contain JSON embedded in text)
 
         Returns:
-            Dictionary with parsed intent
+            Dictionary with parsed intent, validated and with all required fields
         """
         try:
             # Use the common JSON parsing utility

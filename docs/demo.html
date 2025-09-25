@@ -57,14 +57,7 @@
 
       /* Typing animation - wave effect */
       .typing-dot {
-        width: 4px;
-        height: 4px;
-        background: #1a1a1a;
-        border-radius: 50%;
-        animation: typing 1.4s infinite ease-in-out;
-      }
-      .typing-dot:nth-child(1) {
-        animation-delay: 0s;
+        animation: typing 1.4s infinite;
       }
       .typing-dot:nth-child(2) {
         animation-delay: 0.2s;
@@ -155,9 +148,9 @@
             <div class="bg-cos-gray px-4 py-3 rounded-sm border-l-2 border-cos-text">
               <div class="flex items-center space-x-2">
                 <div class="flex space-x-1 items-center">
-                  <div class="typing-dot"></div>
-                  <div class="typing-dot"></div>
-                  <div class="typing-dot"></div>
+                  <div class="w-2 h-2 bg-cos-text rounded-full typing-dot"></div>
+                  <div class="w-2 h-2 bg-cos-text rounded-full typing-dot"></div>
+                  <div class="w-2 h-2 bg-cos-text rounded-full typing-dot"></div>
                 </div>
                 <div id="typingTimer" class="text-xs text-gray-500 timer-pulse ml-2"></div>
               </div>
