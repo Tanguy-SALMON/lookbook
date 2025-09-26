@@ -454,7 +454,7 @@ Return ONLY the JSON object for: "{message}"
             GROUP BY p.sku, p.title, p.price, p.image_key,
                      pva.color, pva.category, pva.occasion, pva.style,
                      pva.material, pva.description
-            ORDER BY match_count DESC, p.price ASC
+            ORDER BY match_count DESC, RAND()
             LIMIT %s
         """.format(search_clause)
 
@@ -559,7 +559,7 @@ Return ONLY the JSON object for: "{message}"
                 FROM products p
                 JOIN product_vision_attributes pva ON p.sku = pva.sku
                 WHERE p.in_stock = 1 AND pva.category = %s AND ({color_clause})
-                ORDER BY p.price ASC
+                ORDER BY RAND()
                 LIMIT %s
             """
 
@@ -838,7 +838,7 @@ Return ONLY the JSON object for: "{message}"
                     WHERE p.in_stock = 1
                       AND pva.category = %s
                       AND ({color_conditions} OR pva.style = 'casual')
-                    ORDER BY p.price ASC
+                    ORDER BY RAND()
                     LIMIT %s
                 """
                 params = [category] + colors + [limit]
@@ -876,7 +876,7 @@ Return ONLY the JSON object for: "{message}"
                     WHERE p.in_stock = 1
                       AND pva.category = %s
                       AND pva.style = 'casual'
-                    ORDER BY p.price ASC
+                    ORDER BY RAND()
                     LIMIT %s
                 """
                 params = [category, limit]
