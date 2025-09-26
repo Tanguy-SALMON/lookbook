@@ -524,16 +524,16 @@
       function getImageVariations(baseImageUrl) {
         if (!baseImageUrl) {
           return {
-            main: 'https://dummyimage.com/300x400/cccccc/666666&text=No+Image',
-            view2: 'https://dummyimage.com/300x400/cccccc/666666&text=View+2',
-            view3: 'https://dummyimage.com/300x400/cccccc/666666&text=Detail'
+            main: "https://dummyimage.com/300x400/cccccc/666666&text=No+Image",
+            view2: "https://dummyimage.com/300x400/cccccc/666666&text=View+2",
+            view3: "https://dummyimage.com/300x400/cccccc/666666&text=Detail",
           };
         }
-        
+
         return {
           main: baseImageUrl,
-          view2: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, '_xxl-2.$1'),
-          view3: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, '_xxl-3.$1')
+          view2: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, "_xxl-2.$1"),
+          view3: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, "_xxl-3.$1"),
         };
       }
 
@@ -545,7 +545,7 @@
         if (item.sku) {
           return `https://th.cos.com/th_en/${item.sku}.html`;
         }
-        return '#';
+        return "#";
       }
 
       function addMessage(content, isUser = false) {
@@ -587,27 +587,27 @@
         messageDiv.className = "flex items-start mb-6";
 
         let productCardsHtml = "";
-        
+
         if (outfits && outfits.length > 0) {
           outfits.forEach((outfit) => {
-            const itemsHtml = outfit.items.map(item => {
-              const images = getImageVariations(item.image_url);
-              const productUrl = getProductUrl(item);
-              return `
+            const itemsHtml = outfit.items
+              .map((item) => {
+                const images = getImageVariations(item.image_url);
+                return `
               <div class="border border-gray-200 rounded-lg overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5 mb-3">
-                <a href="https://th.cos.com/th_en/${item.sku}.html" target="_blank" class="no-underline text-inherit block">
+                <a href="${item.product_url}" target="_blank" class="no-underline text-inherit block">
                   <div class="flex gap-2 mb-2">
-                    <img src="${images.main}" 
-                         alt="${item.title}" 
-                         class="flex-1 h-40 object-cover object-top rounded-md" 
+                    <img src="${images.main}"
+                         alt="${item.title}"
+                         class="flex-1 h-40 object-cover object-top rounded-md"
                          onerror="this.src='https://dummyimage.com/300x400/cccccc/666666&text=No+Image'">
-                    <img src="${images.view2}" 
-                         alt="${item.title} - Side View" 
-                         class="flex-1 h-40 object-cover object-top rounded-md" 
+                    <img src="${images.view2}"
+                         alt="${item.title} - Side View"
+                         class="flex-1 h-40 object-cover object-top rounded-md"
                          onerror="this.src='https://dummyimage.com/300x400/cccccc/666666&text=View+2'">
-                    <img src="${images.view3}" 
-                         alt="${item.title} - Detail" 
-                         class="flex-1 h-40 object-contain bg-gray-50 rounded-md" 
+                    <img src="${images.view3}"
+                         alt="${item.title} - Detail"
+                         class="flex-1 h-40 object-contain bg-gray-50 rounded-md"
                          onerror="this.src='https://dummyimage.com/300x400/cccccc/666666&text=Detail'">
                   </div>
                   <div class="p-2">
@@ -616,30 +616,33 @@
                   </div>
                 </a>
               </div>
-            `;}).join("");
+            `;
+              })
+              .join("");
 
             productCardsHtml += `
               <div class="bg-white border border-gray-200 rounded-xl p-4 mt-3 max-w-md">
                 <div class="text-sm text-gray-600 mb-2">${outfit.title}:</div>
                 <div class="grid grid-cols-1 gap-3 max-w-sm">
-                  ${outfit.items.map(item => {
-                    const images = getImageVariations(item.image_url);
-                    const productUrl = getProductUrl(item);
-                    return `
+                  ${outfit.items
+                    .map((item) => {
+                      const images = getImageVariations(item.image_url);
+                      const productUrl = getProductUrl(item);
+                      return `
                     <div class="border border-gray-200 rounded-lg overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5">
-                      <a href="https://th.cos.com/th_en/${item.sku}.html" target="_blank" class="no-underline text-inherit block">
+                      <a href="${item.product_url}" target="_blank" class="no-underline text-inherit block">
                         <div class="flex gap-2 mb-2">
-                          <img src="${images.main}" 
-                               alt="${item.title}" 
-                               class="flex-1 h-40 object-cover object-top rounded-md" 
+                          <img src="${images.main}"
+                               alt="${item.title}"
+                               class="flex-1 h-40 object-cover object-top rounded-md"
                                onerror="this.src='https://dummyimage.com/300x400/cccccc/666666&text=No+Image'">
-                          <img src="${images.view2}" 
-                               alt="${item.title} - Side View" 
-                               class="flex-1 h-40 object-cover object-top rounded-md" 
+                          <img src="${images.view2}"
+                               alt="${item.title} - Side View"
+                               class="flex-1 h-40 object-cover object-top rounded-md"
                                onerror="this.src='https://dummyimage.com/300x400/cccccc/666666&text=View+2'">
-                          <img src="${images.view3}" 
-                               alt="${item.title} - Detail" 
-                               class="flex-1 h-40 object-contain bg-gray-50 rounded-md" 
+                          <img src="${images.view3}"
+                               alt="${item.title} - Detail"
+                               class="flex-1 h-40 object-contain bg-gray-50 rounded-md"
                                onerror="this.src='https://dummyimage.com/300x400/cccccc/666666&text=Detail'">
                         </div>
                         <div class="p-2">
@@ -648,7 +651,9 @@
                         </div>
                       </a>
                     </div>
-                  `;}).join('')}
+                  `;
+                    })
+                    .join("")}
                 </div>
               </div>
             `;
@@ -662,7 +667,10 @@
           <div class="max-w-[70%] p-3 px-4 rounded-2xl text-sm leading-normal font-normal bg-gray-100 text-gray-800 self-start rounded-bl-sm">
             ${content}
             ${productCardsHtml}
-            <div class="text-xs text-gray-400 mt-1 text-right font-normal">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+            <div class="text-xs text-gray-400 mt-1 text-right font-normal">${new Date().toLocaleTimeString(
+              [],
+              { hour: "2-digit", minute: "2-digit" }
+            )}</div>
           </div>
         `;
 

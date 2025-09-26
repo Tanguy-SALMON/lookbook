@@ -86,7 +86,8 @@ async def test_smart_recommender_logs():
         test_message = "I need something for a business meeting"
 
         # This will generate logs at each step
-        outfits = await recommender.recommend_outfits(test_message, limit=2)
+        result = await recommender.recommend_outfits(test_message, limit=2)
+        outfits = result.get("outfits", [])
 
         print("-"*60)
         print("RESULTS:")

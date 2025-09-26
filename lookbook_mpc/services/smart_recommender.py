@@ -1121,12 +1121,15 @@ Return ONLY the JSON object for: "{message}"
         Returns:
             Frontend-formatted product dictionary with image_url and proper structure
         """
+        # Truncate SKU to 10 digits for COS website URL format
+        sku_for_url = str(product["sku"])[:10] if product["sku"] else ""
+
         return {
             "sku": product["sku"],
             "title": product["title"],
             "price": float(product["price"]),
             "image_url": f"{settings.s3_base_url_with_trailing_slash}{product['image_key']}",
-            "product_url": f"https://th.cos.com/th_en/{product['sku']}.html",
+            "product_url": f"https://th.cos.com/th_en/{sku_for_url}.html",
             "color": product.get("color") or "N/A",
             "category": product.get("category") or "N/A",
             "relevance_score": product.get("relevance_score", 0),

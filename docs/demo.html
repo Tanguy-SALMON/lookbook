@@ -86,8 +86,13 @@
       }
 
       @keyframes pulse {
-        0%, 100% { opacity: 0.5; }
-        50% { opacity: 1; }
+        0%,
+        100% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
       }
     </style>
   </head>
@@ -119,9 +124,17 @@
         >
           <!-- Welcome Message -->
           <div class="flex items-start space-x-4">
-            <div class="w-6 h-6 border border-cos-text flex items-center justify-center flex-shrink-0">
-              <svg class="w-4 h-4 user-icon" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+            <div
+              class="w-6 h-6 border border-cos-text flex items-center justify-center flex-shrink-0"
+            >
+              <svg
+                class="w-4 h-4 user-icon"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"
+                />
               </svg>
             </div>
             <div class="max-w-md border-l-2 border-cos-text pl-4">
@@ -129,10 +142,11 @@
                 Hello. I'm your personal styling assistant.
               </div>
               <div class="text-sm leading-relaxed">
-                Tell me about the occasion, your preferences, or what you're looking for, and I'll help you find the perfect pieces from our collection.
+                Tell me about the occasion, your preferences, or what you're
+                looking for, and I'll help you find the perfect pieces from our
+                collection.
               </div>
-              <div class="text-xs text-gray-500 mt-3" id="welcomeTime">
-              </div>
+              <div class="text-xs text-gray-500 mt-3" id="welcomeTime"></div>
             </div>
           </div>
         </div>
@@ -140,19 +154,38 @@
         <!-- Typing Indicator -->
         <div id="typingIndicator" class="hidden px-8 pb-2">
           <div class="flex items-start space-x-4">
-            <div class="w-6 h-6 border border-cos-text flex items-center justify-center">
-              <svg class="w-4 h-4 user-icon" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+            <div
+              class="w-6 h-6 border border-cos-text flex items-center justify-center"
+            >
+              <svg
+                class="w-4 h-4 user-icon"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+              >
+                <path
+                  d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"
+                />
               </svg>
             </div>
-            <div class="bg-cos-gray px-4 py-3 rounded-sm border-l-2 border-cos-text">
+            <div
+              class="bg-cos-gray px-4 py-3 rounded-sm border-l-2 border-cos-text"
+            >
               <div class="flex items-center space-x-2">
                 <div class="flex space-x-1 items-center">
-                  <div class="w-2 h-2 bg-cos-text rounded-full typing-dot"></div>
-                  <div class="w-2 h-2 bg-cos-text rounded-full typing-dot"></div>
-                  <div class="w-2 h-2 bg-cos-text rounded-full typing-dot"></div>
+                  <div
+                    class="w-2 h-2 bg-cos-text rounded-full typing-dot"
+                  ></div>
+                  <div
+                    class="w-2 h-2 bg-cos-text rounded-full typing-dot"
+                  ></div>
+                  <div
+                    class="w-2 h-2 bg-cos-text rounded-full typing-dot"
+                  ></div>
                 </div>
-                <div id="typingTimer" class="text-xs text-gray-500 timer-pulse ml-2"></div>
+                <div
+                  id="typingTimer"
+                  class="text-xs text-gray-500 timer-pulse ml-2"
+                ></div>
               </div>
             </div>
           </div>
@@ -195,7 +228,9 @@
       <!-- Quick Suggestions Sidebar -->
       <div class="w-80 border-l border-cos-border bg-cos-gray p-8">
         <div class="mb-8">
-          <h3 class="text-sm font-medium mb-6 tracking-wider">QUICK SUGGESTIONS</h3>
+          <h3 class="text-sm font-medium mb-6 tracking-wider">
+            QUICK SUGGESTIONS
+          </h3>
 
           <div class="space-y-4">
             <button
@@ -203,7 +238,9 @@
               onclick="sendSuggestion('I need something for a business meeting')"
             >
               <div class="font-medium mb-1">Business Meeting</div>
-              <p class="text-xs text-gray-600">Professional attire for the office</p>
+              <p class="text-xs text-gray-600">
+                Professional attire for the office
+              </p>
             </button>
 
             <button
@@ -219,7 +256,9 @@
               onclick="sendSuggestion('Dinner date outfit, elegant and comfortable')"
             >
               <div class="font-medium mb-1">Evening Out</div>
-              <p class="text-xs text-gray-600">Elegant pieces for special occasions</p>
+              <p class="text-xs text-gray-600">
+                Elegant pieces for special occasions
+              </p>
             </button>
 
             <button
@@ -227,7 +266,9 @@
               onclick="sendSuggestion('Minimalist wardrobe essentials')"
             >
               <div class="font-medium mb-1">Essentials</div>
-              <p class="text-xs text-gray-600">Timeless pieces for any wardrobe</p>
+              <p class="text-xs text-gray-600">
+                Timeless pieces for any wardrobe
+              </p>
             </button>
 
             <button
@@ -309,16 +350,16 @@
       function getImageVariations(baseImageUrl) {
         if (!baseImageUrl) {
           return {
-            main: 'https://dummyimage.com/300x400/f5f5f5/999999&text=No+Image',
-            view2: 'https://dummyimage.com/300x400/f5f5f5/999999&text=View+2',
-            view3: 'https://dummyimage.com/300x400/f5f5f5/999999&text=Detail'
+            main: "https://dummyimage.com/300x400/f5f5f5/999999&text=No+Image",
+            view2: "https://dummyimage.com/300x400/f5f5f5/999999&text=View+2",
+            view3: "https://dummyimage.com/300x400/f5f5f5/999999&text=Detail",
           };
         }
 
         return {
           main: baseImageUrl,
-          view2: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, '_xxl-2.$1'),
-          view3: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, '_xxl-3.$1')
+          view2: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, "_xxl-2.$1"),
+          view3: baseImageUrl.replace(/_xxl-1\.(jpg|png)$/, "_xxl-3.$1"),
         };
       }
 
@@ -328,15 +369,17 @@
       }
 
       function autoResize(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.style.height = "auto";
+        textarea.style.height = textarea.scrollHeight + "px";
       }
 
       function addMessage(content, isUser = false) {
         const messagesContainer = document.getElementById("messages");
         const messageDiv = document.createElement("div");
 
-        messageDiv.className = `flex items-start space-x-4 ${isUser ? 'flex-row-reverse space-x-reverse' : ''}`;
+        messageDiv.className = `flex items-start space-x-4 ${
+          isUser ? "flex-row-reverse space-x-reverse" : ""
+        }`;
 
         if (isUser) {
           messageDiv.innerHTML = `
@@ -348,7 +391,10 @@
                 ${content}
               </div>
               <div class="text-xs text-gray-500 mt-2">
-                ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                ${new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </div>
             </div>
           `;
@@ -364,7 +410,10 @@
                 ${content}
               </div>
               <div class="text-xs text-gray-500 mt-2">
-                ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                ${new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </div>
             </div>
           `;
@@ -386,13 +435,16 @@
           outfits.forEach((outfit) => {
             productCardsHtml += `
               <div class="bg-white border border-gray-200 rounded-xl p-4 mt-3 max-w-md">
-                <div class="text-sm text-gray-600 mb-2">${outfit.title || 'RECOMMENDED PIECES'}:</div>
+                <div class="text-sm text-gray-600 mb-2">${
+                  outfit.title || "RECOMMENDED PIECES"
+                }:</div>
                 <div class="grid grid-cols-1 gap-3 max-w-sm">
-                  ${outfit.items.map(item => {
-                    const images = getImageVariations(item.image_url);
-                    return `
+                  ${outfit.items
+                    .map((item) => {
+                      const images = getImageVariations(item.image_url);
+                      return `
                     <div class="border border-gray-200 rounded-lg overflow-hidden bg-white transition-transform duration-200 hover:-translate-y-0.5">
-                      <a href="https://th.cos.com/th_en/${item.sku}.html" target="_blank" class="no-underline text-inherit block">
+                      <a href="${item.product_url}" target="_blank" class="no-underline text-inherit block">
                         <div class="flex gap-2 mb-2">
                           <img src="${images.main}"
                                alt="${item.title}"
@@ -413,7 +465,9 @@
                         </div>
                       </a>
                     </div>
-                  `;}).join('')}
+                  `;
+                    })
+                    .join("")}
                 </div>
               </div>
             `;
@@ -432,7 +486,10 @@
             </div>
             ${productCardsHtml}
             <div class="text-xs text-gray-500 mt-3">
-              ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              ${new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </div>
           </div>
         `;
@@ -489,7 +546,7 @@
         // Add user message
         addMessage(message, true);
         input.value = "";
-        input.style.height = 'auto';
+        input.style.height = "auto";
 
         // Show typing indicator
         showTypingIndicator();
@@ -497,7 +554,7 @@
         // Disable send button
         const sendButton = document.getElementById("sendButton");
         sendButton.disabled = true;
-        sendButton.innerHTML = 'SENDING...';
+        sendButton.innerHTML = "SENDING...";
 
         // Send to API
         fetch("/v1/chat", {
@@ -527,7 +584,7 @@
 
             // Enable send button
             sendButton.disabled = false;
-            sendButton.innerHTML = 'SEND';
+            sendButton.innerHTML = "SEND";
           })
           .catch((error) => {
             hideTypingIndicator();
@@ -536,7 +593,7 @@
               "I apologize, but I'm experiencing technical difficulties. Please try again in a moment."
             );
             sendButton.disabled = false;
-            sendButton.innerHTML = 'SEND';
+            sendButton.innerHTML = "SEND";
             console.error("Error:", error);
           });
       }
@@ -558,7 +615,7 @@
           const chatMessages = document.getElementById("messages");
           if (chatMessages) {
             // Clear all messages
-            chatMessages.innerHTML = '';
+            chatMessages.innerHTML = "";
 
             // Add welcome message back
             setTimeout(() => {
@@ -578,7 +635,10 @@
                     Tell me about the occasion, your preferences, or what you're looking for, and I'll help you find the perfect pieces from our collection.
                   </div>
                   <div class="text-xs text-gray-500 mt-3">
-                    ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    ${new Date().toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </div>
                 </div>
               `;
@@ -591,7 +651,7 @@
           const messageInput = document.getElementById("messageInput");
           if (messageInput) {
             messageInput.value = "";
-            messageInput.style.height = 'auto';
+            messageInput.style.height = "auto";
           }
 
           // Hide typing indicator if visible
@@ -607,7 +667,10 @@
         // Set welcome message time
         const welcomeTime = document.getElementById("welcomeTime");
         if (welcomeTime) {
-          welcomeTime.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+          welcomeTime.textContent = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
         }
       });
 
