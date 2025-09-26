@@ -257,7 +257,7 @@ Return ONLY the JSON object for: "{message}"
             keywords = ["party", "dance", "stylish", "trendy"]
             occasions = ["party", "festival"]
             styles = ["trendy", "chic"]
-            categories = ["dress", "top"]
+            categories = ["dress", "top", "bottom"]
             colors = ["black", "navy"]
 
         elif any(word in message_lower for word in ["drive", "driving", "travel"]):
@@ -297,10 +297,11 @@ Return ONLY the JSON object for: "{message}"
         self, keywords: Dict[str, Any], limit: int = 15
     ) -> List[Dict[str, Any]]:
         """
-        Search products using generated keywords with relevance scoring.
+        Search products using generated keywords with relevance scoring and category balancing.
 
         Uses direct keyword matching against product attributes (title, color, style, material, occasion).
         Products are scored based on how many keywords match and in which attributes.
+        Includes fallback strategy to ensure balanced mix across categories.
 
         Example Input: keywords = {"keywords": ["party", "stylish"], "colors": ["black"], "styles": ["chic"]}
         Example Output: [
@@ -320,92 +321,21 @@ Return ONLY the JSON object for: "{message}"
             try:
                 cursor = await conn.cursor()
                 try:
-                    # Build search query using keywords
-                    search_terms = []
-                    params = []
+                    # Strategy 1: Try keyword-based search first
+                    products = await self._search_by_keywords(cursor, keywords, limit)
 
-                    # Add keyword searches
-                    all_keywords = (
-                        keywords.get("keywords", [])
-                        + keywords.get("colors", [])
-                        + keywords.get("occasions", [])
-                        + keywords.get("styles", [])
-                        + keywords.get("materials", [])
-                    )
+                    # Strategy 2: If we don't have enough variety, add category-based fallback
+                    if len(products) < limit:
+                        fallback_products = await self._search_by_categories(cursor, keywords, limit - len(products))
+                        products.extend(fallback_products)
 
-                    for keyword in all_keywords[
-                        :10
-                    ]:  # Limit to prevent overly complex queries
-                        search_terms.extend(
-                            [
-                                "pva.occasion LIKE %s",
-                                "pva.color = %s",
-                                "pva.style LIKE %s",
-                                "pva.material LIKE %s",
-                                "p.title LIKE %s",
-                            ]
-                        )
-                        params.extend(
-                            [
-                                f"%{keyword}%",  # occasion
-                                keyword,  # color (exact match)
-                                f"%{keyword}%",  # style
-                                f"%{keyword}%",  # material
-                                f"%{keyword}%",  # title
-                            ]
-                        )
+                    # Strategy 3: Ensure we have both tops and bottoms for complete outfits
+                    products = await self._ensure_category_balance(cursor, products, keywords, limit)
 
-                    # Build the query
-                    search_clause = " OR ".join(search_terms) if search_terms else "1=1"
+                    # Remove duplicates and diversify
+                    products = self._diversify_products(products)
 
-                    query = f"""
-                        SELECT p.sku, p.title, p.price, p.image_key,
-                               pva.color, pva.category, pva.occasion, pva.style,
-                               pva.material, pva.description,
-                               COUNT(*) as match_count
-                        FROM products p
-                        JOIN product_vision_attributes pva ON p.sku = pva.sku
-                        WHERE p.in_stock = 1 AND ({search_clause})
-                        GROUP BY p.sku, p.title, p.price, p.image_key,
-                                 pva.color, pva.category, pva.occasion, pva.style,
-                                 pva.material, pva.description
-                        ORDER BY match_count DESC, p.price ASC
-                        LIMIT %s
-                    """
-
-                    params.append(limit)
-
-                    await cursor.execute(query, params)
-                    results = await cursor.fetchall()
-
-                    # Convert to dictionaries
-                    columns = [
-                        "sku",
-                        "title",
-                        "price",
-                        "image_key",
-                        "color",
-                        "category",
-                        "occasion",
-                        "style",
-                        "material",
-                        "description",
-                        "match_count",
-                    ]
-
-                    products = []
-                    for row in results:
-                        product = dict(zip(columns, row))
-                        # Calculate relevance score based on keyword matches
-                        product["relevance_score"] = self._calculate_keyword_score(
-                            product, keywords
-                        )
-                        products.append(product)
-
-                    # Sort by relevance score
-                    products.sort(key=lambda x: x["relevance_score"], reverse=True)
-
-                    return products
+                    return products[:limit]
 
                 finally:
                     await cursor.close()
@@ -415,6 +345,144 @@ Return ONLY the JSON object for: "{message}"
         except Exception as e:
             self.logger.error("Product search failed", error=str(e))
             return []
+
+    async def _search_by_keywords(self, cursor, keywords: Dict[str, Any], limit: int) -> List[Dict[str, Any]]:
+        """Search products using keyword matching."""
+        search_terms = []
+        params = []
+
+        # Add keyword searches
+        all_keywords = (
+            keywords.get("keywords", [])
+            + keywords.get("colors", [])
+            + keywords.get("occasions", [])
+            + keywords.get("styles", [])
+            + keywords.get("materials", [])
+        )
+
+        for keyword in all_keywords[:8]:  # Limit to prevent overly complex queries
+            search_terms.extend([
+                "pva.occasion LIKE %s",
+                "pva.color = %s",
+                "pva.style LIKE %s",
+                "pva.material LIKE %s",
+                "p.title LIKE %s",
+            ])
+            params.extend([
+                f"%{keyword}%",  # occasion
+                keyword,  # color (exact match)
+                f"%{keyword}%",  # style
+                f"%{keyword}%",  # material
+                f"%{keyword}%",  # title
+            ])
+
+        search_clause = " OR ".join(search_terms) if search_terms else "1=1"
+
+        query = """
+            SELECT p.sku, p.title, p.price, p.image_key,
+                   pva.color, pva.category, pva.occasion, pva.style,
+                   pva.material, pva.description,
+                   COUNT(*) as match_count
+            FROM products p
+            JOIN product_vision_attributes pva ON p.sku = pva.sku
+            WHERE p.in_stock = 1 AND ({})
+            GROUP BY p.sku, p.title, p.price, p.image_key,
+                     pva.color, pva.category, pva.occasion, pva.style,
+                     pva.material, pva.description
+            ORDER BY match_count DESC, p.price ASC
+            LIMIT %s
+        """.format(search_clause)
+
+        params.append(limit)
+        await cursor.execute(query, params)
+        results = await cursor.fetchall()
+
+        return self._convert_results_to_products(results, keywords)
+
+    async def _search_by_categories(self, cursor, keywords: Dict[str, Any], limit: int) -> List[Dict[str, Any]]:
+        """Fallback search to ensure we get products from desired categories."""
+        products = []
+        categories = keywords.get("categories", ["top", "bottom", "dress"])
+
+        for category in categories:
+            if len(products) >= limit:
+                break
+
+            # Get top products from this category, prioritizing matching colors
+            color_conditions = []
+            color_params = []
+
+            for color in keywords.get("colors", []):
+                color_conditions.append("pva.color = %s")
+                color_params.append(color)
+
+            color_clause = " OR ".join(color_conditions) if color_conditions else "1=1"
+
+            query = f"""
+                SELECT p.sku, p.title, p.price, p.image_key,
+                       pva.color, pva.category, pva.occasion, pva.style,
+                       pva.material, pva.description,
+                       1 as match_count
+                FROM products p
+                JOIN product_vision_attributes pva ON p.sku = pva.sku
+                WHERE p.in_stock = 1 AND pva.category = %s AND ({color_clause})
+                ORDER BY p.price ASC
+                LIMIT %s
+            """
+
+            params = [category] + color_params + [max(1, limit // len(categories))]
+            await cursor.execute(query, params)
+            results = await cursor.fetchall()
+
+            category_products = self._convert_results_to_products(results, keywords)
+            products.extend(category_products)
+
+        return products
+
+    def _convert_results_to_products(self, results, keywords) -> List[Dict[str, Any]]:
+        """Convert database results to product dictionaries with scores."""
+        columns = [
+            "sku", "title", "price", "image_key", "color", "category",
+            "occasion", "style", "material", "description", "match_count",
+        ]
+
+        products = []
+        for row in results:
+            product = dict(zip(columns, row))
+            product["relevance_score"] = self._calculate_keyword_score(product, keywords)
+            products.append(product)
+
+        return products
+
+    def _balance_categories(self, products: List[Dict[str, Any]], keywords: Dict[str, Any], limit: int) -> List[Dict[str, Any]]:
+        """Ensure we have a balanced mix of categories for outfit creation."""
+        grouped = self._group_products_by_category(products)
+        balanced = []
+
+        # Prioritize getting at least one item from each desired category
+        desired_categories = keywords.get("categories", ["top", "bottom", "dress"])
+
+        for category in desired_categories:
+            if category in grouped and grouped[category] and len(balanced) < limit:
+                # Add the best item from this category
+                best_item = max(grouped[category], key=lambda x: x["relevance_score"])
+                balanced.append(best_item)
+                grouped[category].remove(best_item)
+
+        # Fill remaining slots with best remaining items
+        remaining_items = []
+        for category_items in grouped.values():
+            remaining_items.extend(category_items)
+
+        remaining_items.sort(key=lambda x: x["relevance_score"], reverse=True)
+
+        for item in remaining_items:
+            if len(balanced) >= limit:
+                break
+            if item not in balanced:
+                balanced.append(item)
+
+        return balanced
 
     def _calculate_keyword_score(
         self, product: Dict[str, Any], keywords: Dict[str, Any]
@@ -488,6 +556,136 @@ Return ONLY the JSON object for: "{message}"
         score += min(product.get("match_count", 0) * 2, 10)
 
         return min(score, 100)  # Cap at 100
+
+    def _diversify_products(self, products: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Remove duplicate product variants to ensure outfit diversity.
+
+        Keeps only one variant per product title to prevent multiple sizes/colors
+        of the same item from dominating recommendations.
+
+        Example Input: [
+            {"title": "RIBBED TANK TOP", "sku": "001", "color": "black"},
+            {"title": "RIBBED TANK TOP", "sku": "002", "color": "white"},
+            {"title": "PARTY DRESS", "sku": "003", "color": "red"}
+        ]
+        Example Output: [
+            {"title": "RIBBED TANK TOP", "sku": "001", "color": "black"},
+            {"title": "PARTY DRESS", "sku": "003", "color": "red"}
+        ]
+        """
+        seen_titles = set()
+        diversified = []
+
+        for product in products:
+            title = product.get("title", "").strip()
+            if title and title not in seen_titles:
+                seen_titles.add(title)
+                diversified.append(product)
+
+        self.logger.info(
+            "Product diversification completed",
+            original_count=len(products),
+            diversified_count=len(diversified),
+            removed_duplicates=len(products) - len(diversified)
+        )
+
+        return diversified
+
+    async def _ensure_category_balance(
+        self, cursor, products: List[Dict[str, Any]], keywords: Dict[str, Any], limit: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Ensure we have both tops and bottoms for complete outfit creation.
+
+        If the main search didn't return both categories, explicitly search for missing ones.
+        This guarantees we can create complete outfits with tops AND bottoms.
+        """
+        try:
+            # Group existing products by category
+            grouped = self._group_products_by_category(products)
+
+            has_tops = len(grouped.get('top', [])) > 0
+            has_bottoms = len(grouped.get('bottom', [])) > 0
+            has_dresses = len(grouped.get('dress', [])) > 0
+
+            # If we have dresses, that's fine - they are complete outfits
+            if has_dresses:
+                return products
+
+            # If we're missing tops or bottoms, search specifically for them
+            additional_products = []
+
+            if not has_tops:
+                # Search for tops with broader criteria
+                tops = await self._search_specific_category(cursor, 'top', keywords, 3)
+                additional_products.extend(tops)
+                self.logger.info("Added missing tops", count=len(tops))
+
+            if not has_bottoms:
+                # Search for bottoms with broader criteria
+                bottoms = await self._search_specific_category(cursor, 'bottom', keywords, 3)
+                additional_products.extend(bottoms)
+                self.logger.info("Added missing bottoms", count=len(bottoms))
+
+            return products + additional_products
+
+        except Exception as e:
+            self.logger.error("Category balance failed", error=str(e))
+            return products
+
+    async def _search_specific_category(
+        self, cursor, category: str, keywords: Dict[str, Any], limit: int
+    ) -> List[Dict[str, Any]]:
+        """Search for specific category (top/bottom/dress) with broader criteria."""
+        try:
+            # Use basic color and style matching for the specific category
+            colors = keywords.get("colors", [])
+            if not colors:
+                colors = ["black", "navy", "white"]  # Default colors
+
+            # Build a simpler search for this category
+            if colors:
+                color_conditions = " OR ".join(["pva.color = %s"] * len(colors))
+                query = f"""
+                    SELECT p.sku, p.title, p.price, p.image_key,
+                           pva.color, pva.category, pva.occasion, pva.style,
+                           pva.material, pva.description,
+                           1 as match_count
+                    FROM products p
+                    JOIN product_vision_attributes pva ON p.sku = pva.sku
+                    WHERE p.in_stock = 1
+                      AND pva.category = %s
+                      AND ({color_conditions} OR pva.style = 'casual')
+                    ORDER BY p.price ASC
+                    LIMIT %s
+                """
+                params = [category] + colors + [limit]
+            else:
+                # Fallback without color conditions
+                query = """
+                    SELECT p.sku, p.title, p.price, p.image_key,
+                           pva.color, pva.category, pva.occasion, pva.style,
+                           pva.material, pva.description,
+                           1 as match_count
+                    FROM products p
+                    JOIN product_vision_attributes pva ON p.sku = pva.sku
+                    WHERE p.in_stock = 1
+                      AND pva.category = %s
+                      AND pva.style = 'casual'
+                    ORDER BY p.price ASC
+                    LIMIT %s
+                """
+                params = [category, limit]
+
+            await cursor.execute(query, params)
+            results = await cursor.fetchall()
+
+            return self._convert_results_to_products(results, keywords)
+
+        except Exception as e:
+            self.logger.error("Specific category search failed", category=category, error=str(e))
+            return []
 
     async def _create_outfit_combinations(
         self, products: List[Dict[str, Any]], keywords: Dict[str, Any], limit: int
@@ -671,16 +869,26 @@ Return ONLY the JSON object for: "{message}"
         if color1 == color2:
             return True
 
-        # Define compatible color pairs
+        # Define compatible color pairs - more permissive for better outfit combinations
         compatible_pairs = {
-            "black": ["white", "grey", "beige"],
-            "white": ["black", "grey", "navy", "beige"],
-            "navy": ["white", "beige", "grey"],
-            "grey": ["white", "black", "beige"],
-            "beige": ["white", "black", "grey", "navy"],
+            "black": ["white", "grey", "beige", "navy", "blue", "denim-blue"],
+            "white": ["black", "grey", "navy", "beige", "blue", "denim-blue"],
+            "navy": ["white", "beige", "grey", "black", "blue", "denim-blue"],
+            "grey": ["white", "black", "beige", "navy", "blue"],
+            "beige": ["white", "black", "grey", "navy", "brown"],
+            "blue": ["white", "black", "grey", "navy", "denim-blue"],
+            "denim-blue": ["black", "white", "navy", "grey", "blue"],
+            "brown": ["beige", "white", "black"],
         }
 
-        return color2 in compatible_pairs.get(color1, [])
+        # If colors aren't in our compatibility map, be more permissive
+        if color1 in compatible_pairs:
+            return color2 in compatible_pairs[color1]
+        elif color2 in compatible_pairs:
+            return color1 in compatible_pairs[color2]
+        else:
+            # For unknown colors, allow the combination (be permissive)
+            return True
 
     def _generate_outfit_title(
         self, dress: Dict[str, Any], keywords: Dict[str, Any]
