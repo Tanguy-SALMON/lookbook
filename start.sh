@@ -28,6 +28,8 @@ export MYSQL_APP_URL="${MYSQL_APP_URL:-mysql+pymysql://magento:Magento@COS(*)@12
 export LLM_PROVIDER="${LLM_PROVIDER:-openrouter}"
 export OPENROUTER_MODEL="${OPENROUTER_MODEL:-openai/gpt-oss-20b:free}"
 export LLM_SERVICE_API="${LLM_SERVICE_API:-OpenRouter (openai/gpt-oss-20b:free)}"
+export LOG_LEVEL="${LOG_LEVEL:-DEBUG}"
+export LOG_FORMAT="${LOG_FORMAT:-json}"
 
 echo "Environment variables loaded:"
 echo "  LLM_SERVICE_API=$LLM_SERVICE_API"
@@ -41,6 +43,8 @@ else
 fi
 echo "  OLLAMA_VISION_MODEL=$OLLAMA_VISION_MODEL"
 echo "  S3_BASE_URL=$S3_BASE_URL"
+echo "  LOG_LEVEL=$LOG_LEVEL"
+echo "  LOG_FORMAT=$LOG_FORMAT"
 echo
 
 echo "Server will be available at:"
@@ -65,6 +69,12 @@ else
     echo "  🧠 Primary: $OLLAMA_TEXT_MODEL"
     echo "  ⚡ Fast (Testing): $OLLAMA_TEXT_MODEL_FAST"
 fi
+echo
+
+echo "Logging Configuration:"
+echo "  📊 Log Level: $LOG_LEVEL"
+echo "  📋 Log Format: $LOG_FORMAT"
+echo "  💬 SmartRecommender logs will be visible at $LOG_LEVEL level"
 echo
 
 echo "=" | head -c 50; echo

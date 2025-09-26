@@ -82,7 +82,7 @@ class Settings(BaseSettings):
     )
 
     # Logging Configuration
-    log_level: str = Field(default="INFO", description="Logging level")
+    log_level: str = Field(default="info", description="Logging level")
     log_format: str = Field(default="json", description="Log format (json or text)")
 
     # Feature Flags

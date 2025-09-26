@@ -73,28 +73,43 @@ class SmartRecommender:
             List of outfit recommendation dictionaries with items, prices, and explanations
         """
         try:
-            self.logger.info("Starting smart recommendation", message=user_message)
+            self.logger.info("Starting smart recommendation process", message=user_message, limit=limit)
 
             # Step 1: Use LLM to generate rich keywords
+            self.logger.info("Step 1: Generating keywords from user message")
             keywords = await self._generate_keywords_from_message(user_message)
+            self.logger.info("Step 1 completed: Keywords generated",
+                           keyword_count=len(keywords.get("keywords", [])),
+                           colors=len(keywords.get("colors", [])),
+                           categories=len(keywords.get("categories", [])))
 
             # Step 2: Search products using keywords
-            products = await self._search_products_by_keywords(keywords, limit * 3)
+            self.logger.info("Step 2: Searching products using generated keywords")
+            search_limit = limit * 3  # Get more products than needed for better selection
+            products = await self._search_products_by_keywords(keywords, search_limit)
+            self.logger.info("Step 2 completed: Products found", product_count=len(products))
 
             # Step 3: Create outfit combinations
+            self.logger.info("Step 3: Creating outfit combinations from products")
             outfits = await self._create_outfit_combinations(products, keywords, limit)
+            self.logger.info("Step 3 completed: Outfits created", outfit_count=len(outfits))
 
             self.logger.info(
-                "Smart recommendation completed",
+                "Smart recommendation process completed successfully",
+                user_message=user_message,
                 keywords_generated=len(keywords.get("keywords", [])),
                 products_found=len(products),
                 outfits_created=len(outfits),
+                limit_requested=limit
             )
 
             return outfits
 
         except Exception as e:
-            self.logger.error("Smart recommendation failed", error=str(e))
+            self.logger.error("Smart recommendation process failed",
+                            error=str(e),
+                            user_message=user_message,
+                            limit=limit)
             return []
 
     async def _generate_keywords_from_message(self, message: str) -> Dict[str, Any]:
@@ -170,6 +185,12 @@ Return ONLY the JSON object for: "{message}"
 """
 
         try:
+            self.logger.info("Sending prompt to LLM for keyword generation",
+                            llm_host=self.llm_host,
+                            llm_model=self.llm_model,
+                            prompt_length=len(prompt),
+                            user_message=message)
+
             async with aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=10)
             ) as session:
@@ -188,12 +209,21 @@ Return ONLY the JSON object for: "{message}"
                         result = await response.json()
                         response_text = result.get("response", "")
 
+                        self.logger.info("LLM response received",
+                                        llm_model=self.llm_model,
+                                        response_length=len(response_text),
+                                        prompt_sent=prompt,
+                                        response_received=response_text)
+
                         # Parse JSON from LLM response
                         keywords = self._parse_keywords_json(response_text)
 
                         self.logger.info(
                             "Keywords generated successfully",
+                            llm_info=f"{self.llm_model}@{self.llm_host}",
                             keywords_count=len(keywords.get("keywords", [])),
+                            colors_count=len(keywords.get("colors", [])),
+                            categories_count=len(keywords.get("categories", [])),
                             mood=keywords.get("mood", "N/A"),
                         )
 
@@ -203,7 +233,10 @@ Return ONLY the JSON object for: "{message}"
 
         except Exception as e:
             self.logger.warning(
-                "LLM keyword generation failed, using fallback", error=str(e)
+                "LLM keyword generation failed, falling back to rule-based extraction",
+                error=str(e),
+                reason="LLM API unavailable or returned invalid response",
+                message=message
             )
             return self._generate_fallback_keywords(message)
 
@@ -238,7 +271,9 @@ Return ONLY the JSON object for: "{message}"
                 raise ValueError("No JSON found in response")
 
         except Exception as e:
-            self.logger.error("Failed to parse keywords JSON", error=str(e))
+            self.logger.warning("Failed to parse LLM keywords JSON, falling back to rule-based extraction",
+                              error=str(e),
+                              reason="LLM response was not valid JSON or missing required fields")
             return self._generate_fallback_keywords("")
 
     def _generate_fallback_keywords(self, message: str) -> Dict[str, Any]:
@@ -317,25 +352,40 @@ Return ONLY the JSON object for: "{message}"
             List of products with relevance scores, sorted by score descending
         """
         try:
+            self.logger.info("Starting product search with keywords", keywords=keywords, limit=limit)
             conn = await self.repository._get_connection()
             try:
                 cursor = await conn.cursor()
                 try:
                     # Strategy 1: Try keyword-based search first
+                    self.logger.info("Strategy 1: Executing keyword-based search")
                     products = await self._search_by_keywords(cursor, keywords, limit)
+                    self.logger.info("Keyword search completed", products_found=len(products))
 
                     # Strategy 2: If we don't have enough variety, add category-based fallback
                     if len(products) < limit:
+                        self.logger.info("Strategy 2: Insufficient products from keyword search, using category-based fallback",
+                                       current_count=len(products), target_limit=limit,
+                                       reason="Need more products for balanced recommendations")
                         fallback_products = await self._search_by_categories(cursor, keywords, limit - len(products))
                         products.extend(fallback_products)
+                        self.logger.info("Category fallback completed", additional_products=len(fallback_products))
 
                     # Strategy 3: Ensure we have both tops and bottoms for complete outfits
+                    self.logger.info("Strategy 3: Ensuring category balance for complete outfits")
                     products = await self._ensure_category_balance(cursor, products, keywords, limit)
+                    self.logger.info("Category balance check completed", final_count=len(products))
 
                     # Remove duplicates and diversify
+                    self.logger.info("Diversifying products to remove duplicates")
                     products = self._diversify_products(products)
 
-                    return products[:limit]
+                    final_products = products[:limit]
+                    self.logger.info("Product search completed successfully",
+                                   total_products_found=len(final_products),
+                                   keywords_used=len(keywords.get("keywords", [])))
+
+                    return final_products
 
                 finally:
                     await cursor.close()
@@ -360,7 +410,22 @@ Return ONLY the JSON object for: "{message}"
             + keywords.get("materials", [])
         )
 
-        for keyword in all_keywords[:8]:  # Limit to prevent overly complex queries
+        # Validate and clean keywords
+        valid_keywords = []
+        for keyword in all_keywords:
+            if isinstance(keyword, str) and keyword.strip():
+                # Remove potentially problematic characters and limit length
+                clean_keyword = keyword.strip()[:50]  # Limit to 50 chars
+                # Remove quotes and semicolons that could break SQL
+                clean_keyword = clean_keyword.replace("'", "").replace('"', '').replace(';', '')
+                if clean_keyword:
+                    valid_keywords.append(clean_keyword)
+
+        self.logger.info("Keyword validation completed",
+                        original_keywords=all_keywords,
+                        valid_keywords=valid_keywords[:8])
+
+        for keyword in valid_keywords[:8]:  # Limit to prevent overly complex queries
             search_terms.extend([
                 "pva.occasion LIKE %s",
                 "pva.color = %s",
@@ -394,13 +459,81 @@ Return ONLY the JSON object for: "{message}"
         """.format(search_clause)
 
         params.append(limit)
-        await cursor.execute(query, params)
-        results = await cursor.fetchall()
+
+        # Validate query before execution
+        self.logger.info("Preparing keyword search query",
+                        search_terms_count=len(search_terms),
+                        params_count=len(params),
+                        keywords_used=all_keywords[:8])
+
+        # Create full query string with parameters for logging
+        try:
+            # Format parameters with proper quoting for strings
+            formatted_params = []
+            for param in params:
+                if isinstance(param, str):
+                    # Escape single quotes and wrap in single quotes
+                    escaped = param.replace("'", "''")
+                    formatted_params.append(f"'{escaped}'")
+                else:
+                    formatted_params.append(str(param))
+
+            full_query = query.strip() % tuple(formatted_params)
+            self.logger.info("Query formatting successful")
+        except (TypeError, ValueError) as e:
+            self.logger.error("Query formatting failed", error=str(e), query_template=query.strip(), params=params)
+            # Try to identify the issue
+            for i, param in enumerate(params):
+                if not isinstance(param, (str, int, float)):
+                    self.logger.error("Invalid parameter type", param_index=i, param_value=param, param_type=type(param))
+            return []
+
+        self.logger.info("Executing keyword-based SQL query",
+                        full_query=full_query,
+                        params=params)
+
+        try:
+            await cursor.execute(query, params)
+            results = await cursor.fetchall()
+        except Exception as e:
+            self.logger.error("SQL execution failed", error=str(e), query=full_query, params=params)
+
+            # Try a simple test query to check database connectivity
+            try:
+                await cursor.execute("SELECT COUNT(*) FROM products WHERE in_stock = 1")
+                test_result = await cursor.fetchone()
+                self.logger.info("Database connectivity test", total_products=test_result[0] if test_result else 0)
+            except Exception as test_e:
+                self.logger.error("Database connectivity test failed", error=str(test_e))
+
+            # Try a simplified version of the query to isolate the issue
+            try:
+                simple_query = """
+                    SELECT p.sku, p.title, p.price, p.image_key,
+                           pva.color, pva.category
+                    FROM products p
+                    JOIN product_vision_attributes pva ON p.sku = pva.sku
+                    WHERE p.in_stock = 1 AND p.title LIKE %s
+                    LIMIT 5
+                """
+                await cursor.execute(simple_query, ['%professional%'])
+                simple_results = await cursor.fetchall()
+                self.logger.info("Simplified query test", results_count=len(simple_results), sample=simple_results[:2] if simple_results else [])
+            except Exception as simple_e:
+                self.logger.error("Simplified query test failed", error=str(simple_e))
+
+            return []
+
+        # Log query results for debugging
+        self.logger.info("Keyword search SQL executed",
+                        results_count=len(results),
+                        sample_results=results[:3] if results else [])  # Show first 3 results for debugging
 
         return self._convert_results_to_products(results, keywords)
 
     async def _search_by_categories(self, cursor, keywords: Dict[str, Any], limit: int) -> List[Dict[str, Any]]:
         """Fallback search to ensure we get products from desired categories."""
+        self.logger.info("Starting category-based fallback search", target_limit=limit)
         products = []
         categories = keywords.get("categories", ["top", "bottom", "dress"])
 
@@ -431,12 +564,43 @@ Return ONLY the JSON object for: "{message}"
             """
 
             params = [category] + color_params + [max(1, limit // len(categories))]
+
+            # Create full query string with parameters for logging
+            try:
+                # Format parameters with proper quoting for strings
+                formatted_params = []
+                for param in params:
+                    if isinstance(param, str):
+                        # Escape single quotes and wrap in single quotes
+                        escaped = param.replace("'", "''")
+                        formatted_params.append(f"'{escaped}'")
+                    else:
+                        formatted_params.append(str(param))
+
+                full_query = query.strip() % tuple(formatted_params)
+            except (TypeError, ValueError):
+                full_query = f"Query formatting failed: {query.strip()}"
+
+            self.logger.info("Executing category fallback SQL query",
+                            category=category,
+                            full_query=full_query,
+                            params=params)
+
             await cursor.execute(query, params)
             results = await cursor.fetchall()
+
+            # Log query results for debugging
+            self.logger.info("Category fallback SQL executed",
+                            category=category,
+                            results_count=len(results),
+                            sample_results=results[:2] if results else [])  # Show first 2 results for debugging
 
             category_products = self._convert_results_to_products(results, keywords)
             products.extend(category_products)
 
+            self.logger.info("Category search completed", category=category, products_found=len(category_products))
+
+        self.logger.info("Category-based fallback search completed", total_products=len(products))
         return products
 
     def _convert_results_to_products(self, results, keywords) -> List[Dict[str, Any]]:
@@ -609,8 +773,15 @@ Return ONLY the JSON object for: "{message}"
             has_bottoms = len(grouped.get('bottom', [])) > 0
             has_dresses = len(grouped.get('dress', [])) > 0
 
+            self.logger.info("Checking category balance",
+                           has_tops=has_tops,
+                           has_bottoms=has_bottoms,
+                           has_dresses=has_dresses,
+                           current_product_count=len(products))
+
             # If we have dresses, that's fine - they are complete outfits
             if has_dresses:
+                self.logger.info("Category balance satisfied: Dresses available for complete outfits")
                 return products
 
             # If we're missing tops or bottoms, search specifically for them
@@ -618,17 +789,26 @@ Return ONLY the JSON object for: "{message}"
 
             if not has_tops:
                 # Search for tops with broader criteria
+                self.logger.info("Category balance fallback: Searching for missing tops",
+                               reason="No tops found in initial search, needed for complete outfits")
                 tops = await self._search_specific_category(cursor, 'top', keywords, 3)
                 additional_products.extend(tops)
-                self.logger.info("Added missing tops", count=len(tops))
+                self.logger.info("Added missing tops via fallback search", count=len(tops))
 
             if not has_bottoms:
                 # Search for bottoms with broader criteria
+                self.logger.info("Category balance fallback: Searching for missing bottoms",
+                               reason="No bottoms found in initial search, needed for complete outfits")
                 bottoms = await self._search_specific_category(cursor, 'bottom', keywords, 3)
                 additional_products.extend(bottoms)
-                self.logger.info("Added missing bottoms", count=len(bottoms))
+                self.logger.info("Added missing bottoms via fallback search", count=len(bottoms))
 
-            return products + additional_products
+            final_products = products + additional_products
+            self.logger.info("Category balance check completed",
+                           additional_products_added=len(additional_products),
+                           final_product_count=len(final_products))
+
+            return final_products
 
         except Exception as e:
             self.logger.error("Category balance failed", error=str(e))
@@ -639,6 +819,7 @@ Return ONLY the JSON object for: "{message}"
     ) -> List[Dict[str, Any]]:
         """Search for specific category (top/bottom/dress) with broader criteria."""
         try:
+            self.logger.info("Searching for specific missing category", category=category, limit=limit)
             # Use basic color and style matching for the specific category
             colors = keywords.get("colors", [])
             if not colors:
@@ -661,6 +842,28 @@ Return ONLY the JSON object for: "{message}"
                     LIMIT %s
                 """
                 params = [category] + colors + [limit]
+
+                # Create full query string with parameters for logging
+                try:
+                    # Format parameters with proper quoting for strings
+                    formatted_params = []
+                    for param in params:
+                        if isinstance(param, str):
+                            # Escape single quotes and wrap in single quotes
+                            escaped = param.replace("'", "''")
+                            formatted_params.append(f"'{escaped}'")
+                        else:
+                            formatted_params.append(str(param))
+
+                    full_query = query.strip() % tuple(formatted_params)
+                except (TypeError, ValueError):
+                    full_query = f"Query formatting failed: {query.strip()}"
+
+                self.logger.info("Executing specific category SQL query with colors",
+                                category=category,
+                                full_query=full_query,
+                                params=params,
+                                colors=colors)
             else:
                 # Fallback without color conditions
                 query = """
@@ -678,10 +881,41 @@ Return ONLY the JSON object for: "{message}"
                 """
                 params = [category, limit]
 
+                # Create full query string with parameters for logging
+                try:
+                    # Format parameters with proper quoting for strings
+                    formatted_params = []
+                    for param in params:
+                        if isinstance(param, str):
+                            # Escape single quotes and wrap in single quotes
+                            escaped = param.replace("'", "''")
+                            formatted_params.append(f"'{escaped}'")
+                        else:
+                            formatted_params.append(str(param))
+
+                    full_query = query.strip() % tuple(formatted_params)
+                except (TypeError, ValueError):
+                    full_query = f"Query formatting failed: {query.strip()}"
+
+                self.logger.info("Executing specific category SQL query without colors",
+                                category=category,
+                                full_query=full_query,
+                                params=params,
+                                reason="No preferred colors specified, using casual style fallback")
+
             await cursor.execute(query, params)
             results = await cursor.fetchall()
 
-            return self._convert_results_to_products(results, keywords)
+            # Log query results for debugging
+            self.logger.info("Specific category SQL executed",
+                            category=category,
+                            results_count=len(results),
+                            sample_results=results[:2] if results else [])  # Show first 2 results for debugging
+
+            products = self._convert_results_to_products(results, keywords)
+            self.logger.info("Specific category search completed", category=category, products_found=len(products))
+
+            return products
 
         except Exception as e:
             self.logger.error("Specific category search failed", category=category, error=str(e))
@@ -726,12 +960,22 @@ Return ONLY the JSON object for: "{message}"
             List of complete outfit dictionaries ready for frontend display
         """
         try:
+            self.logger.info("Starting outfit combination creation",
+                           available_products=len(products),
+                           target_limit=limit)
+
             # Group products by category (with simple correction)
             categorized = self._group_products_by_category(products)
+            self.logger.info("Products categorized",
+                           dress_count=len(categorized.get("dress", [])),
+                           top_count=len(categorized.get("top", [])),
+                           bottom_count=len(categorized.get("bottom", [])),
+                           other_count=len(categorized.get("other", [])))
 
             outfits = []
 
             # Strategy 1: Complete dress outfits
+            dress_outfits = 0
             for dress in categorized.get("dress", [])[:2]:
                 outfit = {
                     "title": self._generate_outfit_title(dress, keywords),
@@ -743,12 +987,20 @@ Return ONLY the JSON object for: "{message}"
                     "outfit_type": "complete_look",
                 }
                 outfits.append(outfit)
+                dress_outfits += 1
+
+            self.logger.info("Strategy 1 completed: Dress outfits created", count=dress_outfits)
 
             # Strategy 2: Top + Bottom combinations
+            combo_outfits = 0
             tops = categorized.get("top", [])
             bottoms = categorized.get("bottom", [])
 
             if tops and bottoms:
+                self.logger.info("Strategy 2: Creating top+bottom combinations",
+                               available_tops=len(tops),
+                               available_bottoms=len(bottoms))
+
                 for top in tops[:2]:
                     for bottom in bottoms[:2]:
                         if self._check_color_compatibility(top, bottom):
@@ -768,15 +1020,26 @@ Return ONLY the JSON object for: "{message}"
                                 "outfit_type": "coordinated_set",
                             }
                             outfits.append(outfit)
+                            combo_outfits += 1
 
                             if len(outfits) >= limit:
                                 break
                     if len(outfits) >= limit:
                         break
 
+                self.logger.info("Strategy 2 completed: Combination outfits created", count=combo_outfits)
+            else:
+                self.logger.info("Strategy 2 skipped: Missing tops or bottoms for combinations",
+                               has_tops=bool(tops),
+                               has_bottoms=bool(bottoms))
+
             # Strategy 3: Single standout pieces
+            single_outfits = 0
             if len(outfits) < limit:
-                for product in products[: limit - len(outfits)]:
+                remaining_slots = limit - len(outfits)
+                self.logger.info("Strategy 3: Adding single standout pieces", remaining_slots=remaining_slots)
+
+                for product in products[:remaining_slots]:
                     if product.get("category") in ["top", "dress", "outerwear"]:
                         outfit = {
                             "title": self._generate_single_title(product, keywords),
@@ -788,8 +1051,12 @@ Return ONLY the JSON object for: "{message}"
                             "outfit_type": "statement_piece",
                         }
                         outfits.append(outfit)
+                        single_outfits += 1
+
+                self.logger.info("Strategy 3 completed: Single piece outfits created", count=single_outfits)
 
             # Sort by relevance and price
+            self.logger.info("Sorting outfits by relevance and price")
             outfits.sort(
                 key=lambda x: (
                     -max(item["relevance_score"] for item in x["items"]),
@@ -797,7 +1064,14 @@ Return ONLY the JSON object for: "{message}"
                 )
             )
 
-            return outfits[:limit]
+            final_outfits = outfits[:limit]
+            self.logger.info("Outfit creation completed successfully",
+                           total_outfits=len(final_outfits),
+                           dress_outfits=dress_outfits,
+                           combo_outfits=combo_outfits,
+                           single_outfits=single_outfits)
+
+            return final_outfits
 
         except Exception as e:
             self.logger.error("Outfit creation failed", error=str(e))

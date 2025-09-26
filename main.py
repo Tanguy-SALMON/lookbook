@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import structlog
 import uuid
+import logging
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -42,19 +43,30 @@ from lookbook_mpc.api.routers import (
 )
 from lookbook_mpc.api.mcp_server import create_mcp_app
 
+# Configure logging level from settings
+log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
+logging.basicConfig(level=log_level)
+
 # Configure structured logging
+processors = [
+    structlog.stdlib.filter_by_level,
+    structlog.stdlib.add_logger_name,
+    structlog.stdlib.add_log_level,
+    structlog.stdlib.PositionalArgumentsFormatter(),
+    structlog.processors.TimeStamper(fmt="iso"),
+    structlog.processors.StackInfoRenderer(),
+    structlog.processors.format_exc_info,
+    structlog.processors.UnicodeDecoder(),
+]
+
+# Add appropriate renderer based on log format
+if settings.log_format.lower() == "json":
+    processors.append(structlog.processors.JSONRenderer())
+else:
+    processors.append(structlog.dev.ConsoleRenderer())
+
 structlog.configure(
-    processors=[
-        structlog.stdlib.filter_by_level,
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-        structlog.processors.JSONRenderer(),
-    ],
+    processors=processors,
     context_class=dict,
     logger_factory=structlog.stdlib.LoggerFactory(),
     wrapper_class=structlog.stdlib.BoundLogger,
@@ -100,7 +112,7 @@ async def lifespan(app: FastAPI):
     logger.info(
         "Starting Lookbook-MPC application",
         version="0.1.0",
-        environment=settings.log_level,
+        environment=settings.log_level.upper(),
         workers=settings.api_workers,
     )
 
@@ -133,7 +145,7 @@ async def lifespan(app: FastAPI):
         vision_model=settings.ollama_vision_model,
         text_model=settings.ollama_text_model,
         db_url=settings.lookbook_db_url,
-        log_level=settings.log_level,
+        log_level=settings.log_level.upper(),
         feature_mcp=settings.feature_mcp,
     )
 
@@ -225,7 +237,7 @@ async def health_check():
         "status": "healthy",
         "service": "lookbook-mpc",
         "version": "0.1.0",
-        "environment": settings.log_level,
+        "environment": settings.log_level.upper(),
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
@@ -361,7 +373,7 @@ async def root(request: Request):
                 <h1 class="text-4xl font-bold text-gray-900 mb-4">Lookbook-MPC</h1>
                 <p class="text-lg text-gray-600 mb-2">Fashion Lookbook Recommendation Microservice</p>
                 <p class="text-sm text-gray-500">Version 0.1.0 • Environment: """
-        + settings.log_level
+        + settings.log_level.upper()
         + """</p>
             </div>
 
