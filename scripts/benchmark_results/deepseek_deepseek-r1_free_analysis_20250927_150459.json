@@ -1,0 +1,202 @@
+{
+  "model_name": "deepseek/deepseek-r1:free",
+  "total_runs": 30,
+  "successful_runs": 30,
+  "failed_runs": 0,
+  "success_rate": 100.0,
+  "system_info": {
+    "cpu_count": 8,
+    "cpu_freq": 3504,
+    "total_memory_gb": 16.0,
+    "gpu_info": [],
+    "python_version": "3.11.9 (v3.11.9:de54cf5be3, Apr  2 2024, 07:12:50) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "benchmark_timestamp": "2025-09-27T14:42:34.590418"
+  },
+  "performance_metrics": {
+    "response_time": {
+      "mean": 44.67909313837687,
+      "median": 20.045422911643982,
+      "std": 81.7231673613036,
+      "min": 13.28728175163269,
+      "max": 422.51702666282654,
+      "p95": 160.70151343345606,
+      "p99": 364.05638786077515
+    },
+    "tokens_per_second": {
+      "mean": 17.24109187185365,
+      "median": 19.897013272930412,
+      "std": 7.123940098067166,
+      "min": 0.9064723450911681,
+      "max": 25.447146993309342
+    },
+    "inference_speed": {
+      "mean": 22.757481370619264,
+      "median": 22.818655138984994,
+      "std": 2.360526902860484,
+      "min": 18.127282303788768,
+      "max": 27.451702194568156
+    },
+    "memory_usage_mb": {
+      "mean": 50.748958333333334,
+      "median": 50.484375,
+      "std": 4.842300139887628,
+      "min": 40.2734375,
+      "max": 65.921875
+    },
+    "cpu_usage_percent": {
+      "mean": 0.0,
+      "median": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "quality_metrics": {
+    "quality_score": {
+      "mean": 0.66,
+      "median": 0.6500000000000001,
+      "std": 0.13920959142540285,
+      "min": 0.25,
+      "max": 0.8
+    },
+    "response_length": {
+      "mean": 503.6333333333333,
+      "median": 492.5,
+      "std": 53.64666222437415,
+      "min": 404,
+      "max": 642
+    }
+  },
+  "variability_metrics": {
+    "overall_response_time_std": 81.7231673613036,
+    "overall_quality_score_std": 0.13920959142540285,
+    "prompt_variability": {
+      "I want to do yoga, what should I wear? ": {
+        "response_time_std": 38.00616965018053,
+        "quality_score_std": 0.08660254037844381,
+        "runs_count": 3
+      },
+      "Restaurant this weekend, attractive for $50": {
+        "response_time_std": 1.7579542670549058,
+        "quality_score_std": 0.05773502691896263,
+        "runs_count": 3
+      },
+      "I am fat, I want something to look slim": {
+        "response_time_std": 37.63529552941104,
+        "quality_score_std": 0.0,
+        "runs_count": 3
+      },
+      "Business meeting outfit for office": {
+        "response_time_std": 15.148717974041954,
+        "quality_score_std": 0.08660254037844381,
+        "runs_count": 3
+      },
+      "Beach vacation clothes for hot weather": {
+        "response_time_std": 2.3517754354914153,
+        "quality_score_std": 0.08660254037844381,
+        "runs_count": 3
+      },
+      "First date outfit ideas": {
+        "response_time_std": 118.33340303326598,
+        "quality_score_std": 0.0,
+        "runs_count": 3
+      },
+      "Gym workout clothes recommendation": {
+        "response_time_std": 5.259285855211084,
+        "quality_score_std": 0.15000000000000002,
+        "runs_count": 3
+      },
+      "Winter formal dress suggestions": {
+        "response_time_std": 229.99361238562128,
+        "quality_score_std": 0.20207259421636908,
+        "runs_count": 3
+      },
+      "Casual Friday office attire": {
+        "response_time_std": 5.493025073446095,
+        "quality_score_std": 0.08660254037844381,
+        "runs_count": 3
+      },
+      "Hiking trip clothing advice": {
+        "response_time_std": 0.17595403757764405,
+        "quality_score_std": 0.08660254037844395,
+        "runs_count": 3
+      }
+    }
+  },
+  "prompt_analysis": {
+    "I want to do yoga, what should I wear? ": {
+      "avg_response_time": 39.109769662221275,
+      "avg_quality_score": 0.7500000000000001,
+      "response_time_std": 38.00616965018053,
+      "quality_score_std": 0.08660254037844381,
+      "total_runs": 3
+    },
+    "Restaurant this weekend, attractive for $50": {
+      "avg_response_time": 17.582768599192303,
+      "avg_quality_score": 0.5666666666666668,
+      "response_time_std": 1.7579542670549058,
+      "quality_score_std": 0.05773502691896263,
+      "total_runs": 3
+    },
+    "I am fat, I want something to look slim": {
+      "avg_response_time": 44.04953130086263,
+      "avg_quality_score": 0.8,
+      "response_time_std": 37.63529552941104,
+      "quality_score_std": 0.0,
+      "total_runs": 3
+    },
+    "Business meeting outfit for office": {
+      "avg_response_time": 29.470772584279377,
+      "avg_quality_score": 0.7000000000000001,
+      "response_time_std": 15.148717974041954,
+      "quality_score_std": 0.08660254037844381,
+      "total_runs": 3
+    },
+    "Beach vacation clothes for hot weather": {
+      "avg_response_time": 19.213441610336304,
+      "avg_quality_score": 0.7500000000000001,
+      "response_time_std": 2.3517754354914153,
+      "quality_score_std": 0.08660254037844381,
+      "total_runs": 3
+    },
+    "First date outfit ideas": {
+      "avg_response_time": 84.2893837292989,
+      "avg_quality_score": 0.6500000000000001,
+      "response_time_std": 118.33340303326598,
+      "quality_score_std": 0.0,
+      "total_runs": 3
+    },
+    "Gym workout clothes recommendation": {
+      "avg_response_time": 18.43646264076233,
+      "avg_quality_score": 0.65,
+      "response_time_std": 5.259285855211084,
+      "quality_score_std": 0.15000000000000002,
+      "total_runs": 3
+    },
+    "Winter formal dress suggestions": {
+      "avg_response_time": 156.94894766807556,
+      "avg_quality_score": 0.43333333333333335,
+      "response_time_std": 229.99361238562128,
+      "quality_score_std": 0.20207259421636908,
+      "total_runs": 3
+    },
+    "Casual Friday office attire": {
+      "avg_response_time": 21.45893669128418,
+      "avg_quality_score": 0.7500000000000001,
+      "response_time_std": 5.493025073446095,
+      "quality_score_std": 0.08660254037844381,
+      "total_runs": 3
+    },
+    "Hiking trip clothing advice": {
+      "avg_response_time": 16.230916897455852,
+      "avg_quality_score": 0.55,
+      "response_time_std": 0.17595403757764405,
+      "quality_score_std": 0.08660254037844395,
+      "total_runs": 3
+    }
+  },
+  "error_analysis": {
+    "total_errors": 0,
+    "error_types": {}
+  }
+}

@@ -1,0 +1,48 @@
+
+OPENROUTER BENCHMARK SUMMARY
+============================
+Model: anthropic/claude-3-haiku
+Timestamp: 2025-09-27T13:37:32.340635
+
+⚠️  BENCHMARK FAILED - NO SUCCESSFUL RUNS
+==========================================
+Total Attempts: 1
+Success Rate: 0.0% (0/1 runs)
+
+ERROR ANALYSIS
+--------------
+• Model unavailable: 401: User not found.: 1 occurrences
+
+COMMON SOLUTIONS
+----------------
+• HTTP 404 (Data Policy): Configure privacy settings at https://openrouter.ai/settings/privacy
+• HTTP 429 (Rate Limiting): Wait and retry, or use different model
+• HTTP 401 (Unauthorized): Check your API key
+• HTTP 403 (Forbidden): Check model access permissions
+• Timeout errors: Increase timeout or try smaller prompts
+• Network errors: Check internet connection
+
+DATA POLICY ERRORS EXPLAINED
+-----------------------------
+Some free models require specific privacy settings:
+1. Visit https://openrouter.ai/settings/privacy
+2. Enable "Allow training on your data" for some free models
+3. Or try models that don't require training consent:
+   • qwen/qwen-2.5-7b-instruct:free
+   • meta-llama/llama-3.3-8b-instruct:free
+   • google/gemma-3-12b-it:free
+
+WORKING FREE MODELS (TESTED)
+----------------------------
+• qwen/qwen-2.5-7b-instruct:free - Fast and reliable
+• meta-llama/llama-3.3-8b-instruct:free - High quality responses
+• google/gemma-3-12b-it:free - Good performance
+• mistralai/mistral-7b-instruct:free - Consistent results
+
+TROUBLESHOOTING TIPS
+--------------------
+• Try a different model: --models "qwen/qwen-2.5-7b-instruct:free"
+• Reduce request rate: --repeat 1
+• Use shorter prompts: --prompts "Quick outfit advice"
+• Check API status: https://status.openrouter.ai/
+• For privacy errors: Configure https://openrouter.ai/settings/privacy

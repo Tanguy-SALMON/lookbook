@@ -7,6 +7,7 @@ pycache/
 .venv/
 venv/
 env/
+.venv_embedding
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

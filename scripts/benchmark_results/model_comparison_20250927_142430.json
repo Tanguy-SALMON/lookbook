@@ -1,0 +1,38 @@
+{
+  "openai/gpt-3.5-turbo": {
+    "error": "No successful benchmark runs",
+    "success_rate": 0.0,
+    "performance_metrics": {
+      "response_time": {
+        "mean": 0,
+        "median": 0,
+        "std": 0
+      }
+    },
+    "quality_metrics": {
+      "quality_score": {
+        "mean": 0,
+        "median": 0,
+        "std": 0
+      }
+    }
+  },
+  "anthropic/claude-3-haiku": {
+    "error": "No successful benchmark runs",
+    "success_rate": 0.0,
+    "performance_metrics": {
+      "response_time": {
+        "mean": 0,
+        "median": 0,
+        "std": 0
+      }
+    },
+    "quality_metrics": {
+      "quality_score": {
+        "mean": 0,
+        "median": 0,
+        "std": 0
+      }
+    }
+  }
+}

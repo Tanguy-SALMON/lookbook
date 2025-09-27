@@ -1,0 +1,33 @@
+
+OPENROUTER BENCHMARK SUMMARY
+============================
+Model: x-ai/grok-4-fast:free
+Timestamp: 2025-09-27T14:30:23.089397
+
+PERFORMANCE SUMMARY
+------------------
+Average Response Time: 7.00s
+Average Total Tokens/sec: 80.5
+Average Inference Speed: 80.9 tokens/s
+Response Time P95: 6.01s
+Total Tokens Used: 12,853 (Prompt: 4,257, Completion: 8,596)
+Estimated Total Cost: $0.0236 (Avg per request: $0.0008)
+Success Rate: 100.0% (30/30 runs)
+
+QUALITY SUMMARY
+--------------
+Average Quality Score: 0.752/1.000
+Average Response Length: 445 characters
+
+TOP PERFORMING PROMPTS
+---------------------
+1. I want to do yoga, what should I wear? ...
+   Quality: 0.850, Time: 3.97s
+2. I am fat, I want something to look slim...
+   Quality: 0.850, Time: 3.07s
+3. Winter formal dress suggestions...
+   Quality: 0.800, Time: 3.40s
+4. Casual Friday office attire...
+   Quality: 0.800, Time: 3.10s
+5. Business meeting outfit for office...
+   Quality: 0.750, Time: 4.46s

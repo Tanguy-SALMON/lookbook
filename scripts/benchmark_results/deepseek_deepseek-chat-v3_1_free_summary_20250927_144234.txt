@@ -1,0 +1,33 @@
+
+OPENROUTER BENCHMARK SUMMARY
+============================
+Model: deepseek/deepseek-chat-v3.1:free
+Timestamp: 2025-09-27T14:42:34.525837
+
+PERFORMANCE SUMMARY
+------------------
+Average Response Time: 21.82s
+Average Total Tokens/sec: 9.2
+Average Inference Speed: 9.6 tokens/s
+Response Time P95: 21.97s
+Total Tokens Used: 4,477 (Prompt: 942, Completion: 3,535)
+Estimated Total Cost: $0.0085 (Avg per request: $0.0003)
+Success Rate: 100.0% (30/30 runs)
+
+QUALITY SUMMARY
+--------------
+Average Quality Score: 0.748/1.000
+Average Response Length: 516 characters
+
+TOP PERFORMING PROMPTS
+---------------------
+1. I am fat, I want something to look slim...
+   Quality: 0.800, Time: 10.54s
+2. Beach vacation clothes for hot weather...
+   Quality: 0.800, Time: 17.83s
+3. First date outfit ideas...
+   Quality: 0.800, Time: 10.27s
+4. Gym workout clothes recommendation...
+   Quality: 0.800, Time: 16.33s
+5. I want to do yoga, what should I wear? ...
+   Quality: 0.750, Time: 7.82s

@@ -1257,6 +1257,17 @@ async def generate_comparison_report(results_files: Dict[str, str]):
                 }
 
         if analysis is not None:
+            # Ensure analysis has all required keys with default values
+            if 'success_rate' not in analysis:
+                analysis['success_rate'] = 0.0
+            if 'performance_metrics' not in analysis:
+                analysis['performance_metrics'] = {
+                    'response_time': {'mean': 0, 'median': 0, 'std': 0}
+                }
+            if 'quality_metrics' not in analysis:
+                analysis['quality_metrics'] = {
+                    'quality_score': {'mean': 0, 'median': 0, 'std': 0}
+                }
             comparison_data[model] = analysis
 
     # Generate comparison table
@@ -1280,8 +1291,9 @@ async def generate_comparison_report(results_files: Dict[str, str]):
             )
         else:
             # Model failed completely - show zeros
+            success_rate = data.get('success_rate', 0.0)
             print(
-                f"{model:<30} {'0.00':<13} {'0.00':<15} {'0.0':<15} {'0.000':<15} {data['success_rate']:<13.1f}"
+                f"{model:<30} {'0.00':<13} {'0.00':<15} {'0.0':<15} {'0.000':<15} {success_rate:<13.1f}"
             )
 
     # Find best models for different metrics (only from successful models)

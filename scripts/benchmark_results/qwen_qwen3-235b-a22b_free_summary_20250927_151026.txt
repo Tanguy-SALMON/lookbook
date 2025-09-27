@@ -1,0 +1,33 @@
+
+OPENROUTER BENCHMARK SUMMARY
+============================
+Model: qwen/qwen3-235b-a22b:free
+Timestamp: 2025-09-27T15:10:26.146425
+
+PERFORMANCE SUMMARY
+------------------
+Average Response Time: 10.71s
+Average Total Tokens/sec: 38.4
+Average Inference Speed: 38.5 tokens/s
+Response Time P95: 15.61s
+Total Tokens Used: 26,742 (Prompt: 15,516, Completion: 11,226)
+Estimated Total Cost: $0.0457 (Avg per request: $0.0015)
+Success Rate: 100.0% (30/30 runs)
+
+QUALITY SUMMARY
+--------------
+Average Quality Score: 0.638/1.000
+Average Response Length: 1204 characters
+
+TOP PERFORMING PROMPTS
+---------------------
+1. Gym workout clothes recommendation...
+   Quality: 0.783, Time: 8.04s
+2. Business meeting outfit for office...
+   Quality: 0.700, Time: 13.46s
+3. Beach vacation clothes for hot weather...
+   Quality: 0.700, Time: 10.71s
+4. I am fat, I want something to look slim...
+   Quality: 0.667, Time: 12.58s
+5. Casual Friday office attire...
+   Quality: 0.667, Time: 11.24s

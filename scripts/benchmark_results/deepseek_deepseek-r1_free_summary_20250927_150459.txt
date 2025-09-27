@@ -1,0 +1,33 @@
+
+OPENROUTER BENCHMARK SUMMARY
+============================
+Model: deepseek/deepseek-r1:free
+Timestamp: 2025-09-27T15:04:59.774511
+
+PERFORMANCE SUMMARY
+------------------
+Average Response Time: 44.68s
+Average Total Tokens/sec: 17.2
+Average Inference Speed: 22.8 tokens/s
+Response Time P95: 160.70s
+Total Tokens Used: 12,109 (Prompt: 1,002, Completion: 11,107)
+Estimated Total Cost: $0.0237 (Avg per request: $0.0008)
+Success Rate: 100.0% (30/30 runs)
+
+QUALITY SUMMARY
+--------------
+Average Quality Score: 0.660/1.000
+Average Response Length: 504 characters
+
+TOP PERFORMING PROMPTS
+---------------------
+1. I am fat, I want something to look slim...
+   Quality: 0.800, Time: 44.05s
+2. I want to do yoga, what should I wear? ...
+   Quality: 0.750, Time: 39.11s
+3. Beach vacation clothes for hot weather...
+   Quality: 0.750, Time: 19.21s
+4. Casual Friday office attire...
+   Quality: 0.750, Time: 21.46s
+5. Business meeting outfit for office...
+   Quality: 0.700, Time: 29.47s

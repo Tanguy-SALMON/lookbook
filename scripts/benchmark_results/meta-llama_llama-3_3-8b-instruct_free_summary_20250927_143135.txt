@@ -1,0 +1,33 @@
+
+OPENROUTER BENCHMARK SUMMARY
+============================
+Model: meta-llama/llama-3.3-8b-instruct:free
+Timestamp: 2025-09-27T14:31:35.365085
+
+PERFORMANCE SUMMARY
+------------------
+Average Response Time: 2.26s
+Average Total Tokens/sec: 36.7
+Average Inference Speed: 36.9 tokens/s
+Response Time P95: 3.11s
+Total Tokens Used: 3,552 (Prompt: 1,119, Completion: 2,433)
+Estimated Total Cost: $0.0065 (Avg per request: $0.0002)
+Success Rate: 100.0% (30/30 runs)
+
+QUALITY SUMMARY
+--------------
+Average Quality Score: 0.710/1.000
+Average Response Length: 370 characters
+
+TOP PERFORMING PROMPTS
+---------------------
+1. I want to do yoga, what should I wear? ...
+   Quality: 0.950, Time: 2.93s
+2. I am fat, I want something to look slim...
+   Quality: 0.883, Time: 2.41s
+3. First date outfit ideas...
+   Quality: 0.867, Time: 2.49s
+4. Business meeting outfit for office...
+   Quality: 0.850, Time: 2.41s
+5. Winter formal dress suggestions...
+   Quality: 0.700, Time: 2.23s

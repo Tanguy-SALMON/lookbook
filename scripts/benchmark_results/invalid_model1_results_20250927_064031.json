@@ -1,0 +1,23 @@
+[
+  {
+    "model_name": "invalid/model1",
+    "prompt": "I want to do yoga, what should I wear? ",
+    "response_time": 0.3704719543457031,
+    "tokens_per_second": 0.0,
+    "memory_usage_mb": 45.421875,
+    "cpu_usage_percent": 0.0,
+    "gpu_usage_percent": null,
+    "gpu_memory_mb": null,
+    "response_length": 0,
+    "response_quality_score": 0.0,
+    "timestamp": "2025-09-27T06:40:31.748203",
+    "success": false,
+    "response_content": "",
+    "error_message": "Model unavailable: 401: User not found.",
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0,
+    "estimated_cost": 0.0,
+    "inference_speed": 0.0
+  }
+]
